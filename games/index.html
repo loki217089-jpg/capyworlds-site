@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games - CapyWorlds</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    header h1 {
+      font-size: 36px;
+      color: #fff;
+      letter-spacing: 2px;
+    }
+
+    header h1 span {
+      color: #7c6aff;
+    }
+
+    header p {
+      margin-top: 8px;
+      color: #888;
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 28px 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: #7c6aff;
+      box-shadow: 0 8px 24px rgba(124, 106, 255, 0.2);
+    }
+
+    .card .emoji {
+      font-size: 36px;
+    }
+
+    .card .name {
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .card .desc {
+      font-size: 14px;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 48px;
+      color: #7c6aff;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎮 <span>Games</span></h1>
+    <p>My small games collection</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="mosquito/">
+      <div class="emoji">🦟</div>
+      <div class="name">Evolution Mosquito</div>
+      <div class="desc">進化蚊子生存遊戲，吸血升級、鍊化商店</div>
+    </a>
+
+    <a class="card" href="virus/">
+      <div class="emoji">🦠</div>
+      <div class="name">Virus.exe</div>
+      <div class="desc">病毒主題地城射擊，對抗防火牆與量子病毒</div>
+    </a>
+
+    <a class="card" href="hero/">
+      <div class="emoji">⚔️</div>
+      <div class="name">Hero Idle RPG</div>
+      <div class="desc">放置英雄RPG，職業系統與爆發召喚機制</div>
+    </a>
+
+    <a class="card" href="fps/">
+      <div class="emoji">🔫</div>
+      <div class="name">FPS Game</div>
+      <div class="desc">第一人稱射擊遊戲</div>
+    </a>
+  </div>
+
+  <a class="back" href="/">← Back Home</a>
+
+</body>
+</html>
