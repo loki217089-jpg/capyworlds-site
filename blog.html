@@ -1,16 +1,164 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-<title>Blog - CapyWorlds</title>
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog - CapyWorlds</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: #13100c;
+      color: #e8ddd0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .page-header {
+      width: 100%;
+      text-align: center;
+      padding: 48px 24px 36px;
+      background: radial-gradient(ellipse at 50% -10%, #2d1e0e 0%, #13100c 68%);
+      position: relative;
+    }
+    .page-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 15%; right: 15%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c8a456 40%, #c8a456 60%, transparent);
+    }
+
+    .capy-art {
+      width: 160px;
+      height: 148px;
+      display: block;
+      margin: 0 auto 22px;
+      filter: drop-shadow(0 6px 20px rgba(200,164,86,0.18));
+    }
+
+    .page-header h1 {
+      font-size: 36px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 3px;
+    }
+    .page-header h1 .accent { color: #c8a456; }
+
+    .content {
+      max-width: 600px;
+      width: 100%;
+      padding: 48px 24px;
+    }
+
+    .placeholder-card {
+      background: #1e1812;
+      border: 1px dashed #3d3020;
+      border-radius: 18px;
+      padding: 40px 28px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .placeholder-card .pl-icon { font-size: 36px; opacity: 0.5; }
+    .placeholder-card .pl-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #7a6a58;
+    }
+    .placeholder-card .pl-desc {
+      font-size: 13px;
+      color: #604830;
+      line-height: 1.7;
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 36px;
+      color: #c8a456;
+      text-decoration: none;
+      font-size: 14px;
+      letter-spacing: 1px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+  </style>
+</head>
 <body>
 
-<h1>✍ Blog</h1>
+  <header class="page-header">
+    <!-- Capybara writing SVG -->
+    <svg class="capy-art" viewBox="0 0 160 148" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ground -->
+      <ellipse cx="80" cy="142" rx="68" ry="11" fill="#2d4a1e" opacity="0.4"/>
+      <!-- Body -->
+      <ellipse cx="78" cy="114" rx="50" ry="30" fill="#b8955a"/>
+      <!-- Paper/notebook on lap -->
+      <rect x="52" y="122" width="56" height="32" rx="4" fill="#f5e8c8"/>
+      <rect x="52" y="122" width="6"  height="32" rx="4" fill="#d4c090"/>
+      <!-- Lines on paper -->
+      <line x1="62" y1="130" x2="100" y2="130" stroke="#c0a878" stroke-width="1.2"/>
+      <line x1="62" y1="136" x2="100" y2="136" stroke="#c0a878" stroke-width="1.2"/>
+      <line x1="62" y1="142" x2="92"  y2="142" stroke="#c0a878" stroke-width="1.2"/>
+      <!-- Left arm down on paper -->
+      <path d="M44 104 Q38 120 52 128" stroke="#b8955a" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <!-- Right arm holding pencil -->
+      <path d="M112 100 Q125 94 126 78" stroke="#b8955a" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <!-- Pencil -->
+      <g transform="rotate(-18, 124, 72)">
+        <rect x="120" y="50" width="8" height="34" rx="2" fill="#f5d86a"/>
+        <rect x="120" y="50" width="8" height="6"  rx="2" fill="#d4a040"/>
+        <polygon points="120,84 128,84 124,96" fill="#e8b048"/>
+        <polygon points="121.5,90 126.5,90 124,96" fill="#f0c060"/>
+        <polygon points="122.5,93 125.5,93 124,96" fill="#2a1a0a"/>
+        <!-- Eraser -->
+        <rect x="120" y="50" width="8" height="6" rx="2" fill="#f5a0a0"/>
+      </g>
+      <!-- Head -->
+      <ellipse cx="82" cy="70" rx="40" ry="37" fill="#c09a62"/>
+      <!-- Snout -->
+      <ellipse cx="82" cy="84" rx="24" ry="17" fill="#d4aa78"/>
+      <!-- Ears -->
+      <ellipse cx="52" cy="42" rx="13" ry="15" fill="#b8955a"/>
+      <ellipse cx="112" cy="42" rx="13" ry="15" fill="#b8955a"/>
+      <ellipse cx="52" cy="42" rx="9" ry="11" fill="#d0a874"/>
+      <ellipse cx="112" cy="42" rx="9" ry="11" fill="#d0a874"/>
+      <!-- Eyes (focused, looking down at paper) -->
+      <ellipse cx="71" cy="65" rx="7" ry="8" fill="#1a0e06"/>
+      <ellipse cx="93" cy="65" rx="7" ry="8" fill="#1a0e06"/>
+      <circle cx="68" cy="62" r="2.5" fill="white"/>
+      <circle cx="90" cy="62" r="2.5" fill="white"/>
+      <!-- Nostrils -->
+      <ellipse cx="75" cy="85" rx="3.5" ry="2.5" fill="#7a5035"/>
+      <ellipse cx="89" cy="85" rx="3.5" ry="2.5" fill="#7a5035"/>
+      <!-- Focused expression -->
+      <path d="M 68 93 Q 82 103 96 93" stroke="#7a5035" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- Small stars/sparkles around pencil area -->
+      <text x="136" y="66" font-size="10" opacity="0.5">✦</text>
+      <text x="138" y="52" font-size="8"  opacity="0.35">✧</text>
+    </svg>
 
-<p>Articles and ideas will be posted here.</p>
+    <h1>📝 <span class="accent">Blog</span></h1>
+  </header>
 
-<a href="index.html">⬅ Back Home</a>
+  <main class="content">
+    <div class="placeholder-card">
+      <div class="pl-icon">✍️</div>
+      <div class="pl-title">文章陸續更新中…</div>
+      <div class="pl-desc">
+        各種想法、開發心得、遊戲設計筆記<br>
+        敬請期待 CapyWorlds 卡皮巴拉的碎碎念
+      </div>
+    </div>
+    <a class="back-link" href="/">← 回到首頁 &nbsp; Back Home</a>
+  </main>
 
 </body>
 </html>

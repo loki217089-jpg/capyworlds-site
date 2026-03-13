@@ -1,21 +1,222 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CapyWorlds</title>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6193561251326215"
      crossorigin="anonymous"></script>
-<meta charset="UTF-8">
-<title>CapyWorlds</title>
-</head>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: #13100c;
+      color: #e8ddd0;
+      min-height: 100vh;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 52px 24px 44px;
+      background: radial-gradient(ellipse at 50% -10%, #2d1e0e 0%, #13100c 68%);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c8a456 40%, #c8a456 60%, transparent);
+    }
+
+    .capy-mascot {
+      width: 190px;
+      height: 170px;
+      margin: 0 auto 28px;
+      display: block;
+      filter: drop-shadow(0 8px 24px rgba(200, 164, 86, 0.18));
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 7vw, 58px);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 4px;
+      text-shadow: 0 0 50px rgba(200, 164, 86, 0.35);
+    }
+    .hero h1 .accent { color: #c8a456; }
+
+    .hero .tagline {
+      margin-top: 12px;
+      color: #907a60;
+      font-size: 15px;
+      letter-spacing: 1px;
+    }
+
+    /* ── Nav Grid ── */
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      max-width: 840px;
+      margin: 52px auto 0;
+      padding: 0 24px;
+    }
+
+    .nav-card {
+      background: #1e1812;
+      border: 1px solid #3d3020;
+      border-radius: 18px;
+      padding: 32px 20px;
+      text-decoration: none;
+      color: inherit;
+      text-align: center;
+      transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .nav-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #c8a456, transparent);
+      opacity: 0;
+      transition: opacity 0.22s;
+    }
+    .nav-card:hover {
+      transform: translateY(-6px);
+      border-color: #c8a456;
+      box-shadow: 0 10px 32px rgba(200, 164, 86, 0.18);
+    }
+    .nav-card:hover::before { opacity: 1; }
+
+    .nav-card .card-icon {
+      font-size: 42px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+    }
+    .nav-card .card-label {
+      font-size: 19px;
+      font-weight: 700;
+      color: #e8ddd0;
+      letter-spacing: 1px;
+    }
+    .nav-card .card-desc {
+      font-size: 12px;
+      color: #7a6a58;
+      line-height: 1.5;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 36px 24px;
+      margin-top: 60px;
+      color: #4a3828;
+      font-size: 13px;
+      border-top: 1px solid #2a1e14;
+    }
+    footer span { color: #c8a456; }
+  </style>
+</head>
 <body>
 
-<h1>🦫 CapyWorlds</h1>
-<p>Welcome to my world.</p>
+  <div class="hero">
+    <!-- Capybara mascot -->
+    <svg class="capy-mascot" viewBox="0 0 190 170" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ground -->
+      <ellipse cx="95" cy="160" rx="82" ry="14" fill="#2d4a1e" opacity="0.45"/>
+      <!-- Grass blades -->
+      <path d="M18 158 Q14 142 22 132 Q26 143 18 158Z" fill="#3a6424" opacity="0.65"/>
+      <path d="M32 156 Q30 144 37 136 Q39 145 32 156Z" fill="#4a7a30" opacity="0.55"/>
+      <path d="M160 156 Q163 141 156 132 Q153 143 160 156Z" fill="#3a6424" opacity="0.65"/>
+      <path d="M172 158 Q175 143 168 133 Q165 144 172 158Z" fill="#4a7a30" opacity="0.55"/>
+      <!-- Body -->
+      <ellipse cx="95" cy="128" rx="55" ry="36" fill="#b8955a"/>
+      <!-- Tail bump -->
+      <ellipse cx="145" cy="133" rx="15" ry="13" fill="#a8854e"/>
+      <!-- Head -->
+      <ellipse cx="95" cy="80" rx="42" ry="38" fill="#c09a62"/>
+      <!-- Snout -->
+      <ellipse cx="95" cy="95" rx="26" ry="18" fill="#d4aa78"/>
+      <!-- Ears -->
+      <ellipse cx="63" cy="50" rx="14" ry="16" fill="#b8955a"/>
+      <ellipse cx="127" cy="50" rx="14" ry="16" fill="#b8955a"/>
+      <ellipse cx="63" cy="50" rx="9" ry="11" fill="#d0a874"/>
+      <ellipse cx="127" cy="50" rx="9" ry="11" fill="#d0a874"/>
+      <!-- Eyes -->
+      <circle cx="79" cy="72" r="9" fill="#1a0e06"/>
+      <circle cx="111" cy="72" r="9" fill="#1a0e06"/>
+      <circle cx="76" cy="69" r="3.5" fill="white"/>
+      <circle cx="108" cy="69" r="3.5" fill="white"/>
+      <circle cx="77" cy="70" r="1.5" fill="#3d2a10" opacity="0.5"/>
+      <circle cx="109" cy="70" r="1.5" fill="#3d2a10" opacity="0.5"/>
+      <!-- Nostrils -->
+      <ellipse cx="87" cy="95" rx="4" ry="3" fill="#7a5035"/>
+      <ellipse cx="103" cy="95" rx="4" ry="3" fill="#7a5035"/>
+      <!-- Smile -->
+      <path d="M 80 104 Q 95 115 110 104" stroke="#7a5035" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Paws -->
+      <ellipse cx="56" cy="153" rx="20" ry="11" fill="#b8955a"/>
+      <ellipse cx="134" cy="153" rx="20" ry="11" fill="#b8955a"/>
+      <!-- Paw toes -->
+      <path d="M49 152 L48 160 M56 151 L55 160 M63 152 L62 160" stroke="#8a6a40" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M127 152 L126 160 M134 151 L133 160 M141 152 L140 160" stroke="#8a6a40" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Yellow flower left -->
+      <circle cx="14" cy="144" r="5" fill="#ffd700" opacity="0.85"/>
+      <circle cx="14" cy="136" r="4" fill="#ffd700" opacity="0.65"/>
+      <circle cx="20" cy="140" r="4" fill="#ffd700" opacity="0.65"/>
+      <circle cx="8"  cy="140" r="4" fill="#ffd700" opacity="0.65"/>
+      <circle cx="14" cy="144" r="2.5" fill="#e07800"/>
+      <!-- Pink flower right -->
+      <circle cx="176" cy="142" r="5" fill="#ffb6d9" opacity="0.9"/>
+      <circle cx="176" cy="134" r="4" fill="#ffb6d9" opacity="0.65"/>
+      <circle cx="182" cy="138" r="4" fill="#ffb6d9" opacity="0.65"/>
+      <circle cx="170" cy="138" r="4" fill="#ffb6d9" opacity="0.65"/>
+      <circle cx="176" cy="142" r="2.5" fill="#d4609a"/>
+      <!-- Sparkles -->
+      <text x="158" y="68" font-size="12" opacity="0.6">✦</text>
+      <text x="22" y="80" font-size="10" opacity="0.5">✦</text>
+    </svg>
 
-<a href="games.html">🎮 Games</a><br>
-<a href="blog.html">📝 Blog</a><br>
-<a href="books.html">📚 Books</a><br>
-<a href="about.html">👤 About</a>
+    <h1>Capy<span class="accent">Worlds</span></h1>
+    <p class="tagline">我的創作小宇宙 &nbsp;·&nbsp; Welcome to my creative world</p>
+  </div>
+
+  <nav class="nav-grid">
+    <a class="nav-card" href="games/">
+      <div class="card-icon">🎮</div>
+      <div class="card-label">Games</div>
+      <div class="card-desc">獨立小遊戲收藏</div>
+    </a>
+    <a class="nav-card" href="blog.html">
+      <div class="card-icon">📝</div>
+      <div class="card-label">Blog</div>
+      <div class="card-desc">文章與想法</div>
+    </a>
+    <a class="nav-card" href="books.html">
+      <div class="card-icon">📚</div>
+      <div class="card-label">Books</div>
+      <div class="card-desc">書寫計劃</div>
+    </a>
+    <a class="nav-card" href="about.html">
+      <div class="card-icon">🦫</div>
+      <div class="card-label">About</div>
+      <div class="card-desc">關於我</div>
+    </a>
+  </nav>
+
+  <footer>
+    © 2025 <span>CapyWorlds</span> &nbsp;·&nbsp; Made with 🦫 &amp; ❤️
+  </footer>
 
 </body>
 </html>
