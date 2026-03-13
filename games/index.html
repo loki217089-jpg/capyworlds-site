@@ -8,123 +8,414 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0f0f1a;
-      color: #e0e0e0;
+      font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: #13100c;
+      color: #e8ddd0;
       min-height: 100vh;
-      padding: 40px 20px;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 48px;
-    }
-
-    header h1 {
-      font-size: 36px;
-      color: #fff;
-      letter-spacing: 2px;
-    }
-
-    header h1 span {
-      color: #7c6aff;
-    }
-
-    header p {
-      margin-top: 8px;
-      color: #888;
-      font-size: 16px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 24px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .card {
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      border-radius: 12px;
-      padding: 28px 24px;
-      text-decoration: none;
-      color: inherit;
-      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    /* ── Header ── */
+    .page-header {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      align-items: center;
+      text-align: center;
+      padding: 44px 24px 36px;
+      background: radial-gradient(ellipse at 50% -10%, #2d1e0e 0%, #13100c 68%);
+      position: relative;
+    }
+    .page-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #c8a456 40%, #c8a456 60%, transparent);
     }
 
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: #7c6aff;
-      box-shadow: 0 8px 24px rgba(124, 106, 255, 0.2);
+    .capy-gamer {
+      width: 180px;
+      height: 148px;
+      display: block;
+      margin-bottom: 22px;
+      filter: drop-shadow(0 6px 20px rgba(200, 164, 86, 0.2));
     }
 
-    .card .emoji {
-      font-size: 36px;
-    }
-
-    .card .name {
-      font-size: 20px;
-      font-weight: bold;
+    .page-header h1 {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 900;
       color: #fff;
+      letter-spacing: 3px;
     }
+    .page-header h1 .accent { color: #c8a456; }
 
-    .card .desc {
+    .page-header p {
+      margin-top: 8px;
+      color: #907a60;
       font-size: 14px;
-      color: #888;
-      line-height: 1.5;
     }
 
-    .back {
+    /* ── Main Content ── */
+    .content {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 24px 60px;
+    }
+
+    /* ── Section Title ── */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #c8a456;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, #3d3020, transparent);
+    }
+
+    /* ── Game Cards Grid ── */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .game-card {
+      background: #1e1812;
+      border: 1px solid #3d3020;
+      border-radius: 18px;
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+      display: flex;
+      flex-direction: column;
+    }
+    .game-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--card-accent, #c8a456);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 0 1px var(--card-accent, #c8a456) inset;
+    }
+
+    /* Card banner */
+    .card-banner {
+      height: 90px;
+      background: var(--banner-bg, #2a2018);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 100%, var(--banner-glow, rgba(200,164,86,0.25)) 0%, transparent 70%);
+    }
+    .card-banner .game-emoji {
+      font-size: 52px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+    }
+
+    /* Card body */
+    .card-body {
+      padding: 22px 22px 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .game-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .game-desc {
+      font-size: 13px;
+      color: #907a60;
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    /* Tags */
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(200,164,86,0.12);
+      color: #c8a456;
+      border: 1px solid rgba(200,164,86,0.28);
+      letter-spacing: 0.5px;
+    }
+
+    /* Card footer */
+    .card-footer {
+      padding: 14px 22px;
+      border-top: 1px solid #2d2418;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .play-btn {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--card-accent, #c8a456);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: gap 0.2s;
+    }
+    .game-card:hover .play-btn { gap: 10px; }
+
+    /* ── Coming Soon ── */
+    .coming-soon-section {
+      margin-top: 56px;
+    }
+
+    .coming-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .coming-card {
+      background: #181410;
+      border: 1px dashed #3d3020;
+      border-radius: 18px;
+      padding: 28px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+      opacity: 0.6;
+    }
+    .coming-card .coming-icon {
+      font-size: 36px;
+      filter: grayscale(1);
+    }
+    .coming-card .coming-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #6a5a48;
+    }
+    .coming-badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: #2a2018;
+      color: #6a5a48;
+      border: 1px solid #3d3020;
+    }
+
+    /* ── Back Link ── */
+    .back-link {
       display: block;
       text-align: center;
-      margin-top: 48px;
-      color: #7c6aff;
+      margin-top: 56px;
+      color: #c8a456;
       text-decoration: none;
-      font-size: 16px;
+      font-size: 14px;
+      letter-spacing: 1px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
     }
-
-    .back:hover { text-decoration: underline; }
+    .back-link:hover { opacity: 1; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>🎮 <span>Games</span></h1>
-    <p>My small games collection</p>
+  <header class="page-header">
+    <!-- Capybara gamer SVG -->
+    <svg class="capy-gamer" viewBox="0 0 180 148" xmlns="http://www.w3.org/2000/svg">
+      <!-- Body -->
+      <ellipse cx="90" cy="118" rx="52" ry="32" fill="#b8955a"/>
+      <!-- Left arm holding controller -->
+      <path d="M52 108 Q44 124 58 132" stroke="#b8955a" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <!-- Right arm holding controller -->
+      <path d="M128 108 Q136 124 122 132" stroke="#b8955a" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <!-- Game controller body -->
+      <rect x="62" y="124" width="56" height="24" rx="10" fill="#1e1e2e"/>
+      <rect x="64" y="126" width="52" height="20" rx="9" fill="#2a2a3e"/>
+      <!-- D-pad -->
+      <rect x="70" y="131" width="11" height="5" rx="1.5" fill="#4a4a6a"/>
+      <rect x="73" y="128" width="5" height="11" rx="1.5" fill="#4a4a6a"/>
+      <!-- Buttons -->
+      <circle cx="110" cy="133" r="3.5" fill="#ff5555" opacity="0.9"/>
+      <circle cx="116" cy="136" r="3" fill="#55cc55" opacity="0.9"/>
+      <circle cx="116" cy="130" r="3" fill="#5555ff" opacity="0.9"/>
+      <circle cx="104" cy="136" r="3" fill="#ffcc00" opacity="0.9"/>
+      <!-- Analog sticks -->
+      <circle cx="84" cy="142" r="4" fill="#3d3d5e"/>
+      <circle cx="96" cy="142" r="4" fill="#3d3d5e"/>
+      <!-- Head -->
+      <ellipse cx="90" cy="72" rx="40" ry="37" fill="#c09a62"/>
+      <!-- Headphone band -->
+      <path d="M62 60 Q90 40 118 60" stroke="#1e1e2e" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <!-- Headphone cups -->
+      <ellipse cx="62" cy="64" rx="10" ry="12" fill="#1a1a2a"/>
+      <ellipse cx="118" cy="64" rx="10" ry="12" fill="#1a1a2a"/>
+      <ellipse cx="62" cy="64" rx="6.5" ry="8" fill="#2d2d4a"/>
+      <ellipse cx="118" cy="64" rx="6.5" ry="8" fill="#2d2d4a"/>
+      <!-- Ears (behind headphones) -->
+      <ellipse cx="62" cy="46" rx="12" ry="14" fill="#b8955a"/>
+      <ellipse cx="118" cy="46" rx="12" ry="14" fill="#b8955a"/>
+      <!-- Snout -->
+      <ellipse cx="90" cy="86" rx="24" ry="17" fill="#d4aa78"/>
+      <!-- Eyes (focused) -->
+      <circle cx="78" cy="66" r="8" fill="#1a0e06"/>
+      <circle cx="102" cy="66" r="8" fill="#1a0e06"/>
+      <circle cx="75" cy="63" r="3" fill="white"/>
+      <circle cx="99" cy="63" r="3" fill="white"/>
+      <!-- Nostrils -->
+      <ellipse cx="83" cy="87" rx="3.5" ry="2.5" fill="#7a5035"/>
+      <ellipse cx="97" cy="87" rx="3.5" ry="2.5" fill="#7a5035"/>
+      <!-- Happy grin -->
+      <path d="M 76 96 Q 90 107 104 96" stroke="#7a5035" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Glow effect from screen -->
+      <ellipse cx="90" cy="126" rx="40" ry="8" fill="#7c6aff" opacity="0.08"/>
+    </svg>
+
+    <h1>🎮 <span class="accent">Games</span></h1>
+    <p>卡皮巴拉的遊戲收藏 &nbsp;·&nbsp; Growing collection of indie games</p>
   </header>
 
-  <div class="grid">
-    <a class="card" href="mosquito/">
-      <div class="emoji">🦟</div>
-      <div class="name">Evolution Mosquito</div>
-      <div class="desc">進化蚊子生存遊戲，吸血升級、鍊化商店</div>
-    </a>
+  <main class="content">
+    <!-- Current Games -->
+    <div class="section-title">現有遊戲 &nbsp; Available Now</div>
 
-    <a class="card" href="virus/">
-      <div class="emoji">🦠</div>
-      <div class="name">Virus.exe</div>
-      <div class="desc">病毒主題地城射擊，對抗防火牆與量子病毒</div>
-    </a>
+    <div class="games-grid">
 
-    <a class="card" href="hero/">
-      <div class="emoji">⚔️</div>
-      <div class="name">Hero Idle RPG</div>
-      <div class="desc">放置英雄RPG，職業系統與爆發召喚機制</div>
-    </a>
+      <!-- Evolution Mosquito -->
+      <a class="game-card" href="mosquito/"
+         style="--card-accent:#e8a020; --banner-bg:#2a1500; --banner-glow:rgba(232,160,32,0.3);">
+        <div class="card-banner">
+          <div class="game-emoji">🦟</div>
+        </div>
+        <div class="card-body">
+          <div class="game-title">Evolution Mosquito</div>
+          <div class="game-desc">進化蚊子生存遊戲。吸血升級、鍊化商店，帶領蚊子軍團對抗波次入侵。</div>
+          <div class="tags">
+            <span class="tag">生存</span>
+            <span class="tag">進化</span>
+            <span class="tag">策略</span>
+            <span class="tag">波次防禦</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="play-btn" style="color:#e8a020;">▶ 開始遊玩</span>
+        </div>
+      </a>
 
-    <a class="card" href="fps/">
-      <div class="emoji">🔫</div>
-      <div class="name">FPS Game</div>
-      <div class="desc">第一人稱射擊遊戲</div>
-    </a>
-  </div>
+      <!-- Virus.exe -->
+      <a class="game-card" href="virus/"
+         style="--card-accent:#00e060; --banner-bg:#001a08; --banner-glow:rgba(0,224,96,0.25);">
+        <div class="card-banner">
+          <div class="game-emoji">🦠</div>
+        </div>
+        <div class="card-body">
+          <div class="game-title">Virus.exe</div>
+          <div class="game-desc">病毒主題地城射擊。駭客終端美學，對抗防火牆與量子病毒。</div>
+          <div class="tags">
+            <span class="tag" style="color:#00c050;border-color:rgba(0,192,80,0.4);background:rgba(0,192,80,0.1);">射擊</span>
+            <span class="tag" style="color:#00c050;border-color:rgba(0,192,80,0.4);background:rgba(0,192,80,0.1);">地城</span>
+            <span class="tag" style="color:#00c050;border-color:rgba(0,192,80,0.4);background:rgba(0,192,80,0.1);">駭客</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="play-btn" style="color:#00e060;">▶ 開始遊玩</span>
+        </div>
+      </a>
 
-  <a class="back" href="/">← Back Home</a>
+      <!-- Hero Idle RPG -->
+      <a class="game-card" href="hero/"
+         style="--card-accent:#9060ff; --banner-bg:#100a22; --banner-glow:rgba(144,96,255,0.3);">
+        <div class="card-banner">
+          <div class="game-emoji">⚔️</div>
+        </div>
+        <div class="card-body">
+          <div class="game-title">Hero Idle RPG</div>
+          <div class="game-desc">放置英雄RPG。豐富職業系統、爆發召喚機制，掛機養成你的英雄傳說。</div>
+          <div class="tags">
+            <span class="tag" style="color:#9060ff;border-color:rgba(144,96,255,0.4);background:rgba(144,96,255,0.1);">放置</span>
+            <span class="tag" style="color:#9060ff;border-color:rgba(144,96,255,0.4);background:rgba(144,96,255,0.1);">RPG</span>
+            <span class="tag" style="color:#9060ff;border-color:rgba(144,96,255,0.4);background:rgba(144,96,255,0.1);">職業系統</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="play-btn" style="color:#9060ff;">▶ 開始遊玩</span>
+        </div>
+      </a>
+
+      <!-- FPS Game -->
+      <a class="game-card" href="fps/"
+         style="--card-accent:#4080ff; --banner-bg:#0a1422; --banner-glow:rgba(64,128,255,0.28);">
+        <div class="card-banner">
+          <div class="game-emoji">🔫</div>
+        </div>
+        <div class="card-body">
+          <div class="game-title">FPS Game</div>
+          <div class="game-desc">第一人稱射擊遊戲。光線追蹤地城引擎，對抗士兵、重甲兵、精英怪。</div>
+          <div class="tags">
+            <span class="tag" style="color:#4080ff;border-color:rgba(64,128,255,0.4);background:rgba(64,128,255,0.1);">FPS</span>
+            <span class="tag" style="color:#4080ff;border-color:rgba(64,128,255,0.4);background:rgba(64,128,255,0.1);">動作</span>
+            <span class="tag" style="color:#4080ff;border-color:rgba(64,128,255,0.4);background:rgba(64,128,255,0.1);">3D</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="play-btn" style="color:#4080ff;">▶ 開始遊玩</span>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Coming Soon -->
+    <div class="coming-soon-section">
+      <div class="section-title">即將推出 &nbsp; Coming Soon</div>
+      <div class="coming-grid">
+        <div class="coming-card">
+          <div class="coming-icon">🏗️</div>
+          <div class="coming-name">新遊戲開發中</div>
+          <span class="coming-badge">即將推出</span>
+        </div>
+        <div class="coming-card">
+          <div class="coming-icon">🔮</div>
+          <div class="coming-name">秘密企劃中</div>
+          <span class="coming-badge">即將推出</span>
+        </div>
+        <div class="coming-card">
+          <div class="coming-icon">🦫</div>
+          <div class="coming-name">卡皮巴拉的新冒險</div>
+          <span class="coming-badge">即將推出</span>
+        </div>
+      </div>
+    </div>
+
+    <a class="back-link" href="/">← 回到首頁 &nbsp; Back Home</a>
+  </main>
 
 </body>
 </html>
