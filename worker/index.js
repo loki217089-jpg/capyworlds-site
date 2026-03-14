@@ -53,6 +53,35 @@ export default {
       return Response.json({ ok: true }, { headers: cors });
     }
 
+    // GET /leaderboard/:game — top 10 scores
+    const lbGetMatch = url.pathname.match(/^\/leaderboard\/([a-z0-9_-]+)$/);
+    if (lbGetMatch && request.method === 'GET') {
+      const game = lbGetMatch[1];
+      const { results } = await env.DB.prepare(
+        'SELECT name, score, created_at FROM scores WHERE game = ? ORDER BY score DESC LIMIT 10'
+      ).bind(game).all();
+      return Response.json(results, { headers: cors });
+    }
+
+    // POST /leaderboard/:game — submit score { name, score }
+    const lbPostMatch = url.pathname.match(/^\/leaderboard\/([a-z0-9_-]+)$/);
+    if (lbPostMatch && request.method === 'POST') {
+      const game = lbPostMatch[1];
+      let body;
+      try { body = await request.json(); } catch {
+        return Response.json({ error: '格式錯誤' }, { status: 400, headers: cors });
+      }
+      const name = (body.name || '').trim().slice(0, 30);
+      const score = parseInt(body.score);
+      if (!name || isNaN(score) || score < 0) {
+        return Response.json({ error: '請填寫名稱與有效分數' }, { status: 400, headers: cors });
+      }
+      await env.DB.prepare(
+        'INSERT INTO scores (game, name, score, created_at) VALUES (?, ?, ?, ?)'
+      ).bind(game, name, score, new Date().toISOString()).run();
+      return Response.json({ ok: true }, { headers: cors });
+    }
+
     return new Response('Not Found', { status: 404 });
   }
 };
