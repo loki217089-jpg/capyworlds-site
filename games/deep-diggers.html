@@ -41,6 +41,16 @@ body{background:#0a0a0f;display:flex;justify-content:center;align-items:center;m
 .btn.gr{background:#2a2a3a;color:#aaa;}.btn.gr:hover{background:#3a3a4a;transform:none;}
 .btn.p{background:#b060ff;color:#fff;}.btn.p:hover{background:#cc88ff;}
 #rp{background:#0f1a0f;border:1px solid #44cf6c;border-radius:8px;padding:14px;width:340px;}
+.lb-row{display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px solid #1a2a1a;font-size:14px;}
+.lb-rank{width:26px;text-align:center;font-weight:700;color:#555;font-size:13px;}
+.lb-rank.top{color:#f5a623;font-size:15px;}
+.lb-name{flex:1;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-score{color:#f5a623;font-weight:700;margin-left:4px;}
+.lb-form{display:flex;gap:6px;margin-top:8px;}
+.lb-inp{flex:1;background:#1e1e2e;border:1px solid #2a2a3a;border-radius:4px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;padding:5px 8px;outline:none;}
+.lb-inp:focus{border-color:#f5a623;}
+.lb-sub{background:#f5a623;color:#0a0a0f;border:none;border-radius:4px;font-family:'Black Ops One',cursive;font-size:12px;padding:5px 10px;cursor:pointer;white-space:nowrap;letter-spacing:.5px;}
+.lb-sub:hover{background:#ffd04d;}.lb-sub:disabled{background:#2a2a3a;color:#555;cursor:not-allowed;}
 .ll{max-height:140px;overflow-y:auto;margin-bottom:7px;}
 .li{display:flex;justify-content:space-between;align-items:center;padding:4px 5px;border-bottom:1px solid #1a2a1a;font-size:14px;color:#ccc;cursor:pointer;border-radius:3px;}
 .li:hover{background:rgba(245,166,35,.07);}
@@ -96,9 +106,10 @@ body{background:#0a0a0f;display:flex;justify-content:center;align-items:center;m
   <div id="sur">
     <div id="rp">
       <div style="display:flex;gap:0;margin-bottom:8px;border-bottom:1px solid #1a2a1a;">
-        <button id="tlb" onclick="showTab('loot')" style="flex:1;background:none;border:none;border-bottom:2px solid #44cf6c;color:#44cf6c;font-family:'Black Ops One',cursive;font-size:14px;padding:6px 0;cursor:pointer">&#x1F3D4; &#x6230;&#x5229;&#x54C1;</button>
-        <button id="tub" onclick="showTab('upg')" style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:#888;font-family:'Black Ops One',cursive;font-size:14px;padding:6px 0;cursor:pointer">&#x1F529; &#x5347;&#x7D1A;</button>
-        <button id="tmb" onclick="showTab('mod')" style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:#888;font-family:'Black Ops One',cursive;font-size:14px;padding:6px 0;cursor:pointer">&#x1F9E9; &#x6A21;&#x7D44;</button>
+        <button id="tlb" onclick="showTab('loot')" style="flex:1;background:none;border:none;border-bottom:2px solid #44cf6c;color:#44cf6c;font-family:'Black Ops One',cursive;font-size:13px;padding:6px 0;cursor:pointer">&#x1F3D4; &#x6230;&#x5229;&#x54C1;</button>
+        <button id="tub" onclick="showTab('upg')" style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:#888;font-family:'Black Ops One',cursive;font-size:13px;padding:6px 0;cursor:pointer">&#x1F529; &#x5347;&#x7D1A;</button>
+        <button id="tmb" onclick="showTab('mod')" style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:#888;font-family:'Black Ops One',cursive;font-size:13px;padding:6px 0;cursor:pointer">&#x1F9E9; &#x6A21;&#x7D44;</button>
+        <button id="tbb" onclick="showTab('lb')" style="flex:1;background:none;border:none;border-bottom:2px solid transparent;color:#888;font-family:'Black Ops One',cursive;font-size:13px;padding:6px 0;cursor:pointer">&#x1F3C6; &#x6392;&#x884C;</button>
       </div>
       <div id="tLoot">
         <div class="ll" id="lootList"></div>
@@ -110,6 +121,15 @@ body{background:#0a0a0f;display:flex;justify-content:center;align-items:center;m
         <div style="margin-top:5px;color:#888;font-size:14px;text-align:center">&#x8CC7;&#x91D1;&#xFF1A;<span id="um" style="color:#f5a623">$0</span></div></div>
       <div id="tMod" style="display:none"><div id="modList" style="max-height:230px;overflow-y:auto"></div>
         <div style="margin-top:5px;color:#888;font-size:14px;text-align:center">&#x8CC7;&#x91D1;&#xFF1A;<span id="mm" style="color:#f5a623">$0</span></div></div>
+      <div id="tLb" style="display:none">
+        <div style="font-size:13px;color:#888;margin-bottom:4px">本次得分：<span id="lbScore" style="color:#f5a623;font-weight:700">$0</span></div>
+        <div class="lb-form">
+          <input class="lb-inp" id="lbName" maxlength="20" placeholder="輸入名稱上傳分數...">
+          <button class="lb-sub" id="lbSubBtn" onclick="submitScore()">送出</button>
+        </div>
+        <div id="lbStatus" style="font-size:13px;text-align:center;padding:3px 0;min-height:18px;color:#888"></div>
+        <div id="lbList" style="max-height:155px;overflow-y:auto;margin-top:4px"></div>
+      </div>
     </div>
     <button class="btn g" id="digBtn">&#x26CF; &#x7E7C;&#x7E8C;&#x6316;&#x6398;</button>
   </div>
@@ -581,7 +601,44 @@ function drawRadar(){
 // SURFACE
 function showSurface(){
   const earned=ST.inv.reduce((s,i)=>s+calcVal(i),0);ST.money+=earned;ST.lastEarned=earned;
+  document.getElementById('lbScore').textContent='$'+ST.money;
+  document.getElementById('lbSubBtn').style.display='';
+  document.getElementById('lbSubBtn').disabled=false;
+  document.getElementById('lbStatus').textContent='';
   renderLoot();showTab('loot');document.getElementById('sur').style.display='flex';updateUI();
+}
+
+// LEADERBOARD
+async function fetchLeaderboard(){
+  const list=document.getElementById('lbList');
+  list.innerHTML='<div style="color:#555;font-size:14px;text-align:center;padding:8px">載入中...</div>';
+  try{
+    const r=await fetch('/leaderboard/deep-diggers');
+    const data=await r.json();
+    list.innerHTML='';
+    if(!data.length){list.innerHTML='<div style="color:#555;font-size:14px;text-align:center;padding:8px">尚無紀錄，成為第一名吧！</div>';return;}
+    data.forEach((row,i)=>{
+      const d=document.createElement('div');d.className='lb-row';
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':null;
+      d.innerHTML='<span class="lb-rank'+(i<3?' top':'')+'">'+( medal||('#'+(i+1)))+'</span><span class="lb-name">'+row.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</span><span class="lb-score">$'+row.score+'</span>';
+      list.appendChild(d);
+    });
+  }catch{list.innerHTML='<div style="color:#e74c3c;font-size:14px;text-align:center;padding:8px">載入失敗</div>';}
+}
+async function submitScore(){
+  const name=document.getElementById('lbName').value.trim();
+  if(!name){document.getElementById('lbStatus').style.color='#e74c3c';document.getElementById('lbStatus').textContent='請輸入名稱';return;}
+  const btn=document.getElementById('lbSubBtn');btn.disabled=true;
+  document.getElementById('lbStatus').style.color='#888';document.getElementById('lbStatus').textContent='送出中...';
+  try{
+    const r=await fetch('/leaderboard/deep-diggers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,score:ST.money})});
+    if(r.ok){
+      document.getElementById('lbStatus').style.color='#44cf6c';document.getElementById('lbStatus').textContent='✓ 上傳成功！';
+      btn.style.display='none';fetchLeaderboard();
+    }else{
+      document.getElementById('lbStatus').style.color='#e74c3c';document.getElementById('lbStatus').textContent='上傳失敗，請重試';btn.disabled=false;
+    }
+  }catch{document.getElementById('lbStatus').style.color='#e74c3c';document.getElementById('lbStatus').textContent='連線失敗';btn.disabled=false;}
 }
 function renderLoot(){
   const list=document.getElementById('lootList');list.innerHTML='';
@@ -593,8 +650,10 @@ function showTab(t){
   document.getElementById('tLoot').style.display=t==='loot'?'block':'none';
   document.getElementById('tUpg').style.display=t==='upg'?'block':'none';
   document.getElementById('tMod').style.display=t==='mod'?'block':'none';
-  const cols={loot:'#44cf6c',upg:'#f5a623',mod:'#b060ff'};
-  ['loot','upg','mod'].forEach(k=>{const el=document.getElementById(k==='loot'?'tlb':k==='upg'?'tub':'tmb');el.style.borderBottom='2px solid '+(k===t?cols[k]:'transparent');el.style.color=k===t?cols[k]:'#888';});
+  document.getElementById('tLb').style.display=t==='lb'?'block':'none';
+  if(t==='lb')fetchLeaderboard();
+  const cols={loot:'#44cf6c',upg:'#f5a623',mod:'#b060ff',lb:'#ffd700'};
+  [{k:'loot',id:'tlb'},{k:'upg',id:'tub'},{k:'mod',id:'tmb'},{k:'lb',id:'tbb'}].forEach(({k,id})=>{const el=document.getElementById(id);el.style.borderBottom='2px solid '+(k===t?cols[k]:'transparent');el.style.color=k===t?cols[k]:'#888';});
   if(t==='upg')renderUpgTab();if(t==='mod')renderModTab();
 }
 function renderUpgTab(){
