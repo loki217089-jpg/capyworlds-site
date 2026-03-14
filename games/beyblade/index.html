@@ -18,7 +18,7 @@ canvas { position:absolute; top:0; left:0; display:block; }
   z-index:10; padding:20px;
 }
 #selectOverlay h1 {
-  font-size:28px; letter-spacing:4px; color:#cc88ff;
+  font-size:34px; letter-spacing:4px; color:#cc88ff;
   text-shadow:0 0 20px #8833ff, 0 0 40px #6611aa;
   margin-bottom:18px;
 }
@@ -27,18 +27,18 @@ canvas { position:absolute; top:0; left:0; display:block; }
   background:#0d0028; border:1px solid #4422aa; border-radius:10px;
   padding:12px; flex:1; max-width:200px;
 }
-.part-box h3 { font-size:11px; color:#8866cc; letter-spacing:2px; margin-bottom:8px; text-align:center; }
+.part-box h3 { font-size:14px; color:#8866cc; letter-spacing:2px; margin-bottom:8px; text-align:center; }
 .carousel { display:flex; align-items:center; gap:6px; }
 .carousel button {
   background:#1a0040; border:1px solid #5533bb; color:#aa88ff;
-  width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:14px;
+  width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:16px;
   flex-shrink:0;
 }
 .carousel button:hover { background:#2a0060; border-color:#8866ff; }
-.part-name { flex:1; text-align:center; font-size:13px; font-weight:bold; }
-.part-desc { font-size:10px; color:#7766aa; margin-top:6px; text-align:center; min-height:28px; }
+.part-name { flex:1; text-align:center; font-size:15px; font-weight:bold; }
+.part-desc { font-size:12px; color:#7766aa; margin-top:6px; text-align:center; min-height:32px; }
 .part-type-badge {
-  display:inline-block; font-size:9px; padding:2px 6px; border-radius:4px;
+  display:inline-block; font-size:11px; padding:2px 8px; border-radius:4px;
   margin-top:4px; letter-spacing:1px;
 }
 
@@ -47,18 +47,18 @@ canvas { position:absolute; top:0; left:0; display:block; }
   display:flex; gap:16px; margin-top:14px; align-items:flex-start;
 }
 .stat-bars { background:#0d0028; border:1px solid #4422aa; border-radius:10px; padding:12px; flex:1; }
-.stat-bars h3 { font-size:11px; color:#8866cc; letter-spacing:2px; margin-bottom:8px; }
-.stat-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-.stat-label { font-size:11px; color:#aaaacc; width:28px; }
-.stat-bar-bg { flex:1; height:8px; background:#1a0040; border-radius:4px; overflow:hidden; }
-.stat-bar-fill { height:100%; border-radius:4px; transition:width 0.3s; }
-.stat-val { font-size:11px; color:#cc88ff; width:24px; text-align:right; }
+.stat-bars h3 { font-size:14px; color:#8866cc; letter-spacing:2px; margin-bottom:8px; }
+.stat-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.stat-label { font-size:13px; color:#aaaacc; width:32px; }
+.stat-bar-bg { flex:1; height:10px; background:#1a0040; border-radius:5px; overflow:hidden; }
+.stat-bar-fill { height:100%; border-radius:5px; transition:width 0.3s; }
+.stat-val { font-size:13px; color:#cc88ff; width:28px; text-align:right; }
 
 .preview-box {
   background:#0d0028; border:1px solid #4422aa; border-radius:10px;
   padding:12px; width:120px; display:flex; flex-direction:column; align-items:center;
 }
-.preview-box h3 { font-size:11px; color:#8866cc; letter-spacing:2px; margin-bottom:8px; }
+.preview-box h3 { font-size:14px; color:#8866cc; letter-spacing:2px; margin-bottom:8px; }
 #previewCanvas { border-radius:50%; }
 
 /* CPU info */
@@ -66,13 +66,13 @@ canvas { position:absolute; top:0; left:0; display:block; }
   background:#0d0020; border:1px solid #aa2244; border-radius:10px;
   padding:12px; flex:1;
 }
-.cpu-box h3 { font-size:11px; color:#cc5577; letter-spacing:2px; margin-bottom:8px; }
-.cpu-build-name { font-size:14px; font-weight:bold; color:#ff6688; margin-bottom:4px; }
-.cpu-style { font-size:10px; color:#aa4466; }
+.cpu-box h3 { font-size:14px; color:#cc5577; letter-spacing:2px; margin-bottom:8px; }
+.cpu-build-name { font-size:16px; font-weight:bold; color:#ff6688; margin-bottom:4px; }
+.cpu-style { font-size:12px; color:#aa4466; }
 
 /* Start button */
 #startBtn {
-  margin-top:16px; padding:12px 48px; font-size:18px; font-weight:bold; letter-spacing:3px;
+  margin-top:16px; padding:14px 52px; font-size:22px; font-weight:bold; letter-spacing:3px;
   background:linear-gradient(135deg,#4400cc,#8800ff);
   border:2px solid #8844ff; border-radius:12px; color:#fff; cursor:pointer;
   text-shadow:0 0 10px #fff; box-shadow:0 0 20px #6622aa;
@@ -80,8 +80,7 @@ canvas { position:absolute; top:0; left:0; display:block; }
 }
 #startBtn:hover { background:linear-gradient(135deg,#6611ee,#aa22ff); box-shadow:0 0 30px #8844cc; transform:scale(1.03); }
 
-/* controls hint */
-.hint { font-size:11px; color:#443366; margin-top:8px; letter-spacing:1px; }
+.hint { font-size:13px; color:#554477; margin-top:8px; letter-spacing:1px; }
 </style>
 </head>
 <body>
@@ -93,9 +92,9 @@ canvas { position:absolute; top:0; left:0; display:block; }
     <h1>⚡ 戰鬥陀螺 BURST ARENA ⚡</h1>
 
     <div class="sel-row">
-      <!-- Blade -->
+      <!-- Player Blade -->
       <div class="part-box">
-        <h3>刀刃 BLADE</h3>
+        <h3>你的刀刃 BLADE</h3>
         <div class="carousel">
           <button onclick="changePart('blade',-1)">◀</button>
           <div class="part-name" id="bladeName" style="color:#ff8844">烈焰龍</div>
@@ -130,7 +129,7 @@ canvas { position:absolute; top:0; left:0; display:block; }
       <div class="preview-box">
         <h3>預覽</h3>
         <canvas id="previewCanvas" width="80" height="80"></canvas>
-        <div style="font-size:9px;color:#6655aa;margin-top:6px">YOUR TOP</div>
+        <div style="font-size:11px;color:#6655aa;margin-top:6px">YOUR TOP</div>
       </div>
       <div class="stat-bars">
         <h3>屬性</h3>
@@ -143,24 +142,144 @@ canvas { position:absolute; top:0; left:0; display:block; }
         <h3>對手 CPU</h3>
         <div class="cpu-build-name" id="cpuName">?????</div>
         <div class="cpu-style" id="cpuStyle">隨機對手</div>
-        <div style="font-size:10px;color:#663344;margin-top:8px">對手將在開戰時隨機決定</div>
+        <div style="font-size:12px;color:#663344;margin-top:8px">對手將在開戰時隨機決定</div>
       </div>
     </div>
 
     <button id="startBtn" onclick="startBattle()">⚡ 開始戰鬥！</button>
-    <div class="hint">← ↑ → ↓ 移動陀螺 ｜ 空白鍵 爆裂技 ｜ [Enter/R] 重新開始</div>
+    <div class="hint">全自動對戰 — 選好配件按開始即可！</div>
   </div>
 </div>
 
 <script>
 // ===================================================
 //  戰鬥陀螺 BURST ARENA — by CapyWorlds
+//  Auto-battle edition with Web Audio sound effects
 // ===================================================
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const W = 800, H = 600;
-const AX = W/2, AY = H/2, AR = 215; // Arena center + radius
+const AX = W/2, AY = H/2, AR = 215;
+
+// ==================== WEB AUDIO ====================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function ensureAudio(){
+  if(!audioCtx) audioCtx = new AudioCtx();
+}
+
+function playCollision(force){
+  ensureAudio();
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(Math.min(1, force * 0.25), audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+  g.connect(audioCtx.destination);
+
+  // Low thud
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(180 + force * 30, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15);
+  osc.connect(g);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.18);
+
+  // Metallic click
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.exp(-i/(audioCtx.sampleRate*0.008));
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const g2 = audioCtx.createGain();
+  g2.gain.setValueAtTime(Math.min(0.6, force * 0.12), audioCtx.currentTime);
+  src.connect(g2); g2.connect(audioCtx.destination);
+  src.start();
+}
+
+function playWallBounce(){
+  ensureAudio();
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.25, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+  g.connect(audioCtx.destination);
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.1);
+  osc.connect(g); osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+}
+
+function playBurst(color){
+  ensureAudio();
+  // Rising power chord
+  [0, 5, 9, 14].forEach((semi, i) => {
+    const freq = 110 * Math.pow(2, semi/12);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0, audioCtx.currentTime + i*0.04);
+    g.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + i*0.04 + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i*0.04 + 0.45);
+    g.connect(audioCtx.destination);
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i*0.04);
+    osc.frequency.linearRampToValueAtTime(freq*2.1, audioCtx.currentTime + i*0.04 + 0.4);
+    osc.connect(g); osc.start(audioCtx.currentTime + i*0.04);
+    osc.stop(audioCtx.currentTime + i*0.04 + 0.5);
+  });
+}
+
+function playRoundEnd(win){
+  ensureAudio();
+  const notes = win ? [523,659,784,1047] : [392,330,262,220];
+  notes.forEach((freq,i)=>{
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.3, audioCtx.currentTime + i*0.18);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i*0.18 + 0.3);
+    g.connect(audioCtx.destination);
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    osc.connect(g); osc.start(audioCtx.currentTime + i*0.18);
+    osc.stop(audioCtx.currentTime + i*0.18 + 0.35);
+  });
+}
+
+function playCountdownBeep(final){
+  ensureAudio();
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.4, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (final?0.4:0.18));
+  g.connect(audioCtx.destination);
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = final ? 880 : 440;
+  osc.connect(g); osc.start(); osc.stop(audioCtx.currentTime + (final?0.4:0.2));
+}
+
+// spin hum (looping)
+let spinHumNode = null;
+function startSpinHum(){
+  ensureAudio();
+  if(spinHumNode) return;
+  const g = audioCtx.createGain();
+  g.gain.value = 0.06;
+  g.connect(audioCtx.destination);
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.value = 80;
+  osc.connect(g); osc.start();
+  spinHumNode = {osc, g};
+}
+function stopSpinHum(){
+  if(spinHumNode){ try{ spinHumNode.osc.stop(); }catch(e){} spinHumNode=null; }
+}
+function updateSpinHum(p, c){
+  if(!spinHumNode) return;
+  const avgSpin = ((p?p.spinRatio:0)+(c?c.spinRatio:0))/2;
+  spinHumNode.g.gain.value = avgSpin * 0.07;
+  spinHumNode.osc.frequency.value = 55 + avgSpin * 120;
+}
 
 // ==================== PARTS DATA ====================
 const BLADES = [
@@ -194,9 +313,12 @@ let playerScore=0, cpuScore=0, currentRound=1;
 let particles=[];
 let shakeX=0, shakeY=0;
 let countdownTimer=0, roundEndTimer=0, roundEndMsg='';
-let lastTime=0;
+let lastBeepN = -1;
 const keys={};
-document.addEventListener('keydown', e=>{ keys[e.code]=true; if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault(); });
+document.addEventListener('keydown', e=>{
+  keys[e.code]=true;
+  if(e.code==='Enter'||e.code==='KeyR') ensureAudio();
+});
 document.addEventListener('keyup', e=>{ keys[e.code]=false; });
 
 // ==================== TOP CLASS ====================
@@ -221,23 +343,19 @@ class BeyTop {
   get glow(){ return this.blade.glow; }
 
   update(){
-    // Spin decay
     let dr=this.driver.decay;
     if(this.core.bonus==='sta') dr=Math.min(0.9998,dr+0.0003);
     if(this.burstActive){ this.spin=Math.min(3200,this.spin+8); this.burstTimer--; if(this.burstTimer<=0) this.burstActive=false; }
     else this.spin*=dr;
 
-    // Wobble at low spin
     const wobble=(1-this.spinRatio)*2.5;
     this.x+=this.vx+(Math.random()-0.5)*wobble;
     this.y+=this.vy+(Math.random()-0.5)*wobble;
 
-    // Friction
     let fr=0.977-(this.spinRatio*0.022);
     this.vx*=fr; this.vy*=fr;
     this.angle+=this.spin*0.0018;
 
-    // Wall bounce
     const dx=this.x-AX, dy=this.y-AY, d=Math.sqrt(dx*dx+dy*dy);
     if(d+this.r>AR){
       const nx=dx/d, ny=dy/d;
@@ -246,9 +364,9 @@ class BeyTop {
       this.vx-=2*dot*nx*0.82; this.vy-=2*dot*ny*0.82;
       this.spin*=0.994;
       spawnSparks(this.x,this.y,this.color,'#ffffff',4);
+      playWallBounce();
     }
 
-    // Trail
     this.trail.push({x:this.x,y:this.y,t:1});
     if(this.trail.length>22) this.trail.shift();
     this.trail.forEach(p=>p.t-=0.045);
@@ -271,7 +389,6 @@ class BeyTop {
   }
 
   draw(ctx){
-    // Trail
     this.trail.forEach(p=>{
       const alpha=p.t*0.22;
       ctx.beginPath();
@@ -283,7 +400,6 @@ class BeyTop {
     ctx.save();
     ctx.translate(this.x,this.y);
 
-    // Burst glow aura
     if(this.burstActive){
       const gs=32+Math.sin(Date.now()*0.016)*8;
       const g=ctx.createRadialGradient(0,0,this.r,0,0,gs);
@@ -296,18 +412,15 @@ class BeyTop {
 
     const vis=this.flashTimer<=0||Math.floor(this.flashTimer/3)%2===0;
     if(vis){
-      // Outer glow
       const og=ctx.createRadialGradient(0,0,this.r*0.6,0,0,this.r*1.4);
       og.addColorStop(0,this.glow+'55'); og.addColorStop(1,this.glow+'00');
       ctx.beginPath(); ctx.arc(0,0,this.r*1.4,0,Math.PI*2);
       ctx.fillStyle=og; ctx.fill();
 
-      // Body fill
       ctx.beginPath(); ctx.arc(0,0,this.r,0,Math.PI*2);
       ctx.fillStyle=this.color+'44'; ctx.fill();
       ctx.strokeStyle=this.color; ctx.lineWidth=2; ctx.stroke();
 
-      // Blade prongs
       const pts=this.blade.pts;
       ctx.beginPath();
       for(let i=0;i<pts;i++){
@@ -322,43 +435,37 @@ class BeyTop {
       ctx.fillStyle=this.color; ctx.fill();
       ctx.strokeStyle=this.glow; ctx.lineWidth=1; ctx.stroke();
 
-      // Core dot
       ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2);
       ctx.fillStyle=this.core.color; ctx.fill();
       ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2);
       ctx.fillStyle='#ffffff'; ctx.fill();
 
-      // Driver tip
       ctx.beginPath(); ctx.arc(0,0,1.5,0,Math.PI*2);
       ctx.fillStyle=this.driver.color; ctx.fill();
     }
     ctx.restore();
 
     // === HUD bars ===
-    const bw=46,bh=5,bx=this.x-bw/2,by=this.y-33;
-    // HP bar
+    const bw=52,bh=7,bx=this.x-bw/2,by=this.y-36;
     ctx.fillStyle='#110022'; ctx.fillRect(bx,by,bw,bh);
     const hr=Math.max(0,this.hp/this.maxHp);
     ctx.fillStyle=hr>0.5?'#44ff88':hr>0.25?'#ffaa00':'#ff3344';
     ctx.fillRect(bx,by,bw*hr,bh);
     ctx.strokeStyle='#443366'; ctx.lineWidth=1; ctx.strokeRect(bx,by,bw,bh);
 
-    // Burst gauge
     if(this.burst>0||this.burstActive){
-      ctx.fillStyle='#110022'; ctx.fillRect(bx,by+7,bw,3);
+      ctx.fillStyle='#110022'; ctx.fillRect(bx,by+9,bw,4);
       ctx.fillStyle=this.burstActive?'#ffffaa':(this.burst>=100?'#ffffff':'#7755ff');
-      ctx.fillRect(bx,by+7,this.burstActive?bw:bw*(this.burst/100),3);
+      ctx.fillRect(bx,by+9,this.burstActive?bw:bw*(this.burst/100),4);
     }
 
-    // Name
-    ctx.font='bold 9px Arial'; ctx.textAlign='center';
+    ctx.font='bold 11px Arial'; ctx.textAlign='center';
     ctx.fillStyle=this.color+'cc';
-    ctx.fillText(this.blade.name, this.x, by-2);
+    ctx.fillText(this.blade.name, this.x, by-3);
 
-    // RPM
-    ctx.font='9px monospace'; ctx.textAlign='center';
-    ctx.fillStyle=`rgba(180,180,255,${this.spinRatio*0.65})`;
-    ctx.fillText(Math.floor(this.spin)+'rpm', this.x, this.y+32);
+    ctx.font='10px monospace'; ctx.textAlign='center';
+    ctx.fillStyle=`rgba(180,180,255,${this.spinRatio*0.7})`;
+    ctx.fillText(Math.floor(this.spin)+'rpm', this.x, this.y+34);
   }
 }
 
@@ -376,7 +483,6 @@ function spawnBurst(x,y,color){
     particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,
       color, life:1, size:Math.random()*4+1.5, type:'burst'});
   }
-  // Ring pulse
   for(let i=0;i<3;i++){
     particles.push({x,y,vx:0,vy:0,color,life:1,size:0,ring:true,ringR:0,ringMax:60+i*20,type:'ring'});
   }
@@ -412,13 +518,11 @@ function drawParticles(ctx){
 function drawArena(){
   ctx.fillStyle='#060012'; ctx.fillRect(0,0,W,H);
 
-  // Background gradient
   const bg=ctx.createRadialGradient(AX,AY,0,AX,AY,AR*1.15);
   bg.addColorStop(0,'#130032'); bg.addColorStop(0.65,'#0a0022'); bg.addColorStop(1,'#060012');
   ctx.beginPath(); ctx.arc(AX,AY,AR,0,Math.PI*2);
   ctx.fillStyle=bg; ctx.fill();
 
-  // Inner grid (clipped)
   ctx.save();
   ctx.beginPath(); ctx.arc(AX,AY,AR,0,Math.PI*2); ctx.clip();
   ctx.strokeStyle='#ffffff0a'; ctx.lineWidth=1;
@@ -431,18 +535,15 @@ function drawArena(){
   }
   ctx.restore();
 
-  // Danger zone ring (outer 15%)
   const dg=ctx.createRadialGradient(AX,AY,AR*0.8,AX,AY,AR);
   dg.addColorStop(0,'rgba(0,0,0,0)'); dg.addColorStop(1,'rgba(180,0,50,0.15)');
   ctx.beginPath(); ctx.arc(AX,AY,AR,0,Math.PI*2);
   ctx.fillStyle=dg; ctx.fill();
 
-  // Center marker
   ctx.beginPath(); ctx.arc(AX,AY,10,0,Math.PI*2);
   ctx.fillStyle='#ffffff18'; ctx.fill();
   ctx.strokeStyle='#ffffff30'; ctx.lineWidth=1; ctx.stroke();
 
-  // Arena border
   ctx.beginPath(); ctx.arc(AX,AY,AR,0,Math.PI*2);
   ctx.strokeStyle='#7733ff'; ctx.lineWidth=3;
   ctx.shadowBlur=18; ctx.shadowColor='#5522cc'; ctx.stroke(); ctx.shadowBlur=0;
@@ -470,12 +571,10 @@ function checkCollision(a,b){
     b.vy-=imp*mA*ny*(b.burstActive?1.35:1);
 
     const force=Math.abs(rv)+1;
-    // Rubber driver bonus
     const aRubber=a.driver.type==='rubber'?1.25:1;
     const bRubber=b.driver.type==='rubber'?1.25:1;
     let aDmg=force*(b.atk/Math.max(1,a.def))*b.spinRatio*(b.burstActive?2:1)*bRubber;
     let bDmg=force*(a.atk/Math.max(1,b.def))*a.spinRatio*(a.burstActive?2:1)*aRubber;
-    // Defense type: reduce damage taken
     if(a.blade.type==='defense') aDmg*=0.7;
     if(b.blade.type==='defense') bDmg*=0.7;
 
@@ -492,85 +591,80 @@ function checkCollision(a,b){
     shakeX=(Math.random()-0.5)*si; shakeY=(Math.random()-0.5)*si;
     if(a.driver.type==='ball'){a.vx*=1.12;a.vy*=1.12;}
     if(b.driver.type==='ball'){b.vx*=1.12;b.vy*=1.12;}
+
+    playCollision(force);
   }
 }
 
-// ==================== CPU AI ====================
-function updateCpuAI(cpu,player){
-  const dx=player.x-cpu.x, dy=player.y-cpu.y, d=Math.sqrt(dx*dx+dy*dy);
-  const tdx=AX-cpu.x, tdy=AY-cpu.y, td=Math.sqrt(tdx*tdx+tdy*tdy);
-  const f=0.16+cpu.spinRatio*0.08;
-  const t=cpu.blade.type;
+// ==================== AI (used for BOTH tops) ====================
+function updateAI(top, opponent){
+  const dx=opponent.x-top.x, dy=opponent.y-top.y, d=Math.sqrt(dx*dx+dy*dy);
+  const tdx=AX-top.x, tdy=AY-top.y, td=Math.sqrt(tdx*tdx+tdy*tdy);
+  const f=0.16+top.spinRatio*0.08;
+  const t=top.blade.type;
 
   if(t==='attack'){
-    if(d>0){ cpu.vx+=(dx/d)*f; cpu.vy+=(dy/d)*f; }
-    // Occasionally do a fast dash
-    if(Math.random()<0.005){ cpu.vx+=(dx/d)*3; cpu.vy+=(dy/d)*3; }
+    if(d>0){ top.vx+=(dx/d)*f; top.vy+=(dy/d)*f; }
+    if(Math.random()<0.005 && d>0){ top.vx+=(dx/d)*3; top.vy+=(dy/d)*3; }
   } else if(t==='defense'){
-    if(td>35&&td>0){ cpu.vx+=(tdx/td)*f*0.65; cpu.vy+=(tdy/td)*f*0.65; }
-    if(d<130&&d>0){ cpu.vx-=(dx/d)*f*0.4; cpu.vy-=(dy/d)*f*0.4; }
+    if(td>35&&td>0){ top.vx+=(tdx/td)*f*0.65; top.vy+=(tdy/td)*f*0.65; }
+    if(d<130&&d>0){ top.vx-=(dx/d)*f*0.4; top.vy-=(dy/d)*f*0.4; }
   } else if(t==='stamina'){
     if(td>0){
       const px=-tdy/td, py=tdx/td;
-      cpu.vx+=px*f*0.75; cpu.vy+=py*f*0.75;
+      top.vx+=px*f*0.75; top.vy+=py*f*0.75;
       const targetR=85;
-      if(td<targetR-12){cpu.vx-=(tdx/td)*f*0.3;cpu.vy-=(tdy/td)*f*0.3;}
-      if(td>targetR+12){cpu.vx+=(tdx/td)*f*0.3;cpu.vy+=(tdy/td)*f*0.3;}
+      if(td<targetR-12){top.vx-=(tdx/td)*f*0.3;top.vy-=(tdy/td)*f*0.3;}
+      if(td>targetR+12){top.vx+=(tdx/td)*f*0.3;top.vy+=(tdy/td)*f*0.3;}
     }
-  } else { // balance
-    if(cpu.hp>=player.hp){
-      if(d>0){cpu.vx+=(dx/d)*f*0.8;cpu.vy+=(dy/d)*f*0.8;}
+  } else {
+    if(top.hp>=opponent.hp){
+      if(d>0){top.vx+=(dx/d)*f*0.8;top.vy+=(dy/d)*f*0.8;}
     } else {
-      if(td>0){cpu.vx+=(tdx/td)*f*0.6;cpu.vy+=(tdy/td)*f*0.6;}
+      if(td>0){top.vx+=(tdx/td)*f*0.6;top.vy+=(tdy/td)*f*0.6;}
     }
   }
-  if(cpu.burst>=100){ const ok=cpu.activateBurst(); if(ok) spawnBurst(cpu.x,cpu.y,cpu.color); }
-  const spd=Math.sqrt(cpu.vx*cpu.vx+cpu.vy*cpu.vy);
-  if(spd>5.5){ cpu.vx=(cpu.vx/spd)*5.5; cpu.vy=(cpu.vy/spd)*5.5; }
+  if(top.burst>=100){ const ok=top.activateBurst(); if(ok){ spawnBurst(top.x,top.y,top.color); playBurst(top.color); } }
+  const spd=Math.sqrt(top.vx*top.vx+top.vy*top.vy);
+  if(spd>5.5){ top.vx=(top.vx/spd)*5.5; top.vy=(top.vy/spd)*5.5; }
 }
 
 // ==================== BATTLE HUD ====================
 function drawBattleHUD(){
-  // Round + score
-  ctx.textAlign='center'; ctx.font='bold 13px Arial'; ctx.fillStyle='#9988cc';
-  ctx.fillText(`第 ${currentRound} 回合`, AX, 18);
+  ctx.textAlign='center'; ctx.font='bold 16px Arial'; ctx.fillStyle='#9988cc';
+  ctx.fillText(`第 ${currentRound} 回合`, AX, 22);
 
-  ctx.textAlign='left'; ctx.font='bold 15px Arial'; ctx.fillStyle='#44ff88';
-  ctx.fillText(`你: ${'★'.repeat(playerScore)}${'☆'.repeat(Math.max(0,2-playerScore))}`, 16, 22);
+  ctx.textAlign='left'; ctx.font='bold 18px Arial'; ctx.fillStyle='#44ff88';
+  ctx.fillText(`你: ${'★'.repeat(playerScore)}${'☆'.repeat(Math.max(0,2-playerScore))}`, 16, 26);
   ctx.textAlign='right'; ctx.fillStyle='#ff5577';
-  ctx.fillText(`CPU: ${'★'.repeat(cpuScore)}${'☆'.repeat(Math.max(0,2-cpuScore))}`, W-16, 22);
+  ctx.fillText(`CPU: ${'★'.repeat(cpuScore)}${'☆'.repeat(Math.max(0,2-cpuScore))}`, W-16, 26);
 
-  // Controls
-  ctx.textAlign='center'; ctx.font='10px Arial'; ctx.fillStyle='#443355';
-  ctx.fillText('← ↑ → ↓ 移動  |  空白鍵 爆裂技', AX, H-7);
-
-  // Burst ready flash
-  if(playerTop&&playerTop.burst>=100&&!playerTop.burstActive){
-    const flash=Math.floor(Date.now()/400)%2===0;
-    if(flash){
-      ctx.font='bold 13px Arial'; ctx.textAlign='center';
-      ctx.fillStyle='#ffffff'; ctx.shadowBlur=12; ctx.shadowColor='#8855ff';
-      ctx.fillText('⚡ BURST READY！按空白鍵 ⚡', AX, H-22);
-      ctx.shadowBlur=0;
-    }
+  // Team labels
+  if(playerTop){
+    ctx.textAlign='left'; ctx.font='bold 13px Arial'; ctx.fillStyle=playerTop.color+'aa';
+    ctx.fillText('▶ 你的陀螺', 16, H-14);
   }
+  if(cpuTop){
+    ctx.textAlign='right'; ctx.font='bold 13px Arial'; ctx.fillStyle=cpuTop.color+'aa';
+    ctx.fillText('CPU 對手 ◀', W-16, H-14);
+  }
+
   if(playerTop&&playerTop.burstActive){
-    ctx.font='bold 15px Arial'; ctx.textAlign='center';
+    ctx.font='bold 18px Arial'; ctx.textAlign='left';
     ctx.fillStyle=playerTop.color; ctx.shadowBlur=14; ctx.shadowColor=playerTop.color;
-    ctx.fillText('⚡ BURST！⚡', AX, 46);
+    ctx.fillText('⚡ BURST！', 16, 50);
     ctx.shadowBlur=0;
   }
   if(cpuTop&&cpuTop.burstActive){
-    ctx.font='bold 15px Arial'; ctx.textAlign='center';
+    ctx.font='bold 18px Arial'; ctx.textAlign='right';
     ctx.fillStyle=cpuTop.color; ctx.shadowBlur=14; ctx.shadowColor=cpuTop.color;
-    ctx.fillText('⚡ CPU BURST！⚡', AX, cpuTop.burstActive&&playerTop&&playerTop.burstActive?66:46);
+    ctx.fillText('⚡ CPU BURST！', W-16, 50);
     ctx.shadowBlur=0;
   }
 
-  // Spin warning
   if(playerTop&&playerTop.spinRatio<0.25&&playerTop.alive){
-    ctx.font='bold 11px Arial'; ctx.textAlign='left'; ctx.fillStyle='#ff6644';
-    ctx.fillText('⚠ 旋轉衰退！', 16, H-22);
+    ctx.font='bold 14px Arial'; ctx.textAlign='left'; ctx.fillStyle='#ff6644';
+    ctx.fillText('⚠ 旋轉衰退！', 16, H-34);
   }
 }
 
@@ -580,27 +674,28 @@ function drawGameEnd(){
   const won=playerScore>cpuScore;
   ctx.textAlign='center';
   if(won){
-    ctx.font='bold 68px Arial'; ctx.fillStyle='#44ff88';
+    ctx.font='bold 72px Arial'; ctx.fillStyle='#44ff88';
     ctx.shadowBlur=25; ctx.shadowColor='#22cc66';
     ctx.fillText('勝利！', AX, AY-55);
-    ctx.shadowBlur=0; ctx.font='22px Arial'; ctx.fillStyle='#aaffcc';
-    ctx.fillText('你的陀螺稱霸競技場！', AX, AY-10);
+    ctx.shadowBlur=0; ctx.font='26px Arial'; ctx.fillStyle='#aaffcc';
+    ctx.fillText('你的陀螺稱霸競技場！', AX, AY-8);
   } else {
-    ctx.font='bold 68px Arial'; ctx.fillStyle='#ff4466';
+    ctx.font='bold 72px Arial'; ctx.fillStyle='#ff4466';
     ctx.shadowBlur=25; ctx.shadowColor='#cc2244';
     ctx.fillText('敗北...', AX, AY-55);
-    ctx.shadowBlur=0; ctx.font='22px Arial'; ctx.fillStyle='#ffaabb';
-    ctx.fillText('調整配件再挑戰！', AX, AY-10);
+    ctx.shadowBlur=0; ctx.font='26px Arial'; ctx.fillStyle='#ffaabb';
+    ctx.fillText('調整配件再挑戰！', AX, AY-8);
   }
   ctx.shadowBlur=0;
-  ctx.font='18px Arial'; ctx.fillStyle='#9988bb';
-  ctx.fillText(`最終比分  你 ${playerScore} ─ ${cpuScore} CPU`, AX, AY+30);
-  ctx.font='bold 16px Arial'; ctx.fillStyle='#6644aa';
-  ctx.fillText('按 Enter 或 R 重新選擇', AX, AY+75);
+  ctx.font='20px Arial'; ctx.fillStyle='#9988bb';
+  ctx.fillText(`最終比分  你 ${playerScore} ─ ${cpuScore} CPU`, AX, AY+34);
+  ctx.font='bold 18px Arial'; ctx.fillStyle='#6644aa';
+  ctx.fillText('按 Enter 或 R 重新選擇', AX, AY+78);
 
   if(keys['Enter']||keys['KeyR']){
     keys['Enter']=false; keys['KeyR']=false;
     playerScore=0; cpuScore=0; currentRound=1;
+    stopSpinHum();
     gameState='select';
     document.getElementById('selectOverlay').style.display='flex';
     updateSelectUI();
@@ -608,9 +703,9 @@ function drawGameEnd(){
 }
 
 // ==================== MAIN LOOP ====================
+let loopStarted = false;
 function gameLoop(ts){
   requestAnimationFrame(gameLoop);
-  lastTime=ts;
   shakeX*=0.82; shakeY*=0.82;
   ctx.save(); ctx.translate(Math.round(shakeX),Math.round(shakeY));
 
@@ -623,17 +718,24 @@ function gameLoop(ts){
     updateParticles(); drawParticles(ctx);
     countdownTimer--;
     const n=Math.ceil(countdownTimer/60);
+
+    // Countdown beeps
+    if(n !== lastBeepN && n>=1 && n<=3 && countdownTimer>0){
+      playCountdownBeep(false); lastBeepN=n;
+    }
+
     if(countdownTimer>0){
-      ctx.textAlign='center'; ctx.font='bold 90px Arial';
+      ctx.textAlign='center'; ctx.font='bold 110px Arial';
       ctx.fillStyle='#ffffff';
-      ctx.shadowBlur=30;
+      ctx.shadowBlur=35;
       ctx.shadowColor=n===3?'#ff6600':n===2?'#ffee00':'#44ff88';
-      ctx.fillText(n, AX, AY+35);
+      ctx.fillText(n, AX, AY+40);
       ctx.shadowBlur=0;
     } else {
-      ctx.textAlign='center'; ctx.font='bold 70px Arial';
-      ctx.fillStyle='#ffffff'; ctx.shadowBlur=25; ctx.shadowColor='#ff4400';
-      ctx.fillText('GO!', AX, AY+28);
+      if(lastBeepN!==0){ playCountdownBeep(true); lastBeepN=0; startSpinHum(); }
+      ctx.textAlign='center'; ctx.font='bold 86px Arial';
+      ctx.fillStyle='#ffffff'; ctx.shadowBlur=28; ctx.shadowColor='#ff4400';
+      ctx.fillText('GO!', AX, AY+32);
       ctx.shadowBlur=0;
     }
     if(countdownTimer<=-30) gameState='battle';
@@ -641,23 +743,14 @@ function gameLoop(ts){
   } else if(gameState==='battle'){
     drawArena();
 
-    // Player input
-    const spd=0.20;
-    if(keys['ArrowLeft'])  playerTop.vx-=spd;
-    if(keys['ArrowRight']) playerTop.vx+=spd;
-    if(keys['ArrowUp'])    playerTop.vy-=spd;
-    if(keys['ArrowDown'])  playerTop.vy+=spd;
-    if(keys['Space']){
-      const ok=playerTop.activateBurst();
-      if(ok){ spawnBurst(playerTop.x,playerTop.y,playerTop.color); keys['Space']=false; }
-    }
-    const ps=Math.sqrt(playerTop.vx*playerTop.vx+playerTop.vy*playerTop.vy);
-    if(ps>5.5){playerTop.vx=(playerTop.vx/ps)*5.5;playerTop.vy=(playerTop.vy/ps)*5.5;}
+    // Both tops are AI-controlled
+    updateAI(playerTop, cpuTop);
+    updateAI(cpuTop, playerTop);
 
     playerTop.update(); cpuTop.update();
-    updateCpuAI(cpuTop,playerTop);
     checkCollision(playerTop,cpuTop);
     updateParticles();
+    updateSpinHum(playerTop, cpuTop);
 
     // Ambient spin particles
     if(playerTop.spinPTimer%3===0&&playerTop.spinRatio>0.35){
@@ -680,6 +773,8 @@ function gameLoop(ts){
       else { roundEndMsg='你獲勝了！'; winner='player'; playerScore++; }
       roundEndTimer=220;
       gameState='roundEnd';
+      stopSpinHum();
+      playRoundEnd(winner==='player');
       if(winner==='player') spawnBurst(playerTop.x,playerTop.y,playerTop.color);
       if(winner==='cpu') spawnBurst(cpuTop.x,cpuTop.y,cpuTop.color);
     }
@@ -694,14 +789,14 @@ function gameLoop(ts){
     const isWin=roundEndMsg.includes('你');
     const isDraw=roundEndMsg.includes('平');
     ctx.textAlign='center';
-    ctx.font='bold 52px Arial';
+    ctx.font='bold 60px Arial';
     ctx.fillStyle=isWin?'#44ff88':isDraw?'#ffee44':'#ff4466';
-    ctx.shadowBlur=22; ctx.shadowColor=ctx.fillStyle;
-    ctx.fillText(roundEndMsg, AX, AY-15);
+    ctx.shadowBlur=24; ctx.shadowColor=ctx.fillStyle;
+    ctx.fillText(roundEndMsg, AX, AY-10);
     ctx.shadowBlur=0;
-    ctx.font='16px Arial'; ctx.fillStyle='#9988bb';
+    ctx.font='20px Arial'; ctx.fillStyle='#9988bb';
     const cd=Math.ceil(roundEndTimer/60);
-    ctx.fillText(cd>0?`${cd} 秒後繼續...`:'準備！', AX, AY+30);
+    ctx.fillText(cd>0?`${cd} 秒後繼續...`:'準備！', AX, AY+38);
 
     roundEndTimer--;
     if(roundEndTimer<=0){
@@ -721,16 +816,18 @@ function gameLoop(ts){
 
 // ==================== START BATTLE ====================
 function startBattle(){
+  ensureAudio();
   document.getElementById('selectOverlay').style.display='none';
   const cpuIdx=Math.floor(Math.random()*CPU_BUILDS.length);
   window._cpuIdx=cpuIdx;
+  playerScore=0; cpuScore=0; currentRound=1;
   startRound();
-  requestAnimationFrame(gameLoop);
+  if(!loopStarted){ loopStarted=true; requestAnimationFrame(gameLoop); }
 }
 
 function startRound(){
   const cpuIdx=window._cpuIdx!==undefined?window._cpuIdx:Math.floor(Math.random()*CPU_BUILDS.length);
-  if(currentRound===1) window._cpuIdx=cpuIdx; // fix CPU for whole match
+  if(currentRound===1) window._cpuIdx=cpuIdx;
   const cpub=CPU_BUILDS[window._cpuIdx];
 
   playerTop=new BeyTop(AX-105,AY,selBlade,selCore,selDriver,'player');
@@ -740,6 +837,7 @@ function startRound(){
   particles=[];
   shakeX=shakeY=0;
   countdownTimer=195;
+  lastBeepN=-1;
   gameState='countdown';
 }
 
@@ -748,7 +846,6 @@ function drawSelectBG(){
   ctx.fillStyle='#080015'; ctx.fillRect(0,0,W,H);
   drawArena();
   const t=Date.now()*0.001;
-  // Decorative spinning tops
   const demos=[{bi:0,ci:0,di:0},{bi:1,ci:1,di:2},{bi:2,ci:2,di:1},{bi:3,ci:0,di:3}];
   for(let i=0;i<demos.length;i++){
     const a=t*0.35+i*Math.PI/2;
@@ -770,13 +867,12 @@ function drawSelectBG(){
   }
 }
 
-// ==================== SELECT UI UPDATE ====================
+// ==================== SELECT UI ====================
 const TYPE_COLORS={attack:'#ff5544',defense:'#4488ff',stamina:'#44ff88',balance:'#cc44ff'};
 const TYPE_LABELS={attack:'攻擊型',defense:'防禦型',stamina:'耐久型',balance:'均衡型'};
 
 function updateSelectUI(){
   const b=BLADES[selBlade], c=CORES[selCore], d=DRIVERS[selDriver];
-  // Blade
   document.getElementById('bladeName').textContent=b.name;
   document.getElementById('bladeName').style.color=b.color;
   document.getElementById('bladeDesc').textContent=b.desc;
@@ -785,16 +881,13 @@ function updateSelectUI(){
   badge.style.background=TYPE_COLORS[b.type]+'33';
   badge.style.color=TYPE_COLORS[b.type];
   badge.style.border=`1px solid ${TYPE_COLORS[b.type]}55`;
-  // Core
   document.getElementById('coreName').textContent=c.name;
   document.getElementById('coreName').style.color=c.color;
   document.getElementById('coreDesc').textContent=c.desc;
-  // Driver
   document.getElementById('driverName').textContent=d.name;
   document.getElementById('driverName').style.color=d.color;
   document.getElementById('driverDesc').textContent=d.desc;
 
-  // Stats
   const atk=b.atk+(c.bonus==='atk'?c.val:0);
   const def=b.def+(c.bonus==='def'?c.val:0);
   const sta=b.sta+(c.bonus==='sta'?c.val:0);
@@ -809,26 +902,22 @@ function updateSelectUI(){
   document.getElementById('staVal').textContent=sta;
   document.getElementById('hpVal').textContent=hp;
 
-  // Preview canvas
   drawPreview();
 }
 
 function drawPreview(){
   const pc=document.getElementById('previewCanvas');
   const px=pc.getContext('2d');
-  const b=BLADES[selBlade], c=CORES[selCore], d=DRIVERS[selDriver];
+  const b=BLADES[selBlade], c=CORES[selCore];
   px.clearRect(0,0,80,80);
   px.fillStyle='#0d0028'; px.fillRect(0,0,80,80);
   px.save(); px.translate(40,40); px.rotate(Date.now()*0.002);
-  // Outer glow
   const g=px.createRadialGradient(0,0,10,0,0,28);
   g.addColorStop(0,b.glow+'66'); g.addColorStop(1,b.glow+'00');
   px.beginPath(); px.arc(0,0,28,0,Math.PI*2); px.fillStyle=g; px.fill();
-  // Body
   px.beginPath(); px.arc(0,0,16,0,Math.PI*2);
   px.fillStyle=b.color+'44'; px.fill();
   px.strokeStyle=b.color; px.lineWidth=2; px.stroke();
-  // Prongs
   const pts=b.pts;
   px.beginPath();
   for(let i=0;i<pts;i++){
@@ -839,7 +928,6 @@ function drawPreview(){
     px.lineTo(Math.cos(((i+0.5)/pts)*Math.PI*2)*17,Math.sin(((i+0.5)/pts)*Math.PI*2)*17);
   }
   px.closePath(); px.fillStyle=b.color; px.fill();
-  // Core
   px.beginPath(); px.arc(0,0,6,0,Math.PI*2); px.fillStyle=c.color; px.fill();
   px.beginPath(); px.arc(0,0,2.5,0,Math.PI*2); px.fillStyle='#fff'; px.fill();
   px.restore();
@@ -855,8 +943,7 @@ function changePart(type,dir){
 
 // ==================== INIT ====================
 updateSelectUI();
-// Start background animation for select screen
-(function bgLoop(ts){ requestAnimationFrame(bgLoop); if(gameState==='select') drawSelectBG(); })();
+(function bgLoop(){ requestAnimationFrame(bgLoop); if(gameState==='select') drawSelectBG(); })();
 </script>
 </body>
 </html>
