@@ -164,6 +164,56 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','PingFang TC'
 .fest-btn{background:linear-gradient(135deg,#f0c040,#c08020);border:none;border-radius:10px;padding:12px 30px;font-size:.9rem;font-weight:800;color:#1a1005;cursor:pointer;letter-spacing:2px;font-family:inherit;transition:transform .1s}
 .fest-btn:active{transform:scale(.96)}
 
+/* ───── TUTORIAL ───── */
+#tutorial{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:250;align-items:center;justify-content:center;padding:20px}
+#tutorial.open{display:flex}
+.tut-box{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:22px;width:100%;max-width:320px}
+.tut-step{display:none}.tut-step.act{display:block}
+.tut-ic{font-size:2.8rem;text-align:center;display:block;margin-bottom:10px;animation:float 2.5s ease-in-out infinite}
+.tut-title{font-size:.92rem;font-weight:800;color:var(--gold);text-align:center;margin-bottom:8px;letter-spacing:1px}
+.tut-body{font-size:.78rem;color:var(--text2);line-height:2;text-align:center;margin-bottom:16px}
+.tut-dots{display:flex;justify-content:center;gap:7px;margin-bottom:16px}
+.tut-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background .3s}
+.tut-dot.act{background:var(--gold)}
+.tut-next{width:100%;background:linear-gradient(135deg,#f0c040,#c08020);border:none;border-radius:10px;padding:11px;font-size:.88rem;font-weight:800;color:#1a1005;cursor:pointer;font-family:inherit;letter-spacing:1px;transition:transform .1s}
+.tut-next:active{transform:scale(.97)}
+.tut-skip{width:100%;background:none;border:none;padding:8px;font-size:.68rem;color:var(--text4);cursor:pointer;font-family:inherit;margin-top:3px}
+.tut-skip:hover{color:var(--text3)}
+
+/* ───── ACTIVITY SECTION ───── */
+.act-section{background:rgba(240,192,64,.05);border:1px solid rgba(240,192,64,.18);border-radius:11px;padding:11px;margin-bottom:12px}
+.act-section-title{font-size:.6rem;color:var(--gold);letter-spacing:1.5px;margin-bottom:8px;font-weight:700}
+.act-btn{width:100%;background:var(--panel2);border:1px solid var(--border2);border-radius:9px;padding:9px 12px;font-size:.78rem;color:var(--text);cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:9px;margin-bottom:5px;transition:border-color .15s,background .15s}
+.act-btn:last-child{margin-bottom:0}
+.act-btn:hover:not(:disabled){border-color:rgba(240,192,64,.4);background:rgba(240,192,64,.06)}
+.act-btn:disabled{opacity:.38;cursor:not-allowed}
+.act-ic{font-size:1.3rem;flex-shrink:0}
+.act-info{flex:1}
+.act-name{font-size:.78rem;font-weight:700}
+.act-desc{font-size:.62rem;color:var(--text3);margin-top:1px}
+.act-cost{font-size:.62rem;color:var(--text3);margin-top:1px}
+.act-lock{font-size:.68rem;color:var(--text4);padding:8px 4px;text-align:center;font-style:italic;line-height:1.7}
+
+/* ───── ADVENTURE OVERLAY ───── */
+#adventure{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center;text-align:center;padding:24px}
+#adventure.open{display:flex}
+.adv-box{max-width:280px}
+.adv-icons{font-size:2.4rem;margin-bottom:12px;letter-spacing:8px}
+.adv-walker{display:inline-block;animation:bounce .5s ease-in-out infinite alternate}
+@keyframes bounce{0%{transform:translateY(0)}100%{transform:translateY(-6px)}}
+.adv-title{font-size:1rem;font-weight:800;color:var(--gold);margin-bottom:8px;letter-spacing:1px}
+.adv-msg{font-size:.78rem;color:var(--text2);line-height:1.9}
+.adv-dots{font-size:1.2rem;color:var(--gold);margin-top:10px;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ───── GATHER BUTTON ───── */
+.gather-row{display:flex;gap:8px;margin-top:10px}
+.gather-btn{flex:1;background:var(--panel);border:1px solid var(--border2);border-radius:9px;padding:9px 6px;font-size:.75rem;color:var(--text2);cursor:pointer;font-family:inherit;text-align:center;transition:border-color .2s,background .2s,color .2s}
+.gather-btn:hover:not(:disabled){border-color:rgba(240,192,64,.35);background:rgba(240,192,64,.06);color:var(--text)}
+.gather-btn:disabled{opacity:.35;cursor:not-allowed}
+.gather-ic{font-size:1.2rem;display:block;margin-bottom:2px}
+.gather-cd{font-size:.58rem;color:var(--text4);margin-top:2px}
+
 /* ───── NOTIFICATION ───── */
 #notif{position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-4px);background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:7px 16px;font-size:.75rem;color:var(--text);z-index:300;pointer-events:none;opacity:0;transition:opacity .3s,transform .3s;white-space:nowrap;max-width:90vw;text-overflow:ellipsis;overflow:hidden}
 #notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -260,6 +310,48 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','PingFang TC'
   <div class="fest-box">
     <div id="fest-body"></div>
     <button class="fest-btn" onclick="closeFest()">✨ 繼續</button>
+  </div>
+</div>
+
+<!-- Tutorial overlay -->
+<div id="tutorial">
+  <div class="tut-box">
+    <div class="tut-step act" id="tut-0">
+      <span class="tut-ic">🗺️</span>
+      <div class="tut-title">歡迎到村子！</div>
+      <div class="tut-body">地圖上有 <b style="color:var(--gold)">5位村民</b>。<br>點擊地圖上的村民圖示，<br>就可以跟他們打招呼！</div>
+    </div>
+    <div class="tut-step" id="tut-1">
+      <span class="tut-ic">🪵</span>
+      <div class="tut-title">資源從哪裡來？</div>
+      <div class="tut-body">🍎 食物與 🪵 木材會<b style="color:var(--gold)">自動增加</b>。<br>在「<b>你的家</b>」分頁底部<br>有手動採集按鈕，可以加速！</div>
+    </div>
+    <div class="tut-step" id="tut-2">
+      <span class="tut-ic">🤝</span>
+      <div class="tut-title">友誼越深，越多樂趣</div>
+      <div class="tut-body">跟村民打招呼、送禮物，<br>友誼升高後能解鎖同行活動：<br>🚶 散步 · 🧺 野餐 · 🗺️ 探索郊外</div>
+    </div>
+    <div class="tut-dots">
+      <div class="tut-dot act" id="td0"></div>
+      <div class="tut-dot" id="td1"></div>
+      <div class="tut-dot" id="td2"></div>
+    </div>
+    <button class="tut-next" id="tut-btn" onclick="tutNext()">下一頁 →</button>
+    <button class="tut-skip" onclick="closeTutorial()">略過導引</button>
+  </div>
+</div>
+
+<!-- Adventure overlay -->
+<div id="adventure">
+  <div class="adv-box">
+    <div class="adv-icons">
+      <span id="adv-partner-ic" class="adv-walker">🦫</span>
+      <span style="font-size:1.5rem;opacity:.5"> + </span>
+      <span class="adv-walker" style="animation-delay:.25s">🧭</span>
+    </div>
+    <div class="adv-title" id="adv-title">出發探索中...</div>
+    <div class="adv-msg" id="adv-msg">穿越小徑，走向遠方...</div>
+    <div class="adv-dots">· · ·</div>
   </div>
 </div>
 
@@ -474,6 +566,8 @@ function newState(playerName, villageName) {
     diary: [],
     log: [],
     flags: {},
+    actDone: {},       // key: `${vlgrId}_${actType}` → lastDay
+    gatherCd: {food:0, wood:0}, // real-time ms cooldown
     visitCount: 0,
     lastVisit: Date.now(),
     _ok: true,
@@ -559,6 +653,7 @@ function showGame() {
 }
 
 function showFirstWelcome() {
+  G._tutorialAfterFest = true;
   showFest('🏡', `歡迎來到${G.villageName}！`,
     `${G.playerName}，你終於來了。\n\n這個村子已經等你很久了。\n\n村民們很期待認識你——\n去打個招呼吧。`);
   addDiary(`${G.playerName}抵達了${G.villageName}。一切都是新的開始。`, true);
@@ -729,20 +824,66 @@ function renderResources() {
   document.getElementById('r-bond').textContent    = Math.floor(totalBond());
 }
 
+// Decorative elements per season
+const MAP_DECO = {
+  spring: [{ic:'🌸',x:20,y:68},{ic:'🌷',x:55,y:72},{ic:'🌿',x:80,y:65}],
+  summer: [{ic:'🌻',x:20,y:68},{ic:'🌼',x:58,y:72},{ic:'🍃',x:80,y:65}],
+  autumn: [{ic:'🍂',x:20,y:68},{ic:'🍁',x:55,y:72},{ic:'🌾',x:80,y:65}],
+  winter: [{ic:'❄️',x:20,y:68},{ic:'⛄',x:55,y:72},{ic:'🌨️',x:80,y:65}],
+};
+
 function renderMap() {
-  let h = '';
+  const sn = SEASON_CLS[G.seasonIdx];
+  const isDay = G.hour >= 6 && G.hour < 19;
+  // Sun/moon position
+  let skyIc, skyX, skyY;
+  if (isDay) {
+    const t = (G.hour - 6) / 13;
+    skyX = 5 + t * 90;
+    skyY = 28 - Math.sin(t * Math.PI) * 18;
+    skyIc = G.hour <= 7 ? '🌅' : G.hour >= 17 ? '🌇' : '☀️';
+  } else {
+    skyX = 75; skyY = 12; skyIc = '🌙';
+  }
+
+  // SVG paths between buildings (dirt roads)
+  const paths = `<svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <path d="M38,38 Q40,50 42,60" stroke="rgba(120,80,40,.28)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M42,60 Q28,57 14,55" stroke="rgba(120,80,40,.22)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M42,60 Q58,61 74,62" stroke="rgba(120,80,40,.22)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M38,38 Q49,31 60,24" stroke="rgba(120,80,40,.18)" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`;
+
+  let h = paths;
+
+  // Sky body (sun/moon)
+  h += `<div style="position:absolute;left:${skyX}%;top:${skyY}%;transform:translate(-50%,-50%);font-size:1.5rem;filter:drop-shadow(0 0 8px rgba(255,200,80,.5));z-index:3;pointer-events:none;transition:left 4s ease,top 4s ease">${skyIc}</div>`;
+
+  // Stars at night
+  if (!isDay) {
+    h += `<div style="position:absolute;top:5%;left:20%;font-size:.7rem;opacity:.6;pointer-events:none">⭐</div>`;
+    h += `<div style="position:absolute;top:10%;left:50%;font-size:.5rem;opacity:.5;pointer-events:none">✨</div>`;
+    h += `<div style="position:absolute;top:8%;left:35%;font-size:.55rem;opacity:.4;pointer-events:none">⭐</div>`;
+  }
+
+  // Decorative ground elements
+  MAP_DECO[sn].forEach(d => {
+    h += `<div style="position:absolute;left:${d.x}%;top:${d.y}%;transform:translateX(-50%);font-size:1rem;pointer-events:none;z-index:4;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))">${d.ic}</div>`;
+  });
+
   // Buildings
   BLDG_DATA.forEach(b => {
-    h += `<div class="bldg" style="left:${b.x}%;top:${b.y}%" onclick="showBuilding('${b.id}')">
+    h += `<div class="bldg" style="left:${b.x}%;top:${b.y}%;z-index:5" onclick="showBuilding('${b.id}')">
       <span class="bldg-ic" style="font-size:${b.size}">${b.ic}</span>
       <div class="bldg-lbl">${b.name}</div>
     </div>`;
   });
+
   // Villagers
   G.villagers.forEach((v, i) => {
     const d = VLGR_DATA[i];
     const rel = relInfo(v.friendship);
-    h += `<div class="vlgr-dot" style="left:${v.x}%;top:${v.y}%" onclick="openVlgrModal('${d.id}')">
+    h += `<div class="vlgr-dot" style="left:${v.x}%;top:${v.y}%;z-index:6" onclick="openVlgrModal('${d.id}')">
       <span class="vd-ic" style="font-size:1.55rem">${d.ic}</span>
       <div class="vd-nm" style="color:${rel.color}">${d.name}</div>
     </div>`;
@@ -794,7 +935,28 @@ function buildHomeTab() {
   const h = G.home;
   const pct = Math.min(100, h.comfort);
   const feel = pct<20?'空蕩蕩':pct<50?'有點溫馨':pct<80?'很舒適':'完美的家';
+  const now = Date.now();
+  const foodCd = Math.max(0, Math.ceil(((G.gatherCd?.food||0) - now) / 1000));
+  const woodCd = Math.max(0, Math.ceil(((G.gatherCd?.wood||0) - now) / 1000));
+
   let s = `<div class="card">
+    <div class="card-title">🌿 採集資源 <span style="font-size:.62rem;color:var(--text3);font-weight:400">每5分鐘可用一次</span></div>
+    <div style="font-size:.7rem;color:var(--text3);margin-bottom:8px">食物和木材也會<b style="color:var(--text2)">自動緩慢增加</b>，每天日出時補一批。</div>
+    <div class="gather-row">
+      <button class="gather-btn" onclick="gather('food')" ${foodCd?'disabled':''}>
+        <span class="gather-ic">🍎</span>
+        採集食物 +8
+        <span class="gather-cd">${foodCd?`冷卻 ${foodCd}s`:'可採集'}</span>
+      </button>
+      <button class="gather-btn" onclick="gather('wood')" ${woodCd?'disabled':''}>
+        <span class="gather-ic">🪵</span>
+        採集木材 +6
+        <span class="gather-cd">${woodCd?`冷卻 ${woodCd}s`:'可採集'}</span>
+      </button>
+    </div>
+  </div>`;
+
+  s += `<div class="card">
     <div class="card-title">🏠 ${G.playerName}的小屋</div>
     <div class="comfort-row">
       <span class="comfort-lbl">舒適度</span>
@@ -929,6 +1091,9 @@ function openVlgrModal(id) {
   else pool = d.dialogues;
   const line = sub(pool[Math.floor(Math.random()*pool.length)]);
 
+  // Build activity buttons based on friendship tier
+  const actSection = buildActButtons(id, v.friendship);
+
   document.getElementById('modal-body').innerHTML = `
     <div class="modal-vlgr-hdr">
       <span class="mvh-ic">${d.ic}</span>
@@ -940,10 +1105,11 @@ function openVlgrModal(id) {
     </div>
     <div class="dialogue-box" id="dlg-box">"${line}"</div>
     <div class="modal-actions">
-      <button class="modal-btn gold" onclick="talkMore('${id}')">💬 繼續聊聊</button>
+      <button class="modal-btn gold" onclick="talkMore('${id}')">💬 繼續聊聊 <span style="font-size:.65rem;color:var(--text3)">(友誼+3)</span></button>
       <button class="modal-btn" onclick="askVillage('${id}')">🌳 聊聊村子</button>
-      <button class="modal-btn" onclick="showGiftMenu('${id}')">🎁 送個禮物</button>
+      <button class="modal-btn" onclick="showGiftMenu('${id}')">🎁 送個禮物 <span style="font-size:.65rem;color:var(--text3)">(友誼+8)</span></button>
     </div>
+    ${actSection}
     <button class="modal-close" onclick="closeModal()">離開</button>
   `;
   document.getElementById('modal').classList.add('open');
@@ -1058,6 +1224,210 @@ function onRelUp(id, rel) {
 }
 
 // ══════════════════════════════════════════════
+//  GATHER
+// ══════════════════════════════════════════════
+
+function gather(type) {
+  if (!G.gatherCd) G.gatherCd = {};
+  const now = Date.now();
+  const CD = 5 * 60 * 1000; // 5 minutes
+  if (G.gatherCd[type] && now < G.gatherCd[type]) {
+    const left = Math.ceil((G.gatherCd[type] - now) / 1000);
+    notify(`⏳ 還需等待 ${left} 秒`); return;
+  }
+  G.gatherCd[type] = now + CD;
+  if (type === 'food') { G.food = Math.min(999, G.food + 8); notify('🍎 採集了食物 +8！'); addLog('你在農場附近採集了一批食物。'); }
+  else { G.wood = Math.min(999, G.wood + 6); notify('🪵 採集了木材 +6！'); addLog('你砍了幾棵樹，收集到木材。'); }
+  renderResources();
+  renderTab();
+  save();
+}
+
+// ══════════════════════════════════════════════
+//  ACTIVITIES
+// ══════════════════════════════════════════════
+
+const ADV_EVENTS = [
+  {ic:'🌿', title:'發現了珍貴草藥！', msg:'穿越樹林深處，找到了一片草藥叢。\n帶了滿滿一袋回來！', reward:{food:12, wood:18}},
+  {ic:'🐿️', title:'遇到了友善的松鼠！', msg:'牠們帶你去找了一堆松果和漿果，\n笑得你合不攏嘴。', reward:{food:25}},
+  {ic:'🌅', title:'看到了絕美日落！', msg:'爬上小山丘，夕陽把整片天空染成橘紅色。\n這個景色，永遠記在心裡了。', reward:{happiness:30}},
+  {ic:'💎', title:'撿到了閃亮寶石！', msg:'河邊的石頭裡藏著一顆藍色水晶，\n在陽光下閃閃發光。', reward:{wood:10, happiness:20}},
+  {ic:'🎭', title:'遇到了旅行者！', msg:'一個背著大包袱的旅行者，\n說了一段讓人深思的話，\n然後留下一把木材就離開了。', reward:{wood:20, happiness:10}},
+  {ic:'🍄', title:'發現了蘑菇林！', msg:'大片的蘑菇在樹蔭下生長，\n採了滿滿一籃帶回家。', reward:{food:20, wood:8}},
+  {ic:'🌊', title:'找到了山間小溪！', msg:'清涼的溪水和溪邊的石頭讓人心曠神怡，\n帶了一些漂亮的石頭回來。', reward:{happiness:25, wood:5}},
+];
+
+function buildActButtons(vlId, friendship) {
+  if (!G.actDone) G.actDone = {};
+  const done = k => (G.actDone[`${vlId}_${k}`] || -1) === G.day;
+
+  const acts = [
+    {key:'walk',    need:20, ic:'🚶', name:'一起散步', desc:'在村子裡閒逛，聊聊天。', cost:'', tier:'朋友'},
+    {key:'picnic',  need:45, ic:'🧺', name:'去野餐',   desc:'帶上食物，找個好地方歇息。', cost:'消耗 🍎10', tier:'好友'},
+    {key:'adventure',need:70,ic:'🗺️', name:'探索郊外', desc:'一起去村外冒險，帶點驚喜回來！', cost:'消耗 🍎15', tier:'摯友'},
+    {key:'stargazing',need:100,ic:'🌙',name:'守夜數星星',desc:'在廣場大樹下，看整夜的星空。', cost:'', tier:'家人'},
+  ];
+
+  const unlocked = acts.filter(a => friendship >= a.need);
+  const locked   = acts.filter(a => friendship < a.need);
+
+  if (!unlocked.length) {
+    return `<div class="act-lock">繼續跟 TA 打招呼、送禮物，<br>友誼提升後就能一起出遊！</div>`;
+  }
+
+  let html = `<div class="act-section"><div class="act-section-title">✨ 同行活動</div>`;
+  unlocked.forEach(a => {
+    const isDone = done(a.key);
+    html += `<button class="act-btn" ${isDone ? 'disabled' : ''} onclick="doActivity('${vlId}','${a.key}')">
+      <span class="act-ic">${a.ic}</span>
+      <div class="act-info">
+        <div class="act-name">${a.name} ${isDone ? '<span style="font-size:.6rem;color:var(--text4)">今天已做</span>' : ''}</div>
+        <div class="act-desc">${a.desc}</div>
+        ${a.cost ? `<div class="act-cost">${a.cost}</div>` : ''}
+      </div>
+    </button>`;
+  });
+  if (locked.length) {
+    html += `<div class="act-lock" style="font-size:.62rem;border-top:1px solid rgba(255,255,255,.05);padding-top:8px;margin-top:4px">`;
+    locked.forEach(a => { html += `${a.ic} ${a.name}（需達「${a.tier}」）<br>`; });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function doActivity(vlId, key) {
+  if (!G.actDone) G.actDone = {};
+  G.actDone[`${vlId}_${key}`] = G.day;
+  closeModal();
+  if      (key === 'walk')       doWalk(vlId);
+  else if (key === 'picnic')     doPicnic(vlId);
+  else if (key === 'adventure')  doAdventure(vlId);
+  else if (key === 'stargazing') doStargazing(vlId);
+}
+
+function doWalk(vlId) {
+  const d = vd(vlId); const v = vs(vlId);
+  const msgs = [
+    `你跟${d.name}沿著村子小路走了一圈。陽光很好，話不多，但很舒服。`,
+    `${d.name}帶你去了一個${G.villageName}的小角落，說這是最喜歡的地方。`,
+    `走著走著，${d.name}說：「有你在，村子感覺更大了。」`,
+    `你們繞著廣場大樹走了三圈，${d.name}說每圈都有新發現。`,
+  ];
+  const line = msgs[Math.floor(Math.random()*msgs.length)];
+  v.friendship = Math.min(100, v.friendship + 5);
+  G.happiness = Math.min(100, G.happiness + 5);
+  addLog(`🚶 ${G.playerName}跟${d.name}一起散步了！`, 'event');
+  addDiary(`跟${d.name}在村子裡散步。簡單的事，卻很快樂。`);
+  showFest('🚶', `與${d.name}散步`, line + '\n\n友誼 +5 · 幸福 +5');
+  renderVlgrRow(); renderResources(); save();
+}
+
+function doPicnic(vlId) {
+  const d = vd(vlId); const v = vs(vlId);
+  if (G.food < 10) { notify('🍎 食物不足！需要 10 食物'); G.actDone[`${vlId}_picnic`] = -1; return; }
+  G.food -= 10;
+  v.friendship = Math.min(100, v.friendship + 10);
+  G.happiness = Math.min(100, G.happiness + 15);
+  const msgs = [
+    `你們在魚塘旁邊鋪開布，毛球的麵包、阿橘的蔬菜，拼成了一頓溫暖的野餐。`,
+    `廣場大樹下，${d.name}說這是吃過最好的午餐——不是因為食物，是因為有你。`,
+    `草地上，陽光穿過樹葉，${d.name}說：「我希望每天都這樣。」`,
+  ];
+  const line = msgs[Math.floor(Math.random()*msgs.length)];
+  addLog(`🧺 ${G.playerName}跟${d.name}去野餐了！`, 'event');
+  addDiary(`跟${d.name}野餐。吃著簡單的食物，卻是很珍貴的下午。`, true);
+  showFest('🧺', `與${d.name}野餐`, line + '\n\n友誼 +10 · 幸福 +15');
+  renderVlgrRow(); renderResources(); save();
+}
+
+function doAdventure(vlId) {
+  const d = vd(vlId); const v = vs(vlId);
+  if (G.food < 15) { notify('🍎 食物不足！需要 15 食物'); G.actDone[`${vlId}_adventure`] = -1; return; }
+  G.food -= 15;
+  // Show adventure overlay
+  document.getElementById('adv-partner-ic').textContent = d.ic;
+  document.getElementById('adv-title').textContent = `與${d.name}探索郊外`;
+  const walkMsgs = ['穿越小徑，走向遠方...','樹林越來越茂密...','聽到了遠方的水聲...','快到了！'];
+  let step = 0;
+  document.getElementById('adv-msg').textContent = walkMsgs[0];
+  document.getElementById('adventure').classList.add('open');
+  const timer = setInterval(() => {
+    step++;
+    if (step < walkMsgs.length) {
+      document.getElementById('adv-msg').textContent = walkMsgs[step];
+    } else {
+      clearInterval(timer);
+      document.getElementById('adventure').classList.remove('open');
+      resolveAdventure(vlId);
+    }
+  }, 1200);
+}
+
+function resolveAdventure(vlId) {
+  const d = vd(vlId); const v = vs(vlId);
+  const ev = ADV_EVENTS[Math.floor(Math.random()*ADV_EVENTS.length)];
+  v.friendship = Math.min(100, v.friendship + 12);
+  if (ev.reward.food)      G.food      = Math.min(999, G.food + ev.reward.food);
+  if (ev.reward.wood)      G.wood      = Math.min(999, G.wood + ev.reward.wood);
+  if (ev.reward.happiness) G.happiness = Math.min(100, G.happiness + ev.reward.happiness);
+  const rewardStr = [
+    ev.reward.food      ? `🍎食物 +${ev.reward.food}` : '',
+    ev.reward.wood      ? `🪵木材 +${ev.reward.wood}` : '',
+    ev.reward.happiness ? `💛幸福 +${ev.reward.happiness}` : '',
+  ].filter(Boolean).join(' · ');
+  addLog(`🗺️ ${G.playerName}跟${d.name}從郊外探索回來了！帶回了${rewardStr}。`, 'event');
+  addDiary(`跟${d.name}一起探索郊外。${ev.title}這次的冒險永遠不會忘記。`, true);
+  showFest(ev.ic, ev.title, ev.msg + `\n\n友誼 +12 · ${rewardStr}`);
+  renderVlgrRow(); renderResources(); save();
+}
+
+function doStargazing(vlId) {
+  const d = vd(vlId); const v = vs(vlId);
+  v.friendship = Math.min(100, v.friendship + 5);
+  G.happiness = Math.min(100, G.happiness + 20);
+  const msgs = [
+    `夜深了，你跟${d.name}並排坐在廣場大樹下。\n星星一顆一顆出現，沒有人說話，\n但沉默裡有一種很安心的感覺。`,
+    `${d.name}指著天上說：「那顆最亮的，\n以後就叫${G.villageName}之星吧。」\n你笑著點頭。`,
+    `凌晨，風有點涼，${d.name}說：\n「謝謝你留下來。」\n這句話在心裡暖了很久。`,
+  ];
+  const line = msgs[Math.floor(Math.random()*msgs.length)];
+  addLog(`🌙 ${G.playerName}跟${d.name}守夜數星星...`, 'special');
+  addDiary(`跟${d.name}在廣場大樹下看了整晚的星星。這個夜晚，很難忘。`, true);
+  showFest('🌙', `與${d.name}守夜`, line + '\n\n幸福 +20');
+  renderVlgrRow(); renderResources(); save();
+}
+
+// ══════════════════════════════════════════════
+//  TUTORIAL
+// ══════════════════════════════════════════════
+
+let _tutStep = 0;
+function showTutorial() {
+  _tutStep = 0;
+  updateTutStep();
+  document.getElementById('tutorial').classList.add('open');
+}
+
+function tutNext() {
+  _tutStep++;
+  if (_tutStep >= 3) { closeTutorial(); return; }
+  updateTutStep();
+}
+
+function updateTutStep() {
+  for (let i = 0; i < 3; i++) {
+    document.getElementById(`tut-${i}`).classList.toggle('act', i === _tutStep);
+    document.getElementById(`td${i}`).classList.toggle('act', i === _tutStep);
+  }
+  document.getElementById('tut-btn').textContent = _tutStep < 2 ? '下一頁 →' : '✨ 開始吧！';
+}
+
+function closeTutorial() {
+  document.getElementById('tutorial').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════
 //  FESTIVAL & MODAL
 // ══════════════════════════════════════════════
 
@@ -1072,6 +1442,10 @@ function showFest(ic, title, text) {
 
 function closeFest() {
   document.getElementById('festival').classList.remove('open');
+  if (G._tutorialAfterFest) {
+    G._tutorialAfterFest = false;
+    setTimeout(showTutorial, 400);
+  }
 }
 
 function closeModal() {
