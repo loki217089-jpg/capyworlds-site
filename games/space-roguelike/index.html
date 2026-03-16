@@ -119,6 +119,15 @@ canvas { display: block; }
     <button id="shop-close">離開 (E)</button>
   </div>
 </div>
+<button id="earth-btn" style="
+  display:none; position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
+  background:rgba(10,40,15,0.9); border:2px solid #44cc66; color:#88ffaa;
+  padding:12px 36px; border-radius:8px; cursor:pointer; font-size:15px;
+  font-family:'Courier New'; letter-spacing:2px; pointer-events:all; z-index:50;
+  box-shadow:0 0 30px rgba(50,200,80,0.35);
+" onclick="localStorage.setItem('earthData',JSON.stringify({ore:player.ore,crystal:player.crystal,alienTech:player.alienTech,warpCores:player.warpCores,difficulty:difficulty,playTime:Math.floor(playTime)}));window.location.href='../earth-civilization/index.html'">
+  🌍 前往地球 — 重建文明
+</button>
 <script>
 'use strict';
 
@@ -525,7 +534,10 @@ window.addEventListener('keydown', e => {
   }
   if (e.code==='Enter') {
     if (state==='title') startGame();
-    else if (state==='gameover'||state==='victory') startGame();
+    else if (state==='gameover'||state==='victory') {
+      document.getElementById('earth-btn').style.display='none';
+      startGame();
+    }
   }
   // Difficulty selection on title
   if (state==='title') {
@@ -1264,6 +1276,13 @@ function updatePortal(dt) {
   chunk.portal.active=true;
   if (dist2(player.x,player.y,ESCAPE_PORTAL_POS.x,ESCAPE_PORTAL_POS.y)<70**2) {
     state='victory';
+    // Save run data for Earth game
+    localStorage.setItem('earthData', JSON.stringify({
+      ore: player.ore, crystal: player.crystal,
+      alienTech: player.alienTech, warpCores: player.warpCores,
+      difficulty: difficulty, playTime: Math.floor(playTime)
+    }));
+    document.getElementById('earth-btn').style.display='block';
     setTimeout(()=>openMetaShop('victory'), 2000);
   }
 }
