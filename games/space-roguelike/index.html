@@ -32,11 +32,83 @@ canvas { display: block; }
 #shop-close { display: block; margin: 16px auto 0; background: #aa2222; border: none;
   color: #fff; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; }
 #shop-close:hover { background: #cc3333; }
+
+/* META SHOP */
+#meta-overlay {
+  display: none; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  background: rgba(3,6,18,0.97); border: 1px solid #664400;
+  border-radius: 14px; padding: 0; width: min(680px,96vw);
+  max-height: 88vh; overflow-y: auto; z-index: 200;
+  pointer-events: all;
+  box-shadow: 0 0 60px rgba(200,130,0,0.35), 0 0 120px rgba(200,130,0,0.1);
+}
+#meta-header {
+  background: linear-gradient(180deg,rgba(80,40,0,0.6),transparent);
+  padding: 20px 24px 12px; border-bottom: 1px solid #442200;
+}
+#meta-title { font-size: 22px; font-weight: bold; color: #ffcc44; letter-spacing: 3px; }
+#meta-sub   { font-size: 12px; color: #886644; margin-top: 4px; }
+#meta-credits-display {
+  margin-top: 10px; font-size: 20px; color: #ffdd66; font-weight: bold;
+}
+#meta-earned {
+  padding: 12px 24px; background: rgba(40,20,0,0.5);
+  border-bottom: 1px solid #331100; font-size: 12px; color: #aa8855;
+  display: flex; gap: 20px; flex-wrap: wrap;
+}
+#meta-earned span { color: #ffcc44; }
+#meta-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; padding: 16px 24px;
+}
+.meta-item {
+  background: rgba(255,200,50,0.05); border: 1px solid rgba(255,180,0,0.2);
+  border-radius: 8px; padding: 12px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.meta-item:hover:not(.maxed):not(.cant-afford) {
+  background: rgba(255,200,50,0.12); border-color: rgba(255,180,0,0.5);
+}
+.meta-item.maxed { opacity: 0.45; cursor: default; border-color: #332200; }
+.meta-item.cant-afford { opacity: 0.55; cursor: not-allowed; }
+.meta-item-name { font-size: 14px; font-weight: bold; color: #ffcc44; }
+.meta-item-desc { font-size: 11px; color: #997755; line-height: 1.4; }
+.meta-item-level {
+  display: flex; gap: 4px; margin-top: 4px; align-items: center;
+}
+.meta-level-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid #554400;
+}
+.meta-level-dot.filled { background: #ffcc44; border-color: #ffdd88; }
+.meta-item-cost { font-size: 12px; color: #ff9922; margin-top: 4px; font-weight: bold; }
+.meta-item-cost.free { color: #44ff88; }
+#meta-close {
+  display: block; width: calc(100% - 48px); margin: 0 24px 20px;
+  padding: 12px; background: linear-gradient(90deg,#553300,#442200);
+  border: 1px solid #ffcc44; color: #ffcc44; border-radius: 8px;
+  cursor: pointer; font-size: 15px; font-weight: bold; letter-spacing: 2px;
+}
+#meta-close:hover { background: linear-gradient(90deg,#774400,#663300); }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="ui">
+  <!-- META SHOP (between runs) -->
+  <div id="meta-overlay">
+    <div id="meta-header">
+      <div id="meta-title">⭐ 星際指揮部</div>
+      <div id="meta-sub">用星際幣購買永久強化，下一局立即生效</div>
+      <div id="meta-credits-display"></div>
+    </div>
+    <div id="meta-earned"></div>
+    <div id="meta-grid"></div>
+    <button id="meta-close">▶ 開始新的一局</button>
+  </div>
+
   <div id="shop-overlay">
     <h2>太空站補給</h2>
     <div class="resources" id="shop-resources"></div>
@@ -77,8 +149,11 @@ const BH_RADIUS = 200;
 const BH_DMG = 50;
 
 const WARP_CORE_POSITIONS = [
-  {x:7500,y:2500},{x:-6500,y:5500},{x:3500,y:-8500},
-  {x:-5500,y:-4500},{x:9000,y:-5500}
+  {x:2200, y:1000},    // 近 — 適合前幾局達成
+  {x:4800, y:-2400},   // 中距離
+  {x:-4200,y:3800},    // 中距離（另一方向）
+  {x:-5500,y:-4500},   // 遠
+  {x:8500, y:-3800},   // 最遠
 ];
 const ESCAPE_PORTAL_POS = {x:12000,y:0};
 
@@ -89,6 +164,8 @@ let playTime = 0;
 let statusMsg = '';
 let statusTimer = 0;
 let shopStation = null;
+// Milestone flags (reset each run)
+let milestones = { firstKill:false, firstMine:false, firstStation:false };
 
 // ─── RNG ──────────────────────────────────────────────────────────────────────
 function mulberry32(seed) {
@@ -102,6 +179,129 @@ function mulberry32(seed) {
 function chunkSeed(cx, cy) {
   return (cx * 73856093) ^ (cy * 19349663) ^ 0xDEADBEEF;
 }
+
+// ─── META PROGRESSION (cross-run, localStorage) ──────────────────────────────
+const META_KEY = 'voidNavigator_meta';
+const META_DEFAULTS = {
+  credits: 0,
+  startSpeed: 0, startShield: 0, startHull: 0,
+  oreBonus: 0, fuelBonus: 0, fireBonus: 0,
+  coreDetector: 0, startKit: 0,
+  totalRuns: 0, bestCores: 0, bestTime: 0,
+};
+const META_UPGRADES = [
+  {id:'startSpeed',  name:'推進核心',   desc:'每局起始推力 +15%',  max:3, costs:[30,60,100]},
+  {id:'startShield', name:'護盾強化',   desc:'每局最大護盾 +25',   max:3, costs:[25,50,85]},
+  {id:'startHull',   name:'船殼強化',   desc:'每局最大船殼 +25',   max:3, costs:[25,50,85]},
+  {id:'oreBonus',    name:'採礦晶片',   desc:'每局礦石收益 +20%',  max:3, costs:[20,40,70]},
+  {id:'fuelBonus',   name:'燃料槽擴充', desc:'每局加速器燃料 +30%',max:3, costs:[20,45,75]},
+  {id:'fireBonus',   name:'武器校準',   desc:'每局射速 +15%',      max:3, costs:[30,55,90]},
+  {id:'coreDetector',name:'核心偵測器', desc:'HUD 顯示最近核心方向',max:1, costs:[80]},
+  {id:'startKit',    name:'應急補給包', desc:'開局攜帶護盾×1+修復包×1',max:1, costs:[50]},
+];
+let meta = {...META_DEFAULTS};
+
+function loadMeta() {
+  try { const s=localStorage.getItem(META_KEY); if(s) meta={...META_DEFAULTS,...JSON.parse(s)}; }
+  catch(e){}
+}
+function saveMeta() {
+  try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch(e){}
+}
+function metaLevel(id) { return meta[id]||0; }
+function metaNextCost(id) {
+  const u=META_UPGRADES.find(u=>u.id===id);
+  const lv=metaLevel(id);
+  return (lv<u.max) ? u.costs[lv] : null;
+}
+
+function calcRunRewards() {
+  const oreC   = Math.floor(player.ore * 0.5);
+  const crystC = Math.floor(player.crystal * 2);
+  const coreC  = player.warpCores * 50;
+  const timeC  = Math.floor(playTime / 12);
+  const total  = oreC + crystC + coreC + timeC;
+  return {oreC, crystC, coreC, timeC, total};
+}
+
+function openMetaShop(mode) {
+  const rewards = calcRunRewards();
+  meta.credits  = (meta.credits||0) + rewards.total;
+  meta.totalRuns = (meta.totalRuns||0) + 1;
+  if (player.warpCores > (meta.bestCores||0)) meta.bestCores = player.warpCores;
+  if (mode==='victory' || playTime > (meta.bestTime||0)) meta.bestTime = Math.floor(playTime);
+  saveMeta();
+
+  // Credits display
+  document.getElementById('meta-credits-display').textContent =
+    `★ 星際幣：${meta.credits}`;
+  // Breakdown
+  const earnDiv = document.getElementById('meta-earned');
+  earnDiv.innerHTML =
+    `本局獲得：<span>+${rewards.total} ★</span> &nbsp;|&nbsp; ` +
+    `礦石換算 <span>+${rewards.oreC}</span> &nbsp;` +
+    `晶體換算 <span>+${rewards.crystC}</span> &nbsp;` +
+    `翹曲核心 <span>+${rewards.coreC}</span> &nbsp;` +
+    `存活時間 <span>+${rewards.timeC}</span>`;
+  renderMetaShop();
+  document.getElementById('meta-overlay').style.display = 'block';
+}
+
+function renderMetaShop() {
+  document.getElementById('meta-credits-display').textContent = `★ 星際幣：${meta.credits}`;
+  const grid = document.getElementById('meta-grid');
+  grid.innerHTML = '';
+  for (const u of META_UPGRADES) {
+    const lv  = metaLevel(u.id);
+    const cost = metaNextCost(u.id);
+    const maxed = lv >= u.max;
+    const canAfford = !maxed && meta.credits >= cost;
+    const div = document.createElement('div');
+    div.className = 'meta-item' + (maxed?' maxed':(!canAfford?' cant-afford':''));
+    // Level dots
+    const dots = Array.from({length:u.max},(_,i)=>
+      `<div class="meta-level-dot${i<lv?' filled':''}"></div>`).join('');
+    div.innerHTML = `
+      <div class="meta-item-name">${u.name}</div>
+      <div class="meta-item-desc">${u.desc}</div>
+      <div class="meta-item-level">${dots}
+        <span style="font-size:10px;color:#665533;margin-left:4px">${lv}/${u.max}</span>
+      </div>
+      <div class="meta-item-cost${maxed?' free':''}">${maxed?'✓ 已解鎖最高級':'★ '+cost}</div>`;
+    if (!maxed && canAfford) {
+      div.onclick = () => {
+        meta.credits -= cost;
+        meta[u.id] = lv + 1;
+        saveMeta();
+        renderMetaShop();
+      };
+    }
+    grid.appendChild(div);
+  }
+}
+
+function closeMetaShop() {
+  document.getElementById('meta-overlay').style.display = 'none';
+  startGame();
+}
+document.getElementById('meta-close').addEventListener('click', closeMetaShop);
+
+// Apply meta bonuses to a freshly created player
+function applyMeta(p) {
+  p.thrustForce  *= (1 + metaLevel('startSpeed')*0.15);
+  p.maxShield    += metaLevel('startShield') * 25;
+  p.shield        = p.maxShield;
+  p.maxHull      += metaLevel('startHull') * 25;
+  p.hull          = p.maxHull;
+  p.maxBoostFuel *= (1 + metaLevel('fuelBonus') * 0.30);
+  p.boostFuel     = p.maxBoostFuel;
+  if (metaLevel('startKit')) {
+    // Start kit handled in startGame via item drops near spawn
+    p._startKit = true;
+  }
+}
+
+loadMeta();
 
 // ─── STARFIELD ────────────────────────────────────────────────────────────────
 const stars = [];
@@ -337,7 +537,13 @@ function tryOpenShop() {
       if (d<80&&d<nd) { nd=d; nearest=chunk.station; }
     }
   }
-  if (nearest) { shopStation=nearest; openShop(); state='shop'; }
+  if (nearest) {
+    shopStation=nearest; openShop(); state='shop';
+    if (!milestones.firstStation) {
+      milestones.firstStation = true;
+      setStatus('太空站！用礦石升級引擎和武器，強化後去找翹曲核心');
+    }
+  }
 }
 
 function openShop() {
@@ -430,12 +636,29 @@ function spendResources(cost) {
 // ─── GAME INIT ────────────────────────────────────────────────────────────────
 function startGame() {
   player = createPlayer();
+  applyMeta(player);
   bullets = []; enemyBullets = []; particles = []; engineTrail = [];
   chunks.clear();
   gameTime = 0; playTime = 0;
   statusMsg = ''; statusTimer = 0;
+  milestones = { firstKill:false, firstMine:false, firstStation:false };
   state = 'playing';
-  setStatus('射擊隕石蒐集礦石 → 往右找太空站升級 → 蒐集5個翹曲核心！');
+  // Pre-generate boot chunks
+  for(let dx=-1;dx<=2;dx++) for(let dy=-1;dy<=1;dy++) generateChunk(dx,dy);
+  generateChunk(2,0);
+  // Start kit
+  if (player._startKit) {
+    const c0 = chunks.get(chunkKey(0,0));
+    if (c0) {
+      c0.items.push({x:750,y:100,type:'energy',r:12,bobOffset:0,alive:true});
+      c0.items.push({x:750,y:-100,type:'hull',r:12,bobOffset:1,alive:true});
+    }
+  }
+  // Hint based on meta progress
+  const run = meta.totalRuns||0;
+  if (run===0) setStatus('射擊隕石採礦 → 往右找太空站升級 → 蒐集5個翹曲核心！');
+  else if (run<3) setStatus(`第${run+1}局！最近的核心在右上方 2200 單位處`);
+  else setStatus(`加油！目前最佳：${meta.bestCores||0}/5 核心`);
 }
 
 function setStatus(msg) { statusMsg=msg; statusTimer=3; }
@@ -478,7 +701,8 @@ function getPlayerDmg() {
 function getPlayerFireRate() {
   let fr = FIRE_RATE;
   if (player.combatExpert) fr*=0.7;
-  return fr;
+  fr *= (1 - metaLevel('fireBonus')*0.15);
+  return Math.max(fr, 0.08);
 }
 
 function updatePlayer(dt) {
@@ -590,6 +814,7 @@ function damagePlayer(dmg) {
     explosion(player.x,player.y,30,'#ff4400');
     explosion(player.x,player.y,20,'#ffaa00');
     state='gameover';
+    setTimeout(()=>openMetaShop('death'),1200);
   }
 }
 
@@ -660,6 +885,10 @@ function dropLoot(x,y,chunk) {
   else if (roll<0.9) type='crystal';
   else type='alientech';
   chunk.items.push({x,y,type,r:12,bobOffset:Math.random()*Math.PI*2,alive:true});
+  if (!milestones.firstKill) {
+    milestones.firstKill = true;
+    setStatus('首次擊殺！繼續消滅敵人獲取補給');
+  }
 }
 
 function updateEnemyBullets(dt) {
@@ -760,9 +989,15 @@ function collectItem(item) {
       setStatus('船殼修復 +30');
       break;
     case 'ore':
-      const oreAmt=Math.floor((2+Math.random()*3)*lootMult);
+      const metaOreMult = 1 + metaLevel('oreBonus')*0.20;
+      const oreAmt=Math.floor((2+Math.random()*3)*lootMult*metaOreMult);
       player.ore+=oreAmt;
-      setStatus(`礦石 +${oreAmt}`);
+      if (!milestones.firstMine) {
+        milestones.firstMine = true;
+        setStatus(`首次採礦！礦石 +${oreAmt} — 找到太空站可升級太空艇`);
+      } else {
+        setStatus(`礦石 +${oreAmt}`);
+      }
       break;
     case 'crystal':
       const cryAmt=Math.floor((1+Math.random()*2)*lootMult);
@@ -795,6 +1030,7 @@ function updatePortal(dt) {
   chunk.portal.active=true;
   if (dist2(player.x,player.y,ESCAPE_PORTAL_POS.x,ESCAPE_PORTAL_POS.y)<70**2) {
     state='victory';
+    setTimeout(()=>openMetaShop('victory'), 2000);
   }
 }
 
@@ -1318,6 +1554,32 @@ function drawHUD(t) {
     ctx.fillStyle='rgba(255,220,0,0.5)';
     ctx.font='10px Courier New'; ctx.textAlign='center';
     ctx.fillText('翹曲核心分佈在銀河各處 — 向遠方探索！',W/2,H-70);
+  }
+
+  // Core detector HUD arrow (meta perk)
+  if (metaLevel('coreDetector') > 0) {
+    // Find nearest uncollected warp core
+    let nearestCore = null, nearestDist = Infinity;
+    for (const wcp of WARP_CORE_POSITIONS) {
+      const id=`${wcp.x},${wcp.y}`;
+      if (player.warpCoreSet.has(id)) continue;
+      const d2 = (wcp.x-player.x)**2+(wcp.y-player.y)**2;
+      if (d2 < nearestDist) { nearestDist=d2; nearestCore=wcp; }
+    }
+    if (nearestCore) {
+      const ang = Math.atan2(nearestCore.y-player.y, nearestCore.x-player.x);
+      const cx3=W/2, cy3=H/2, arrowR=Math.min(W,H)*0.38;
+      const ax=cx3+Math.cos(ang)*arrowR, ay=cy3+Math.sin(ang)*arrowR;
+      ctx.save(); ctx.translate(ax,ay); ctx.rotate(ang);
+      const pulse=0.6+0.4*Math.sin(t*0.003);
+      ctx.globalAlpha=pulse;
+      ctx.fillStyle='#ffdd00';
+      ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(-8,8); ctx.lineTo(-8,-8); ctx.closePath();
+      ctx.fill();
+      ctx.font='10px Courier New'; ctx.textAlign='center'; ctx.fillStyle='#ffdd00';
+      ctx.fillText(`${Math.floor(Math.sqrt(nearestDist))}u`,0,20);
+      ctx.restore(); ctx.globalAlpha=1;
+    }
   }
 }
 
