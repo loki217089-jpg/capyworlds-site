@@ -148,6 +148,16 @@ const SHIELD_REGEN_DELAY = 3;
 const BH_RADIUS = 200;
 const BH_DMG = 50;
 
+// ─── DIFFICULTY CONFIGS ───────────────────────────────────────────────────────
+const DIFFICULTIES = [
+  {name:'星際見習', sub:'Scout',     hpMult:0.60, dmgMult:0.60, countMult:0.7,  bhMult:0.6,  creditMult:0.8,  desc:'敵人較弱，適合初次探索',         color:'#44ffaa'},
+  {name:'一般任務', sub:'Normal',    hpMult:1.00, dmgMult:1.00, countMult:1.0,  bhMult:1.0,  creditMult:1.0,  desc:'標準挑戰難度',                   color:'#88ccff'},
+  {name:'精英部隊', sub:'Veteran',   hpMult:1.35, dmgMult:1.30, countMult:1.3,  bhMult:1.3,  creditMult:1.3,  desc:'精銳敵人，黑洞引力增強',         color:'#ffcc44'},
+  {name:'黑洞前線', sub:'Hard',      hpMult:1.75, dmgMult:1.65, countMult:1.6,  bhMult:1.7,  creditMult:1.65, desc:'強敵蜂擁，黑洞更危險',           color:'#ff8844'},
+  {name:'虛空惡夢', sub:'Nightmare', hpMult:2.30, dmgMult:2.10, countMult:2.0,  bhMult:2.5,  creditMult:2.2,  desc:'極限挑戰，幾乎無法生存',         color:'#ff4466'},
+];
+let difficulty = 1; // 0=Scout … 4=Nightmare
+
 const WARP_CORE_POSITIONS = [
   {x:2200, y:1000},    // 近 — 適合前幾局達成
   {x:4800, y:-2400},   // 中距離
@@ -220,8 +230,9 @@ function calcRunRewards() {
   const crystC = Math.floor(player.crystal * 2);
   const coreC  = player.warpCores * 50;
   const timeC  = Math.floor(playTime / 12);
-  const total  = oreC + crystC + coreC + timeC;
-  return {oreC, crystC, coreC, timeC, total};
+  const diffMult = DIFFICULTIES[difficulty].creditMult;
+  const total  = Math.floor((oreC + crystC + coreC + timeC) * diffMult);
+  return {oreC, crystC, coreC, timeC, total, diffMult};
 }
 
 function openMetaShop(mode) {
@@ -242,7 +253,8 @@ function openMetaShop(mode) {
     `礦石換算 <span>+${rewards.oreC}</span> &nbsp;` +
     `晶體換算 <span>+${rewards.crystC}</span> &nbsp;` +
     `翹曲核心 <span>+${rewards.coreC}</span> &nbsp;` +
-    `存活時間 <span>+${rewards.timeC}</span>`;
+    `存活時間 <span>+${rewards.timeC}</span> &nbsp;` +
+    `難度加成 <span>×${rewards.diffMult.toFixed(1)} (${DIFFICULTIES[difficulty].name})</span>`;
   renderMetaShop();
   document.getElementById('meta-overlay').style.display = 'block';
 }
@@ -348,6 +360,8 @@ function createPlayer() {
     boostFuel: 100, maxBoostFuel: 100,
     boosting: false,
     escaped: false,
+    boostRegenLevel: 1,  // 1-3: regen speed upgrade
+    boostUseLevel: 1,    // 1-3: fuel consumption reduction
     returnCharges: 0,
     warpFlash: 0   // countdown timer for warp flash effect
   };
@@ -391,8 +405,10 @@ function generateChunk(cx, cy) {
 
   const enemies = [];
   const baseDist = Math.sqrt(cx*cx+cy*cy);
-  // Guarantee 1-3 enemies in all but the very starting chunk
-  const numEnemies = baseDist < 0.1 ? 3 : Math.min(9, 2 + Math.floor(rng()*(3+tier*2)));
+  const dConf = DIFFICULTIES[difficulty];
+  // Increased base enemy count + difficulty scaling
+  const baseCount = baseDist < 0.1 ? 3 : Math.min(14, 3 + Math.floor(rng()*(5+tier*2)));
+  const numEnemies = Math.max(1, Math.round(baseCount * dConf.countMult));
   const types = ['drone','pirate','alien','gunship'];
   for (let i = 0; i < numEnemies; i++) {
     const ex = ox + rng()*CHUNK;
@@ -400,12 +416,13 @@ function generateChunk(cx, cy) {
     // typeIdx progresses with tier: drone only at 0, all 4 by tier 3
     const typeIdx = Math.floor(rng()*Math.min(4, 1+tier));
     const t = types[typeIdx];
-    const scale = 1 + tier*0.15;
+    const hpScale  = (1 + tier*0.15) * dConf.hpMult;
+    const dmgScale = (1 + tier*0.13) * dConf.dmgMult;
     let hp, speed, dmg, fr, r, color;
-    if (t==='drone')   {hp=30*scale; speed=100; dmg=10*scale; fr=0;   r=14; color='#88aacc';}
-    if (t==='pirate')  {hp=55*scale; speed=135; dmg=12*scale; fr=1.8; r=15; color='#ff8833';}
-    if (t==='alien')   {hp=80*scale; speed=155; dmg=20*scale; fr=1.4; r=17; color='#aa44ff';}
-    if (t==='gunship') {hp=110*scale;speed=115; dmg=15*scale; fr=1.0; r=19; color='#ff3355';}
+    if (t==='drone')   {hp=30*hpScale; speed=100; dmg=10*dmgScale; fr=0;   r=14; color='#88aacc';}
+    if (t==='pirate')  {hp=55*hpScale; speed=135; dmg=12*dmgScale; fr=1.8; r=15; color='#ff8833';}
+    if (t==='alien')   {hp=80*hpScale; speed=155; dmg=20*dmgScale; fr=1.4; r=17; color='#aa44ff';}
+    if (t==='gunship') {hp=110*hpScale;speed=115; dmg=15*dmgScale; fr=1.0; r=19; color='#ff3355';}
     enemies.push({x:ex,y:ey,vx:0,vy:0,type:t,hp:Math.ceil(hp),maxHp:Math.ceil(hp),
       speed,dmg:Math.ceil(dmg),fireRate:fr,fireTimer:rng()*fr,r,color,
       state:'patrol',patrolAngle:rng()*Math.PI*2,patrolTimer:0,
@@ -416,8 +433,8 @@ function generateChunk(cx, cy) {
   }
 
   const items = [];
-  const numItems = Math.floor(rng()*4)+1;
-  const itemTypes = ['energy','hull','ore','crystal','alientech'];
+  const numItems = Math.floor(rng()*5)+2;
+  const itemTypes = ['energy','hull','ore','crystal','alientech','fuel','fuel'];
   for (let i = 0; i < numItems; i++) {
     const ix = ox + rng()*CHUNK;
     const iy = oy + rng()*CHUNK;
@@ -470,6 +487,8 @@ function getChunksAround(wx, wy, radius) {
 let bullets = [];
 let enemyBullets = [];
 let particles = [];
+let dynamicEnemies = []; // hunter wave enemies (not bound to chunks)
+let hunterTimer = 0;
 
 function spawnBullet(x,y,angle,speed,dmg,owner='player',homing=false) {
   const b = {x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
@@ -507,6 +526,16 @@ window.addEventListener('keydown', e => {
   if (e.code==='Enter') {
     if (state==='title') startGame();
     else if (state==='gameover'||state==='victory') startGame();
+  }
+  // Difficulty selection on title
+  if (state==='title') {
+    if (e.code==='ArrowLeft')  difficulty = Math.max(0, difficulty-1);
+    if (e.code==='ArrowRight') difficulty = Math.min(4, difficulty+1);
+    if (e.code==='Digit1') difficulty=0;
+    if (e.code==='Digit2') difficulty=1;
+    if (e.code==='Digit3') difficulty=2;
+    if (e.code==='Digit4') difficulty=3;
+    if (e.code==='Digit5') difficulty=4;
   }
   if (e.code==='KeyE') {
     if (state==='playing') tryOpenShop();
@@ -600,6 +629,14 @@ function renderShop() {
       buy:()=>{player.weaponLevel=2;}},
     {name:'武器系統 Mk3 (傷害+75%)',cost:{ore:22,crystal:5},req:()=>player.weaponLevel<3,
       buy:()=>{player.weaponLevel=3;}},
+    {name:'加速器回復 Mk2 (回復+65%)',cost:{ore:8,crystal:3},req:()=>player.boostRegenLevel<2,
+      buy:()=>{player.boostRegenLevel=2;}},
+    {name:'加速器回復 Mk3 (回復+155%)',cost:{ore:16,crystal:8},req:()=>player.boostRegenLevel<3,
+      buy:()=>{player.boostRegenLevel=3;}},
+    {name:'衝刺節能 Mk2 (消耗-26%)',cost:{ore:7},req:()=>player.boostUseLevel<2,
+      buy:()=>{player.boostUseLevel=2;}},
+    {name:'衝刺節能 Mk3 (消耗-48%)',cost:{ore:15,crystal:5},req:()=>player.boostUseLevel<3,
+      buy:()=>{player.boostUseLevel=3;}},
     {name:'緊急維修 (船殼恢復)',cost:{ore:15},req:()=>player.hull<player.maxHull,
       buy:()=>{player.hull=player.maxHull;}},
     {name:'護盾充能 (護盾恢復)',cost:{ore:8},req:()=>player.shield<player.maxShield,
@@ -664,6 +701,7 @@ function startGame() {
   player = createPlayer();
   applyMeta(player);
   bullets = []; enemyBullets = []; particles = []; engineTrail = [];
+  dynamicEnemies = []; hunterTimer = 0;
   chunks.clear();
   gameTime = 0; playTime = 0;
   statusMsg = ''; statusTimer = 0;
@@ -738,14 +776,20 @@ function updatePlayer(dt) {
   const left = keys['KeyA']||keys['ArrowLeft'];
   const right = keys['KeyD']||keys['ArrowRight'];
 
+  // Level-based boost fuel rates
+  const FUEL_REGEN_RATES = [18, 30, 46];
+  const FUEL_USE_RATES   = [35, 26, 18];
+  const curFuelRegen = FUEL_REGEN_RATES[player.boostRegenLevel-1];
+  const curFuelUse   = FUEL_USE_RATES[player.boostUseLevel-1];
+
   // Boost (Shift key)
   const wantBoost = (keys['ShiftLeft']||keys['ShiftRight']) && (up||down||left||right);
   if (wantBoost && player.boostFuel > 0) {
     player.boosting = true;
-    player.boostFuel = Math.max(0, player.boostFuel - BOOST_FUEL_USE*dt);
+    player.boostFuel = Math.max(0, player.boostFuel - curFuelUse*dt);
   } else {
     player.boosting = false;
-    player.boostFuel = Math.min(player.maxBoostFuel, player.boostFuel + BOOST_FUEL_REGEN*dt);
+    player.boostFuel = Math.min(player.maxBoostFuel, player.boostFuel + curFuelRegen*dt);
   }
   const thrustMult = player.boosting ? BOOST_FORCE_MULT : 1;
 
@@ -881,7 +925,7 @@ function updateBullets(dt) {
       if (hitAst) break;
     }
     if (hitAst) continue;
-    // Hit enemies
+    // Hit enemies (chunks)
     let hitEnemy=false;
     for (const [,chunk] of chunks) {
       for (const en of chunk.enemies) {
@@ -893,13 +937,31 @@ function updateBullets(dt) {
             en.alive=false;
             explosion(en.x,en.y,20,en.color);
             explosion(en.x,en.y,10,'#ffffff');
-            // Drop loot
             dropLoot(en.x,en.y,chunk);
           }
           bullets.splice(i,1); hitEnemy=true; break;
         }
       }
       if (hitEnemy) break;
+    }
+    if (hitEnemy) continue;
+    // Hit dynamic (hunter) enemies
+    for (const en of dynamicEnemies) {
+      if (!en.alive) continue;
+      if (dist2(b.x,b.y,en.x,en.y)<(b.r+en.r)**2) {
+        en.hp-=b.dmg;
+        explosion(b.x,b.y,6,en.color);
+        if (en.hp<=0) {
+          en.alive=false;
+          explosion(en.x,en.y,20,en.color);
+          explosion(en.x,en.y,10,'#ffffff');
+          // Drop loot at nearest chunk
+          const ncx=Math.floor(en.x/CHUNK), ncy=Math.floor(en.y/CHUNK);
+          const nc=chunks.get(chunkKey(ncx,ncy));
+          if(nc) dropLoot(en.x,en.y,nc);
+        }
+        bullets.splice(i,1); hitEnemy=true; break;
+      }
     }
   }
 }
@@ -939,6 +1001,33 @@ function updateEnemyBullets(dt) {
       explosion(b.x,b.y,8,'#ff3300');
       enemyBullets.splice(i,1);
     }
+  }
+}
+
+function spawnHunterWave() {
+  const dc = DIFFICULTIES[difficulty];
+  const waveSize = 4 + Math.floor(Math.random()*4) + Math.round(dc.countMult);
+  const types = ['pirate','alien','gunship','drone'];
+  for (let i=0; i<waveSize; i++) {
+    const ang = Math.random()*Math.PI*2;
+    const d   = 750 + Math.random()*350;
+    const ex  = player.x + Math.cos(ang)*d;
+    const ey  = player.y + Math.sin(ang)*d;
+    const t   = types[Math.floor(Math.random()*types.length)];
+    const hs  = 1.6 + Math.random()*0.5;
+    const hpS = hs * dc.hpMult, dmgS = hs * dc.dmgMult;
+    let hp, speed, dmg, fr, r, color;
+    if (t==='drone')   {hp=30*hpS; speed=145; dmg=10*dmgS; fr=0;   r=14; color='#88aacc';}
+    if (t==='pirate')  {hp=55*hpS; speed=170; dmg=12*dmgS; fr=1.4; r=15; color='#ff8833';}
+    if (t==='alien')   {hp=80*hpS; speed=185; dmg=20*dmgS; fr=1.1; r=17; color='#aa44ff';}
+    if (t==='gunship') {hp=110*hpS;speed=145; dmg=15*dmgS; fr=0.8; r=19; color='#ff3355';}
+    dynamicEnemies.push({x:ex,y:ey,vx:0,vy:0,type:t,
+      hp:Math.ceil(hp),maxHp:Math.ceil(hp),
+      speed,dmg:Math.ceil(dmg),fireRate:fr,fireTimer:Math.random()*fr,r,color,
+      state:'chase',patrolAngle:0,patrolTimer:0,
+      angle:Math.atan2(player.y-ey,player.x-ex),alive:true,
+      shotCount:0,charging:false,chargeCD:0,chargeDur:0,
+      circleAngle:Math.random()*Math.PI*2,burstLeft:0,isHunter:true});
   }
 }
 
@@ -1037,6 +1126,71 @@ function updateEnemies(dt) {
       }
     }
   }
+
+  // ── Hunter wave: spawn relentless hunters after all 5 cores collected ──
+  if (player.warpCores >= 5 && state === 'playing') {
+    hunterTimer -= dt;
+    if (hunterTimer <= 0) {
+      spawnHunterWave();
+      const interval = Math.max(5, 12 - difficulty*1.5);
+      hunterTimer = interval + Math.random()*4;
+      setStatus('⚠ 敵方艦隊鎖定位置！');
+    }
+  }
+
+  // ── Update dynamic (hunter) enemies ──
+  for (let hi = dynamicEnemies.length-1; hi>=0; hi--) {
+    const en = dynamicEnemies[hi];
+    if (!en.alive) { dynamicEnemies.splice(hi,1); continue; }
+    const dx=player.x-en.x, dy=player.y-en.y;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    // Hunters always chase
+    if (d>5) {
+      const nx=dx/d, ny=dy/d;
+      if (en.type==='gunship') {
+        en.circleAngle += dt*1.1;
+        const orbitDist=170;
+        const tx=player.x+Math.cos(en.circleAngle)*orbitDist;
+        const ty=player.y+Math.sin(en.circleAngle)*orbitDist;
+        const cdx=tx-en.x, cdy=ty-en.y, cd=Math.sqrt(cdx*cdx+cdy*cdy)+0.01;
+        en.vx+=(cdx/cd)*en.speed*dt; en.vy+=(cdy/cd)*en.speed*dt;
+        en.angle=Math.atan2(dy,dx);
+      } else {
+        if (en.type==='drone') {
+          if(en.charging){en.chargeDur-=dt;if(en.chargeDur<=0){en.charging=false;en.chargeCD=3+Math.random()*2;}}
+          else{en.chargeCD-=dt;}
+          if(!en.charging&&en.chargeCD<=0&&d<220){en.charging=true;en.chargeDur=0.55;en.chargeCD=0;}
+        }
+        const effSpeed=(en.type==='drone'&&en.charging)?en.speed*3.2:en.speed;
+        en.vx+=nx*effSpeed*dt; en.vy+=ny*effSpeed*dt;
+        en.angle=Math.atan2(dy,dx);
+      }
+    }
+    en.vx*=0.85; en.vy*=0.85;
+    const spd=Math.sqrt(en.vx**2+en.vy**2);
+    const maxESpd=(en.type==='drone'&&en.charging)?en.speed*3.2:en.speed*1.05;
+    if(spd>maxESpd){en.vx*=maxESpd/spd;en.vy*=maxESpd/spd;}
+    en.x+=en.vx*dt; en.y+=en.vy*dt;
+    // Melee
+    if(en.type==='drone'&&d<en.r+22&&player.invulTimer<=0)
+      damagePlayer(en.dmg*(en.charging?2:1)*dt);
+    // Ranged
+    if((en.type==='pirate'||en.type==='alien'||en.type==='gunship')&&d<280){
+      en.fireTimer-=dt;
+      if(en.fireTimer<=0){
+        en.fireTimer=en.fireRate;
+        const ang=Math.atan2(dy,dx);
+        if(en.type==='pirate'){
+          en.shotCount++;
+          if(en.shotCount%3===0){for(let si=-1;si<=1;si++)spawnBullet(en.x,en.y,ang+si*0.38,470,en.dmg*0.75,'enemy');}
+          else spawnBullet(en.x,en.y,ang,500,en.dmg,'enemy');
+        }else if(en.type==='alien'){spawnBullet(en.x,en.y,ang,260,en.dmg*1.25,'enemy',true);}
+        else if(en.type==='gunship'){spawnBullet(en.x,en.y,ang-0.08,520,en.dmg,'enemy');spawnBullet(en.x,en.y,ang+0.08,520,en.dmg,'enemy');}
+      }
+    }
+    // Nudge
+    if(d<en.r+22){en.x=player.x-(dx/d)*(en.r+22);en.y=player.y-(dy/d)*(en.r+22);}
+  }
 }
 
 function updateItems(dt) {
@@ -1082,6 +1236,11 @@ function collectItem(item) {
       player.alienTech+=1;
       setStatus('異星科技 +1');
       break;
+    case 'fuel':
+      const fuelAmt = Math.floor((30 + Math.random()*25)*lootMult);
+      player.boostFuel = Math.min(player.maxBoostFuel, player.boostFuel + fuelAmt);
+      setStatus(`燃料電池 +${fuelAmt}`);
+      break;
     case 'warpcore':
       if (!player.warpCoreSet.has(item.id)) {
         player.warpCoreSet.add(item.id);
@@ -1110,14 +1269,15 @@ function updatePortal(dt) {
 }
 
 function updateBlackHole(dt) {
+  const bhMult = DIFFICULTIES[difficulty].bhMult;
   const d=dist(player.x,player.y,0,0);
   if (d<BH_RADIUS) {
-    damagePlayer(BH_DMG*dt);
+    damagePlayer(BH_DMG*bhMult*dt);
   }
-  // Gravity
-  const pullForce = 0.5*(gameTime/60);
+  // Gravity scales with difficulty
+  const pullForce = 0.5*bhMult*(gameTime/60);
   if (d>5) {
-    const acc=Math.min(60,pullForce/Math.pow(d,0.8));
+    const acc=Math.min(60*bhMult,pullForce/Math.pow(d,0.8));
     player.vx -= (player.x/d)*acc*dt;
     player.vy -= (player.y/d)*acc*dt;
   }
@@ -1382,6 +1542,27 @@ function drawItemIcon(type, r, t, seed) {
       const a=i/5*Math.PI*2+t*0.002;
       ctx.beginPath(); ctx.arc(Math.cos(a)*r*1.5,Math.sin(a)*r*1.5,2.5,0,Math.PI*2); ctx.fill();
     }
+
+  } else if (type === 'fuel') {
+    // Fuel canister — orange cylinder with spark
+    ctx.shadowColor='#ff8800'; ctx.shadowBlur=14;
+    const fw=r*0.75, fh=r*1.6;
+    ctx.fillStyle='#331500'; ctx.strokeStyle='#ff7700'; ctx.lineWidth=2;
+    ctx.fillRect(-fw,-fh*0.5,fw*2,fh);
+    ctx.strokeRect(-fw,-fh*0.5,fw*2,fh);
+    // Label band
+    ctx.fillStyle='#ff9900';
+    ctx.fillRect(-fw,-fh*0.12,fw*2,fh*0.24);
+    // Cap top
+    ctx.fillStyle='#ffcc44';
+    ctx.fillRect(-fw*0.4,-fh*0.5-r*0.18,fw*0.8,r*0.2);
+    // Flame spark
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(0,-fh*0.42); ctx.lineTo(r*0.15,-fh*0.18); ctx.lineTo(-r*0.1,-fh*0.22);
+    ctx.lineTo(0,-fh*0.05); ctx.lineTo(-r*0.15,-fh*0.22); ctx.lineTo(r*0.1,-fh*0.18);
+    ctx.closePath(); ctx.fill();
   }
 }
 
@@ -1466,80 +1647,67 @@ function drawPortal(t) {
   ctx.restore();
 }
 
+function drawOneEnemy(en, t) {
+  ctx.save();
+  ctx.translate(en.x,en.y);
+  ctx.rotate(en.angle);
+  const r=en.r;
+  // Hunter glow
+  if (en.isHunter) {
+    ctx.shadowColor='#ff2200'; ctx.shadowBlur=18;
+  }
+  if (en.type==='drone') {
+    ctx.beginPath();
+    for (let i=0;i<6;i++){const a=i/6*Math.PI*2;i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+    ctx.closePath();
+    ctx.fillStyle='#334455'; ctx.fill();
+    ctx.strokeStyle='#88aacc'; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.fillStyle='#88aacc'; ctx.fill();
+  } else if (en.type==='pirate') {
+    ctx.beginPath();
+    ctx.moveTo(r,0); ctx.lineTo(-r*0.7,r*0.6); ctx.lineTo(-r*0.4,0); ctx.lineTo(-r*0.7,-r*0.6);
+    ctx.closePath();
+    ctx.fillStyle='#553322'; ctx.fill(); ctx.strokeStyle='#ff8833'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#ff5500'; ctx.beginPath(); ctx.arc(-r*0.4,0,4,0,Math.PI*2); ctx.fill();
+  } else if (en.type==='alien') {
+    ctx.beginPath();
+    ctx.moveTo(r,0); ctx.lineTo(0,r*0.7); ctx.lineTo(-r,0); ctx.lineTo(0,-r*0.7);
+    ctx.closePath();
+    ctx.fillStyle='#220033'; ctx.fill(); ctx.strokeStyle='#aa44ff'; ctx.lineWidth=2; ctx.stroke();
+    ctx.strokeStyle='#cc66ff'; ctx.lineWidth=1;
+    for(let i=0;i<4;i++){const a=i/4*Math.PI*2+Math.PI/4;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*0.5,Math.sin(a)*r*0.5);ctx.lineTo(Math.cos(a)*r*1.4,Math.sin(a)*r*1.4);ctx.stroke();}
+  } else if (en.type==='gunship') {
+    ctx.beginPath();
+    ctx.moveTo(r*1.1,r*0.35); ctx.lineTo(r*1.1,-r*0.35);
+    ctx.lineTo(-r*0.6,-r*0.55); ctx.lineTo(-r*1.0,-r*0.55);
+    ctx.lineTo(-r*1.0,r*0.55); ctx.lineTo(-r*0.6,r*0.55);
+    ctx.closePath();
+    ctx.fillStyle='#1a1a2e'; ctx.fill(); ctx.strokeStyle='#ff4444'; ctx.lineWidth=2; ctx.stroke();
+    ctx.strokeStyle='#cc3333'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(r*0.6,r*0.28); ctx.lineTo(r*1.4,r*0.28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(r*0.6,-r*0.28); ctx.lineTo(r*1.4,-r*0.28); ctx.stroke();
+    ctx.fillStyle='#ff3300';
+    ctx.beginPath(); ctx.arc(-r*0.9,r*0.35,4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-r*0.9,-r*0.35,4,0,Math.PI*2); ctx.fill();
+  }
+  ctx.shadowBlur=0;
+  const hpFrac=en.hp/en.maxHp;
+  ctx.fillStyle='#550000'; ctx.fillRect(-r,-r-10,r*2,5);
+  ctx.fillStyle=hpFrac>0.5?'#00cc44':'#ff4400'; ctx.fillRect(-r,-r-10,r*2*hpFrac,5);
+  ctx.restore();
+}
+
 function drawEnemies(t) {
   for (const [,chunk] of chunks) {
     for (const en of chunk.enemies) {
       if (!en.alive) continue;
-      ctx.save();
-      ctx.translate(en.x,en.y);
-      ctx.rotate(en.angle);
-      const r=en.r;
-      if (en.type==='drone') {
-        // Hexagonal drone
-        ctx.beginPath();
-        for (let i=0;i<6;i++) {
-          const a=i/6*Math.PI*2;
-          i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
-        }
-        ctx.closePath();
-        ctx.fillStyle='#334455'; ctx.fill();
-        ctx.strokeStyle='#88aacc'; ctx.lineWidth=2; ctx.stroke();
-        ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2);
-        ctx.fillStyle='#88aacc'; ctx.fill();
-      } else if (en.type==='pirate') {
-        // Triangle ship
-        ctx.beginPath();
-        ctx.moveTo(r,0); ctx.lineTo(-r*0.7,r*0.6); ctx.lineTo(-r*0.4,0); ctx.lineTo(-r*0.7,-r*0.6);
-        ctx.closePath();
-        ctx.fillStyle='#553322'; ctx.fill();
-        ctx.strokeStyle='#ff8833'; ctx.lineWidth=2; ctx.stroke();
-        // Engine
-        ctx.fillStyle='#ff5500';
-        ctx.beginPath(); ctx.arc(-r*0.4,0,4,0,Math.PI*2); ctx.fill();
-      } else if (en.type==='alien') {
-        // Diamond + spikes
-        ctx.beginPath();
-        ctx.moveTo(r,0); ctx.lineTo(0,r*0.7); ctx.lineTo(-r,0); ctx.lineTo(0,-r*0.7);
-        ctx.closePath();
-        ctx.fillStyle='#220033'; ctx.fill();
-        ctx.strokeStyle='#aa44ff'; ctx.lineWidth=2; ctx.stroke();
-        // Spikes
-        ctx.strokeStyle='#cc66ff'; ctx.lineWidth=1;
-        for (let i=0;i<4;i++) {
-          const a=i/4*Math.PI*2+Math.PI/4;
-          ctx.beginPath(); ctx.moveTo(Math.cos(a)*r*0.5,Math.sin(a)*r*0.5);
-          ctx.lineTo(Math.cos(a)*r*1.4,Math.sin(a)*r*1.4); ctx.stroke();
-        }
-      } else if (en.type==='gunship') {
-        // Heavy capital ship — wide rectangular hull
-        ctx.beginPath();
-        ctx.moveTo(r*1.1,r*0.35); ctx.lineTo(r*1.1,-r*0.35);
-        ctx.lineTo(-r*0.6,-r*0.55); ctx.lineTo(-r*1.0,-r*0.55);
-        ctx.lineTo(-r*1.0,r*0.55); ctx.lineTo(-r*0.6,r*0.55);
-        ctx.closePath();
-        ctx.fillStyle='#1a1a2e'; ctx.fill();
-        ctx.strokeStyle='#ff4444'; ctx.lineWidth=2; ctx.stroke();
-        // Twin gun barrels
-        ctx.strokeStyle='#cc3333'; ctx.lineWidth=3;
-        ctx.beginPath(); ctx.moveTo(r*0.6,r*0.28); ctx.lineTo(r*1.4,r*0.28); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(r*0.6,-r*0.28); ctx.lineTo(r*1.4,-r*0.28); ctx.stroke();
-        // Engine glow on back
-        ctx.fillStyle='#ff3300';
-        ctx.beginPath(); ctx.arc(-r*0.9,r*0.35,4,0,Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(-r*0.9,-r*0.35,4,0,Math.PI*2); ctx.fill();
-        // Warning stripe
-        ctx.strokeStyle='rgba(255,80,0,0.5)'; ctx.lineWidth=1;
-        ctx.beginPath(); ctx.moveTo(-r*0.2,r*0.55); ctx.lineTo(r*0.4,r*0.55); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(-r*0.2,-r*0.55); ctx.lineTo(r*0.4,-r*0.55); ctx.stroke();
-      }
-      // HP bar
-      const hpFrac=en.hp/en.maxHp;
-      ctx.fillStyle='#550000';
-      ctx.fillRect(-r,-r-10,r*2,5);
-      ctx.fillStyle=hpFrac>0.5?'#00cc44':'#ff4400';
-      ctx.fillRect(-r,-r-10,r*2*hpFrac,5);
-      ctx.restore();
+      drawOneEnemy(en, t);
     }
+  }
+  // Dynamic hunter enemies
+  for (const en of dynamicEnemies) {
+    if (!en.alive) continue;
+    drawOneEnemy(en, t);
   }
 }
 
@@ -1954,18 +2122,54 @@ function renderTitle() {
   const lines=['領航員陳，你被黑洞吸入了未知的銀河！','駕駛你的太空艇，蒐集5個翹曲核心，逃離這裡！'];
   lines.forEach((l,i)=>ctx.fillText(l,W/2,H/2+i*22));
 
+  // ── Difficulty selector ──
+  const dc = DIFFICULTIES[difficulty];
+  const selY = H/2 + 55;
+  ctx.font='13px Courier New';
+  ctx.fillStyle='#556688';
+  ctx.fillText('— 難度選擇 —',W/2,selY-6);
+
+  // 5 difficulty pills
+  const pillW=90, pillGap=8, totalW=(pillW+pillGap)*5-pillGap;
+  const startX = W/2 - totalW/2;
+  for (let i=0;i<5;i++) {
+    const d2=DIFFICULTIES[i];
+    const px=startX+i*(pillW+pillGap);
+    const py=selY+6;
+    const isSelected=(i===difficulty);
+    ctx.fillStyle=isSelected?d2.color+'33':'rgba(255,255,255,0.04)';
+    ctx.beginPath(); ctx.roundRect(px,py,pillW,32,6); ctx.fill();
+    ctx.strokeStyle=isSelected?d2.color:'rgba(255,255,255,0.15)';
+    ctx.lineWidth=isSelected?2:1;
+    ctx.beginPath(); ctx.roundRect(px,py,pillW,32,6); ctx.stroke();
+    ctx.fillStyle=isSelected?d2.color:'#667788';
+    ctx.font=isSelected?'bold 12px Courier New':'12px Courier New';
+    ctx.textAlign='center';
+    ctx.fillText(d2.name,px+pillW/2,py+13);
+    ctx.font='10px Courier New';
+    ctx.fillStyle=isSelected?d2.color+'cc':'#445566';
+    ctx.fillText(d2.sub,px+pillW/2,py+25);
+  }
+
+  // Selected difficulty description
+  ctx.font='12px Courier New';
+  ctx.fillStyle=dc.color;
+  ctx.fillText(dc.desc,W/2,selY+52);
+  ctx.fillStyle='#445566';
+  ctx.fillText('← → 更換難度   數字鍵 1-5',W/2,selY+68);
+
   // Controls
   ctx.font='12px Courier New';
-  ctx.fillStyle='#556677';
-  const controls=['WASD / 方向鍵: 推進   Shift: 加速器   滑鼠: 瞄準   左鍵 / 空白鍵: 射擊','射擊隕石可蒐集礦石   E: 進入太空站   ESC: 暫停'];
-  controls.forEach((l,i)=>ctx.fillText(l,W/2,H/2+80+i*20));
+  ctx.fillStyle='#445566';
+  const controls=['WASD: 推進   Shift: 加速器   滑鼠: 瞄準   左鍵/空白: 射擊   R: 回到原點'];
+  controls.forEach((l,i)=>ctx.fillText(l,W/2,selY+88+i*18));
 
   // Start prompt
   const blinkAlpha=0.5+0.5*Math.sin(t*0.002);
   ctx.globalAlpha=blinkAlpha;
   ctx.font='18px Courier New';
   ctx.fillStyle='#aaddff';
-  ctx.fillText('按 ENTER 或點擊開始',W/2,H/2+148);
+  ctx.fillText('按 ENTER 或點擊開始',W/2,selY+116);
   ctx.globalAlpha=1;
 
   ctx.restore();
@@ -2026,16 +2230,21 @@ function drawVictory(t) {
   ctx.fillText('你逃出去了！成功返回地球！',W/2,H/2-70);
   ctx.shadowBlur=0;
 
-  ctx.font='18px Courier New';
+  const dc=DIFFICULTIES[difficulty];
+  ctx.font='14px Courier New';
+  ctx.fillStyle=dc.color;
+  ctx.fillText(`難度：${dc.name} (${dc.sub})  ×${dc.creditMult.toFixed(1)} 星際幣`,W/2,H/2-28);
+
+  ctx.font='16px Courier New';
   ctx.fillStyle='#88ccff';
-  ctx.fillText(`飛行時間: ${Math.floor(playTime)}秒`,W/2,H/2-20);
-  ctx.fillText(`礦石: ${player.ore}  晶體: ${player.crystal}  異星科技: ${player.alienTech}`,W/2,H/2+15);
+  ctx.fillText(`飛行時間: ${Math.floor(playTime)}秒`,W/2,H/2+4);
+  ctx.fillText(`礦石: ${player.ore}  晶體: ${player.crystal}  異星科技: ${player.alienTech}`,W/2,H/2+26);
 
   const blinkAlpha=0.5+0.5*Math.sin(t*0.003);
   ctx.globalAlpha=blinkAlpha;
   ctx.font='18px Courier New';
   ctx.fillStyle='#ffee88';
-  ctx.fillText('按 ENTER 再次挑戰',W/2,H/2+70);
+  ctx.fillText('按 ENTER 再次挑戰',W/2,H/2+72);
   ctx.globalAlpha=1;
 }
 
