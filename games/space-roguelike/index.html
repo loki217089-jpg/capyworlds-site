@@ -148,11 +148,16 @@ window.addEventListener('resize', () => {
 });
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
-const MUS_TRAVEL = 'bgm/mfcc-ethereal-landscape-space-music-358838.mp3';
+const MUS_TRAVEL_LIST = [
+  'bgm/mfcc-ethereal-landscape-space-music-358838.mp3',
+  'bgm/ObservingTheStar.ogg',
+  'bgm/through space.ogg',
+];
 const MUS_BATTLE = 'bgm/geoffharvey-andromeda-space-adventure-403080.mp3';
 const audio = {
   buffers: {}, music: null, musicSrc: '',
   muted: false, _inited: false, _battleTimer: 0,
+  _travelIdx: 0,
   init() {
     if (this._inited) return;
     this._inited = true;
@@ -184,8 +189,14 @@ const audio = {
     if (this.music) { this.music.pause(); this.music = null; }
     if (!src || this.muted) return;
     const el = new Audio(src);
-    el.loop = true; el.volume = 0.3;
+    el.volume = 0.3;
     el.play().catch(()=>{});
+    el.addEventListener('ended', () => {
+      if (this.musicSrc !== src) return; // already switched to battle
+      this._travelIdx = (this._travelIdx + 1) % MUS_TRAVEL_LIST.length;
+      this.musicSrc = '';
+      this.playMusic(MUS_TRAVEL_LIST[this._travelIdx]);
+    });
     this.music = el;
   },
   toggleMute() {
@@ -199,7 +210,7 @@ const audio = {
   },
   tickMusic(dt) {
     if (!this._inited) return;
-    if (state === 'title' || state === 'shop') { this.playMusic(MUS_TRAVEL); return; }
+    if (state === 'title' || state === 'shop') { this.playMusic(MUS_TRAVEL_LIST[this._travelIdx]); return; }
     if (state === 'gameover' || state === 'victory') { this.playMusic(''); return; }
     if (state !== 'playing') return;
     let enemyNear = false;
@@ -216,7 +227,7 @@ const audio = {
     }
     if (enemyNear) this._battleTimer = 4;
     else if (this._battleTimer > 0) this._battleTimer -= dt;
-    this.playMusic(this._battleTimer > 0 ? MUS_BATTLE : MUS_TRAVEL);
+    this.playMusic(this._battleTimer > 0 ? MUS_BATTLE : MUS_TRAVEL_LIST[this._travelIdx]);
   }
 };
 document.getElementById('mute-btn').addEventListener('click', ()=>audio.toggleMute());
