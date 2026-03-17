@@ -148,10 +148,9 @@ window.addEventListener('resize', () => {
 });
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
-const KENNEY_BASE = 'https://pub-16bdb26b7be84d50975581dfc3c970a5.r2.dev/kenney_sci-fi-sounds/Audio/';
-// 背景音樂路徑 — 把音樂檔案放進 audio/ 資料夾後填入檔名
-const MUS_TRAVEL = 'audio/travel.ogg';   // 巡航音樂
-const MUS_BATTLE = 'audio/battle.ogg';  // 戰鬥音樂
+// 背景音樂路徑 — 尚無音樂檔，留空停用
+const MUS_TRAVEL = '';
+const MUS_BATTLE = '';
 const audio = {
   buffers: {}, music: null, musicSrc: '',
   muted: false, _inited: false, _battleTimer: 0,
@@ -159,14 +158,14 @@ const audio = {
     if (this._inited) return;
     this._inited = true;
     const sfx = {
-      shoot:      KENNEY_BASE + 'laser1.ogg',
-      explode:    KENNEY_BASE + 'explosionCrunch_000.ogg',
-      explodeBig: KENNEY_BASE + 'explosionCrunch_004.ogg',
-      hit:        KENNEY_BASE + 'forceField_000.ogg',
-      pickup:     KENNEY_BASE + 'tone1.ogg',
-      warpcore:   KENNEY_BASE + 'phaseJump1.ogg',
-      heal:       KENNEY_BASE + 'powerUp3.ogg',
-      buy:        KENNEY_BASE + 'upgrade1.ogg',
+      shoot:      'Audio/laserRetro_000.ogg',
+      explode:    'Audio/explosionCrunch_000.ogg',
+      explodeBig: 'Audio/explosionCrunch_004.ogg',
+      hit:        'Audio/forceField_000.ogg',
+      pickup:     'Audio/computerNoise_000.ogg',
+      warpcore:   'Audio/lowFrequency_explosion_000.ogg',
+      heal:       'Audio/computerNoise_002.ogg',
+      buy:        'Audio/computerNoise_001.ogg',
     };
     for (const [id, url] of Object.entries(sfx)) {
       const el = new Audio(url); el.preload = 'auto';
