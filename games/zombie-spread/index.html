@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>殭屍蔓延</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:#0a0a0a;color:#d0ffd0;
+  font-family:'Segoe UI','Microsoft JhengHei',monospace;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100vh;overflow:hidden;user-select:none;
+}
+#wrap{position:relative;width:900px;}
+#topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  background:#0c120c;border:1px solid #1a3a1a;border-bottom:none;
+  padding:5px 16px;height:38px;font-size:12px;
+}
+.tb-grp{display:flex;gap:14px;align-items:center;}
+.tl{color:#2a5a2a;font-size:10px;}
+.tv{font-weight:bold;font-size:14px;}
+.tv-hp{color:#4f8;}
+.tv-ammo{color:#fa4;}
+.tv-wave{color:#f8f;}
+.tv-score{color:#fff;}
+#canvas{display:block;border:1px solid #1a3a1a;cursor:crosshair;image-rendering:pixelated;}
+#botbar{
+  background:#0c120c;border:1px solid #1a3a1a;border-top:none;
+  display:flex;justify-content:center;align-items:center;gap:8px;
+  height:32px;font-size:11px;color:#2a5a2a;
+}
+.kb{background:#0d1a0d;border:1px solid #2a4a2a;border-radius:3px;padding:1px 8px;font-size:12px;font-weight:bold;color:#6aaa6a;}
+#overlay{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:rgba(2,8,2,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;z-index:10;
+}
+#overlay h1{color:#4f8;font-size:32px;text-shadow:0 0 30px #0f0;letter-spacing:2px;}
+#overlay p{color:#4a7a4a;font-size:13px;text-align:center;line-height:1.9;max-width:480px;}
+.obtn{
+  background:#0d1a0d;border:1px solid #4f8;color:#4f8;
+  padding:10px 40px;font-size:16px;border-radius:6px;cursor:pointer;
+  transition:background .15s;letter-spacing:1px;
+}
+.obtn:hover{background:#1a3a1a;}
+#wave-banner{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(2,8,2,.88);border:1px solid #4f8;border-radius:10px;
+  padding:14px 40px;text-align:center;z-index:5;pointer-events:none;
+  display:none;
+}
+#wave-banner h2{color:#4f8;font-size:22px;margin-bottom:6px;}
+#wave-banner p{color:#2a7a2a;font-size:13px;}
+#skip-btn{
+  position:absolute;bottom:46px;right:10px;z-index:6;
+  background:#0d1a0d;border:1px solid #2a5a2a;color:#4a8a4a;
+  padding:5px 16px;font-size:12px;border-radius:6px;cursor:pointer;
+  display:none;transition:all .15s;
+}
+#skip-btn:hover{border-color:#4f8;color:#4f8;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar">
+    <div class="tb-grp">
+      <span class="tl">生命</span><span class="tv tv-hp" id="t-hp">100</span>
+      <span class="tl">彈藥</span><span class="tv tv-ammo" id="t-ammo">30</span>
+    </div>
+    <div class="tb-grp">
+      <span class="tl">第</span><span class="tv tv-wave" id="t-wave">1</span><span class="tl">波</span>
+      <span class="tl">擊殺</span><span class="tv" id="t-kill">0</span>
+      <span class="tl">分數</span><span class="tv tv-score" id="t-score">0</span>
+    </div>
+  </div>
+  <canvas id="canvas" width="900" height="500"></canvas>
+  <div id="botbar">
+    <span>移動</span><span class="kb">W</span><span class="kb">A</span><span class="kb">S</span><span class="kb">D</span>
+    <span style="margin-left:8px">射擊</span><span class="kb">滑鼠左鍵</span>
+    <span style="margin-left:8px">換彈</span><span class="kb">R</span>
+  </div>
+  <div id="wave-banner"><h2 id="wb-title">第 1 波來襲！</h2><p id="wb-sub">準備好了嗎？</p></div>
+  <button id="skip-btn">跳過 ▶</button>
+  <div id="overlay">
+    <h1>☣ 殭屍蔓延</h1>
+    <p>末日降臨，殭屍從四面八方湧來！<br>用滑鼠瞄準射擊，撿起補給維持生存。<br>堅持越多波次，分數越高。</p>
+    <button class="obtn" id="start-btn">開始求生</button>
+  </div>
+</div>
+<script>
+'use strict';
+// ── BLOCK 2: Constants & Sprite Config ───────────────────
+const PA = '../../assets/PostApocalypse_AssetPack_v1.1.2/';
+const CW=900, CH=500, SCALE=4;
+
+// Sprite def: [path, frameCount, sheetW, sheetH]
+const SPRITES = {
+  // Player
+  pIdle: [PA+'Character/Main/Idle/Character_side_idle-Sheet6.png',       6, 72, 16],
+  pRun:  [PA+'Character/Main/Run/Character_side_run-Sheet6.png',          6, 84, 17],
+  pDie:  [PA+'Character/Main/Death/Character_side_death1-Sheet6.png',     6,126, 16],
+  // Gun overlay
+  gIdle: [PA+'Character/Guns/Gun/Gun_side_idle-and-run-Sheet6.png',       6, 96, 10],
+  gShot: [PA+'Character/Guns/Gun/Gun_side_shoot-Sheet3.png',              3, 54, 10],
+  // Zombie Small
+  zsIdle:[PA+'Enemies/Zombie_Small/Zombie_Small_Side_Idle-Sheet6.png',    6, 66, 15],
+  zsWalk:[PA+'Enemies/Zombie_Small/Zombie_Small_Side_Walk-Sheet6.png',    6, 78, 15],
+  zsAtk: [PA+'Enemies/Zombie_Small/Zombie_Small_Side_First-Attack-Sheet4.png', 4, 44, 14],
+  zsDie: [PA+'Enemies/Zombie_Small/Zombie_Small_Side_First-Death-Sheet6.png',  6, 96, 14],
+  // Zombie Axe
+  zaIdle:[PA+'Enemies/Zombie_Axe/Zombie_Axe_Side_Idle-Sheet6.png',       6,132, 18],
+  zaWalk:[PA+'Enemies/Zombie_Axe/Zombie_Axe_Side_Walk-Sheet8.png',       8,168, 19],
+  zaAtk: [PA+'Enemies/Zombie_Axe/Zombie_Axe_Side_First-Attack-Sheet7.png',7,154, 20],
+  zaDie: [PA+'Enemies/Zombie_Axe/Zombie_Axe_Side-left_First-Death-Sheet6.png',6,120,17],
+  // Zombie Big
+  zbIdle:[PA+'Enemies/Zombie_Big/Zombie_Big_Side_Idle-Sheet6.png',       6, 96, 22],
+  zbWalk:[PA+'Enemies/Zombie_Big/Zombie_Big_Side_Walk-Sheet8.png',       8,128, 24],
+  zbAtk: [PA+'Enemies/Zombie_Big/Zombie_Big_Side_First-Attack-Sheet8.png',8,152, 26],
+  zbDie: [PA+'Enemies/Zombie_Big/Zombie_Big_Side_First-Death-Sheet7.png', 7,126, 22],
+};
+
+const imgs = {};
+let loadedN = 0;
+const loadTotal = Object.keys(SPRITES).length;
+
+function loadImages(cb) {
+  for (const [k, [src]] of Object.entries(SPRITES)) {
+    const img = new Image();
+    img.onload = img.onerror = () => { if (++loadedN >= loadTotal) cb(); };
+    img.src = src;
+    imgs[k] = img;
+  }
+}
+
+// Pickable sprite paths (static images)
+const PICKABLE_IMGS = {
+  bandage: PA+'Objects/Pickable/Bandage.png',
+  ammo:    PA+'Objects/Pickable/Ammo-crate_Green.png',
+  food:    PA+'Objects/Pickable/Canned-food.png',
+};
+const pickImgs = {};
+for (const [k,src] of Object.entries(PICKABLE_IMGS)) {
+  const img = new Image(); img.src = src; pickImgs[k] = img;
+}
+
+// ── Audio ─────────────────────────────────────────────────
+let actx = null;
+const sfxBufs = {};
+const SFX = {
+  shoot:   ['../../assets/sfx/GameSFX3/Weapon/laser/Retro%20Gun%20Laser%20SingleShot%2001.wav', 0.18, 0.5],
+  hit:     ['../../assets/sfx/GameSFX2/Impact/Retro%20Impact%20Punch%2007.wav',                 0.18, 0.6],
+  hurt:    ['../../assets/sfx/GameSFX2/Impact/Retro%20Impact%20Punch%20Hurt%2001.wav',          0.22, 0.65],
+  pickup:  ['../../assets/sfx/GameSFX3/PickUp/Retro%20PickUp%2010.wav',                         0.15, 0.7],
+  wave:    ['../../assets/sfx/GameSFX3/PowerUp/Retro%20PowerUP%2009.wav',                       0.5,  0.7],
+  die:     ['../../assets/sfx/GameSFX1/Events/Negative/Retro%20Negative%20Short%2007.wav',      0.3,  0.8],
+  win:     ['../../assets/sfx/GameSFX2/Music/Success/Retro%20Success%20Melody%2001%20-%20sawtooth%20lead%201.wav',3.0,0.7],
+};
+function initAudio() {
+  if (actx) return;
+  actx = new (window.AudioContext||window.webkitAudioContext)();
+  for (const [k,[url]] of Object.entries(SFX)) {
+    fetch(url).then(r=>r.arrayBuffer()).then(ab=>actx.decodeAudioData(ab)).then(buf=>{sfxBufs[k]=buf;}).catch(()=>{});
+  }
+}
+function playSfx(key) {
+  if (!actx||!sfxBufs[key]) return;
+  const [,maxSec,vol]=SFX[key];
+  const src=actx.createBufferSource(), g=actx.createGain();
+  src.buffer=sfxBufs[key]; src.connect(g); g.connect(actx.destination);
+  g.gain.value=vol; src.start(); src.stop(actx.currentTime+maxSec);
+}
+let bgm=null;
+function playBgm(src){if(bgm){bgm.pause();bgm.currentTime=0;}bgm=new Audio(src);bgm.loop=true;bgm.volume=0.28;bgm.play().catch(()=>{});}
+function stopBgm(){if(bgm){bgm.pause();bgm=null;}}
+// ── BLOCK 3: Sprite Animator ─────────────────────────────
+class Anim {
+  constructor(key, fps, loop=true, onDone=null) {
+    this.key=key; this.fps=fps; this.loop=loop; this.onDone=onDone;
+    this.t=0; this.fi=0; this.done=false;
+  }
+  update(dt) {
+    if (this.done && !this.loop) return;
+    this.t += dt;
+    const dur = 1000/this.fps;
+    if (this.t >= dur) {
+      this.t -= dur; this.fi++;
+      const maxF = SPRITES[this.key][1];
+      if (this.fi >= maxF) {
+        if (this.loop) this.fi=0;
+        else { this.fi=maxF-1; this.done=true; this.onDone&&this.onDone(); }
+      }
+    }
+  }
+  // Draw centered at (cx,cy), flip=mirrors horizontally
+  draw(ctx, cx, cy, flip=false, alpha=1) {
+    const img = imgs[this.key];
+    if (!img||!img.complete||!img.naturalWidth) return;
+    const [,frames,sw,sh] = SPRITES[this.key];
+    const fw = sw/frames, fh = sh;
+    const dw = fw*SCALE, dh = fh*SCALE;
+    ctx.save(); ctx.globalAlpha=alpha;
+    if (flip) {
+      ctx.translate(cx+dw/2, cy-dh/2);
+      ctx.scale(-1,1);
+      ctx.drawImage(img, this.fi*fw,0, fw,fh, 0,0, dw,dh);
+    } else {
+      ctx.drawImage(img, this.fi*fw,0, fw,fh, cx-dw/2, cy-dh/2, dw,dh);
+    }
+    ctx.restore();
+  }
+}
+
+// ── BLOCK 4: Player ───────────────────────────────────────
+const MAX_HP=100, MAX_AMMO=30, RELOAD_MS=1800, SHOOT_COOLDOWN=320;
+const gs = {
+  phase:'menu', wave:1, score:0, kills:0,
+  waveCountdown:0, waveSkippable:false,
+};
+
+class Player {
+  constructor() {
+    this.x=CW/2; this.y=CH/2;
+    this.hp=MAX_HP; this.ammo=MAX_AMMO;
+    this.speed=110;
+    this.anim = new Anim('pIdle',8,true);
+    this.gunAnim = new Anim('gIdle',8,true);
+    this.flip=false;
+    this.shootCd=0; this.reloadT=0; this.reloading=false;
+    this.flashT=0; this.shakeX=0; this.shakeT=0;
+    this.dead=false;
+    this.mouseX=CW/2; this.mouseY=CH/2;
+  }
+  get alive(){ return this.hp>0; }
+  update(dt, keys) {
+    if (this.dead) { this.anim.update(dt); return; }
+    // movement
+    let dx=0, dy=0;
+    if (keys['w']||keys['arrowup'])    dy-=1;
+    if (keys['s']||keys['arrowdown'])  dy+=1;
+    if (keys['a']||keys['arrowleft'])  dx-=1;
+    if (keys['d']||keys['arrowright']) dx+=1;
+    if (dx&&dy){ dx*=0.707; dy*=0.707; }
+    this.x = Math.max(16, Math.min(CW-16, this.x + dx*this.speed*dt/1000));
+    this.y = Math.max(16, Math.min(CH-16, this.y + dy*this.speed*dt/1000));
+    // face mouse
+    this.flip = this.mouseX < this.x;
+    // anim
+    const moving = dx||dy;
+    const curKey = this.anim.key;
+    if (moving && curKey==='pIdle') this.anim=new Anim('pRun',10,true);
+    if (!moving && curKey==='pRun')  this.anim=new Anim('pIdle',8,true);
+    this.anim.update(dt);
+    // gun & shoot
+    if (this.shootCd>0) this.shootCd-=dt;
+    if (this.reloading) {
+      this.reloadT-=dt;
+      if (this.reloadT<=0) { this.ammo=MAX_AMMO; this.reloading=false; hudUpdate(); }
+    }
+    if (this.gunAnim.key==='gShot' && this.gunAnim.done) this.gunAnim=new Anim('gIdle',8,true);
+    this.gunAnim.update(dt);
+    // flash/shake
+    if (this.flashT>0) this.flashT-=dt;
+    if (this.shakeT>0) { this.shakeT-=dt; this.shakeX=this.shakeT>0?Math.sin(this.shakeT*.08)*6:0; }
+  }
+  shoot() {
+    if (!this.alive||this.reloading||this.shootCd>0) return null;
+    if (this.ammo<=0) { this.reload(); return null; }
+    this.ammo--;
+    this.shootCd=SHOOT_COOLDOWN;
+    this.gunAnim=new Anim('gShot',18,false);
+    playSfx('shoot');
+    hudUpdate();
+    const ang = Math.atan2(this.mouseY-this.y, this.mouseX-this.x);
+    return new Bullet(this.x, this.y, ang);
+  }
+  reload() {
+    if (this.reloading||this.ammo===MAX_AMMO) return;
+    this.reloading=true; this.reloadT=RELOAD_MS;
+  }
+  takeDamage(dmg) {
+    if (!this.alive) return;
+    this.hp=Math.max(0, this.hp-dmg);
+    this.flashT=280; this.shakeX=8; this.shakeT=260;
+    playSfx('hurt'); hudUpdate();
+    if (this.hp<=0) this.die();
+  }
+  die() {
+    this.dead=true;
+    this.anim=new Anim('pDie',8,false);
+    setTimeout(()=>endGame(), 1200);
+  }
+  draw(ctx) {
+    const ox = this.shakeX;
+    const cx = this.x+ox, cy = this.y;
+    if (this.flashT>0) {
+      ctx.save(); this.anim.draw(ctx,cx,cy,this.flip,1);
+      ctx.globalAlpha=Math.min(.65,this.flashT/200);
+      ctx.fillStyle='#f44';
+      const [,f,sw,sh]=SPRITES['pIdle']; const fw=sw/f*SCALE, fh=sh*SCALE;
+      ctx.fillRect(cx-fw/2, cy-fh/2, fw, fh);
+      ctx.restore();
+    } else {
+      this.anim.draw(ctx,cx,cy,this.flip,1);
+    }
+    // gun overlay
+    const [,gf,gsw,gsh]=SPRITES[this.gunAnim.key];
+    const gfw=gsw/gf, gfh=gsh;
+    const gdw=gfw*SCALE, gdh=gfh*SCALE;
+    const goy = this.flip ? cy-8 : cy-8;
+    this.gunAnim.draw(ctx, cx, goy, this.flip, 1);
+    // reload bar
+    if (this.reloading) {
+      const pct = 1 - this.reloadT/RELOAD_MS;
+      ctx.fillStyle='#333'; ctx.fillRect(this.x-20, this.y+24, 40, 5);
+      ctx.fillStyle='#fa4'; ctx.fillRect(this.x-20, this.y+24, 40*pct, 5);
+    }
+  }
+}
+// ── BLOCK 5: Bullet + Pickup ─────────────────────────────
+class Bullet {
+  constructor(x,y,ang) {
+    this.x=x; this.y=y;
+    this.vx=Math.cos(ang)*420; this.vy=Math.sin(ang)*420;
+    this.dead=false; this.r=4;
+  }
+  update(dt) {
+    this.x+=this.vx*dt/1000; this.y+=this.vy*dt/1000;
+    if (this.x<0||this.x>CW||this.y<0||this.y>CH) this.dead=true;
+  }
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(Math.atan2(this.vy,this.vx));
+    ctx.fillStyle='#ffee88';
+    ctx.fillRect(-8,-2,16,4);
+    ctx.restore();
+  }
+}
+
+class Pickup {
+  constructor(x,y,type) {
+    this.x=x; this.y=y; this.type=type;
+    this.dead=false; this.r=12; this.t=0;
+    this.life=8000; // disappear after 8s
+  }
+  update(dt) { this.t+=dt; this.life-=dt; if(this.life<=0) this.dead=true; }
+  draw(ctx) {
+    const img=pickImgs[this.type];
+    const bob = Math.sin(this.t*0.004)*3;
+    if (img&&img.complete&&img.naturalWidth) {
+      ctx.drawImage(img, this.x-8, this.y-8+bob, 16, 16);
+    } else {
+      ctx.fillStyle=this.type==='bandage'?'#f44':this.type==='ammo'?'#fa4':'#4f8';
+      ctx.beginPath(); ctx.arc(this.x, this.y+bob, 8, 0, Math.PI*2); ctx.fill();
+    }
+    // label
+    const labels={bandage:'繃帶',ammo:'彈藥',food:'食物'};
+    ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(this.x-16,this.y+8+bob,32,12);
+    ctx.fillStyle='#cfc'; ctx.font='8px monospace'; ctx.textAlign='center';
+    ctx.fillText(labels[this.type], this.x, this.y+17+bob);
+    ctx.textAlign='left';
+  }
+  apply(player) {
+    if (this.type==='bandage') { player.hp=Math.min(MAX_HP,player.hp+25); playSfx('pickup'); hudUpdate(); }
+    else if (this.type==='ammo') { player.ammo=MAX_AMMO; player.reloading=false; playSfx('pickup'); hudUpdate(); }
+    else if (this.type==='food') { player.hp=Math.min(MAX_HP,player.hp+15); playSfx('pickup'); hudUpdate(); }
+  }
+}
+
+// ── BLOCK 6: Enemy Base + 3 Types ────────────────────────
+let eidSeq=0;
+class Enemy {
+  constructor(x,y,cfg) {
+    this.id=++eidSeq; this.x=x; this.y=y;
+    this.hp=cfg.hp; this.maxHp=cfg.hp;
+    this.speed=cfg.speed; this.dmg=cfg.dmg; this.score=cfg.score;
+    this.atkRange=cfg.atkRange||28; this.atkCd=cfg.atkCd||1200;
+    this.atkT=0; this.flashT=0;
+    this.dead=false; this.r=cfg.r||10;
+    this.anim=new Anim(cfg.idleKey,8,true);
+    this.cfg=cfg;
+  }
+  update(dt, player) {
+    if (this.dead) { this.anim.update(dt); return; }
+    const dx=player.x-this.x, dy=player.y-this.y;
+    const dist=Math.hypot(dx,dy);
+    this.flip = dx<0;
+    // attack or walk
+    if (dist < this.atkRange) {
+      if (this.anim.key===this.cfg.walkKey) this.anim=new Anim(this.cfg.idleKey,8,true);
+      this.atkT-=dt;
+      if (this.atkT<=0 && player.alive) {
+        this.atkT=this.atkCd;
+        this.anim=new Anim(this.cfg.atkKey, 10, false, ()=>{
+          this.anim=new Anim(this.cfg.idleKey,8,true);
+        });
+        player.takeDamage(this.dmg);
+      }
+    } else {
+      if (this.anim.key===this.cfg.idleKey) this.anim=new Anim(this.cfg.walkKey,10,true);
+      const spd=this.speed*dt/1000;
+      this.x+=dx/dist*spd; this.y+=dy/dist*spd;
+    }
+    this.anim.update(dt);
+    if (this.flashT>0) this.flashT-=dt;
+  }
+  takeDamage(dmg) {
+    this.hp-=dmg; this.flashT=180;
+    playSfx('hit');
+    if (this.hp<=0) this.die();
+  }
+  die() {
+    this.dead=true;
+    this.anim=new Anim(this.cfg.dieKey,10,false);
+    gs.kills++; gs.score+=this.score; hudUpdate();
+    // drop pickup
+    if (Math.random()<0.25) {
+      const t=['bandage','ammo','food'][Math.floor(Math.random()*3)];
+      pickups.push(new Pickup(this.x, this.y, t));
+    }
+    playSfx('die');
+  }
+  get fullyDead() { return this.dead && this.anim.done; }
+  draw(ctx) {
+    const [,f,sw,sh]=SPRITES[this.anim.key];
+    const fw=sw/f, fh=sh;
+    const dw=fw*SCALE, dh=fh*SCALE;
+    if (this.flashT>0) {
+      ctx.save(); this.anim.draw(ctx,this.x,this.y,this.flip,1);
+      ctx.globalAlpha=Math.min(.7,this.flashT/150);
+      ctx.fillStyle='#f88';
+      ctx.fillRect(this.x-dw/2, this.y-dh/2, dw, dh);
+      ctx.restore();
+    } else {
+      this.anim.draw(ctx,this.x,this.y,this.flip,1);
+    }
+    // HP bar (only if alive and damaged)
+    if (!this.dead && this.hp<this.maxHp) {
+      const bw=dw, bh=4;
+      ctx.fillStyle='#400'; ctx.fillRect(this.x-bw/2, this.y-dh/2-6, bw, bh);
+      ctx.fillStyle='#f44'; ctx.fillRect(this.x-bw/2, this.y-dh/2-6, bw*(this.hp/this.maxHp), bh);
+    }
+  }
+}
+
+const ENEMY_CFGS = {
+  small: {hp:30, speed:65, dmg:10, score:50, r:9, atkRange:26, atkCd:1100,
+          idleKey:'zsIdle', walkKey:'zsWalk', atkKey:'zsAtk', dieKey:'zsDie'},
+  axe:   {hp:80, speed:42, dmg:22, score:120, r:12, atkRange:32, atkCd:1400,
+          idleKey:'zaIdle', walkKey:'zaWalk', atkKey:'zaAtk', dieKey:'zaDie'},
+  big:   {hp:160,speed:28, dmg:38, score:200, r:16, atkRange:36, atkCd:1800,
+          idleKey:'zbIdle', walkKey:'zbWalk', atkKey:'zbAtk', dieKey:'zbDie'},
+};
+// ── BLOCK 7: Wave System & Game State ────────────────────
+let player, enemies=[], bullets=[], pickups=[], popups=[];
+const keys={};
+
+function spawnEdge() {
+  const side=Math.floor(Math.random()*4);
+  if (side===0) return {x:Math.random()*CW, y:-20};
+  if (side===1) return {x:CW+20, y:Math.random()*CH};
+  if (side===2) return {x:Math.random()*CW, y:CH+20};
+  return {x:-20, y:Math.random()*CH};
+}
+
+// wave def: [{type, count}]
+function waveEnemies(wave) {
+  const list=[];
+  const smalls = Math.min(3+wave*2, 14);
+  const axes   = wave>=3 ? Math.min(Math.floor((wave-2)*1.5),8) : 0;
+  const bigs   = wave>=5 ? Math.min(Math.floor((wave-4)),4) : 0;
+  for(let i=0;i<smalls;i++) list.push('small');
+  for(let i=0;i<axes;i++)   list.push('axe');
+  for(let i=0;i<bigs;i++)   list.push('big');
+  return list;
+}
+
+let spawnQueue=[], spawnTimer=0;
+
+function startWave(wave) {
+  gs.wave=wave; gs.phase='playing';
+  hudUpdate();
+  showWaveBanner(`第 ${wave} 波來襲！`, wave===1?'戰鬥開始！':'殭屍更多了！');
+  spawnQueue = waveEnemies(wave);
+  spawnQueue.sort(()=>Math.random()-.5);
+  spawnTimer=0;
+  playSfx('wave');
+  document.getElementById('skip-btn').style.display='none';
+}
+
+function showWaveBanner(title, sub) {
+  const wb=document.getElementById('wave-banner');
+  document.getElementById('wb-title').textContent=title;
+  document.getElementById('wb-sub').textContent=sub;
+  wb.style.display='block';
+  setTimeout(()=>wb.style.display='none', 2200);
+}
+
+let countdownTimer=0;
+let countdownActive=false;
+
+function beginCountdown(nextWave) {
+  gs.phase='countdown';
+  countdownTimer=2000;
+  countdownActive=true;
+  document.getElementById('skip-btn').style.display='block';
+  document.getElementById('skip-btn').onclick=()=>finishCountdown(nextWave);
+  // store next wave
+  document.getElementById('skip-btn').dataset.next=nextWave;
+}
+
+function finishCountdown(nextWave) {
+  countdownActive=false;
+  countdownTimer=0;
+  document.getElementById('skip-btn').style.display='none';
+  startWave(nextWave);
+}
+
+function addPopup(text, x, y, col) {
+  popups.push({text,x,y,col,t:0,dur:700});
+}
+
+function hudUpdate() {
+  document.getElementById('t-hp').textContent=Math.max(0,Math.floor(player?player.hp:0));
+  document.getElementById('t-ammo').textContent=player?(player.reloading?'裝彈...':player.ammo):0;
+  document.getElementById('t-wave').textContent=gs.wave;
+  document.getElementById('t-kill').textContent=gs.kills;
+  document.getElementById('t-score').textContent=gs.score;
+}
+
+function endGame() {
+  gs.phase='gameover';
+  stopBgm();
+  const ol=document.getElementById('overlay');
+  ol.innerHTML=`<h1>💀 陣亡</h1><p>堅持到第 ${gs.wave} 波<br>擊殺 ${gs.kills} 隻殭屍<br>最終分數：${gs.score}</p><button class="obtn" id="obtn">再試一次</button>`;
+  ol.style.display='flex';
+  document.getElementById('obtn').onclick=()=>{ ol.style.display='none'; resetGame(); };
+}
+
+function resetGame() {
+  enemies=[]; bullets=[]; pickups=[]; popups=[]; spawnQueue=[]; spawnTimer=0;
+  Object.assign(gs,{phase:'playing',wave:1,score:0,kills:0,waveCountdown:0});
+  player=new Player(); hudUpdate();
+  startWave(1);
+  playBgm('../../assets/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Corrupted%20Circuitry.ogg');
+}
+// ── BLOCK 8: Rendering ───────────────────────────────────
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+
+function drawBackground() {
+  // Dark asphalt ground
+  ctx.fillStyle='#0f1a0f'; ctx.fillRect(0,0,CW,CH);
+  // Grid lines (cracked streets)
+  ctx.strokeStyle='#131f13'; ctx.lineWidth=1;
+  for(let x=0;x<CW;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();}
+  for(let y=0;y<CH;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();}
+  // danger vignette near edges
+  const grad=ctx.createRadialGradient(CW/2,CH/2,CH*0.28,CW/2,CH/2,CH*0.7);
+  grad.addColorStop(0,'rgba(0,0,0,0)');
+  grad.addColorStop(1,'rgba(0,0,0,0.55)');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,CW,CH);
+}
+
+function drawHUD() {
+  // HP bar visual
+  const php = player?Math.max(0,player.hp)/MAX_HP:0;
+  ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(8,8,104,10);
+  ctx.fillStyle = php>.5?'#4f8':php>.25?'#fa4':'#f44';
+  ctx.fillRect(8,8,104*php,10);
+
+  // Countdown bar
+  if (gs.phase==='countdown') {
+    const pct = countdownTimer/2000;
+    ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(CW/2-100,10,200,12);
+    ctx.fillStyle='#4f8'; ctx.fillRect(CW/2-100,10,200*pct,12);
+    ctx.fillStyle='#cfc'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+    const secs = Math.ceil(countdownTimer/1000);
+    ctx.fillText(`下一波：${secs}s`, CW/2, 20);
+    ctx.textAlign='left';
+  }
+
+  // Popups
+  for (const p of popups) {
+    const a=1-p.t/p.dur;
+    ctx.globalAlpha=a; ctx.fillStyle=p.col;
+    ctx.font='bold 13px monospace'; ctx.textAlign='center';
+    ctx.fillText(p.text, p.x, p.y - p.t*0.05);
+  }
+  ctx.globalAlpha=1; ctx.textAlign='left';
+}
+
+function render() {
+  ctx.clearRect(0,0,CW,CH);
+  drawBackground();
+  // pickups (below everything)
+  for (const p of pickups) if(!p.dead) p.draw(ctx);
+  // bullets
+  for (const b of bullets) if(!b.dead) b.draw(ctx);
+  // enemies (sort by y for depth)
+  const drawOrder=[...enemies].sort((a,b)=>a.y-b.y);
+  for (const e of drawOrder) e.draw(ctx);
+  // player
+  if (player) player.draw(ctx);
+  drawHUD();
+}
+
+// ── BLOCK 9: Main Loop + Input ───────────────────────────
+let lastT=0;
+let mouseDown=false;
+let shootBurstCd=0;
+
+function loop(now) {
+  const dt=Math.min(now-lastT, 50); lastT=now;
+
+  if (gs.phase==='playing'||gs.phase==='countdown') {
+    player.update(dt, keys);
+
+    // shoot on hold
+    if (mouseDown && gs.phase==='playing') {
+      const b=player.shoot();
+      if (b) bullets.push(b);
+    }
+
+    // spawn enemies
+    if (gs.phase==='playing') {
+      if (spawnQueue.length>0) {
+        spawnTimer-=dt;
+        if (spawnTimer<=0) {
+          const type=spawnQueue.shift();
+          const {x,y}=spawnEdge();
+          enemies.push(new Enemy(x,y,ENEMY_CFGS[type]));
+          spawnTimer = 600+Math.random()*600;
+        }
+      }
+      // update enemies
+      for (const e of enemies) e.update(dt, player);
+
+      // bullet-enemy collision
+      for (const b of bullets) {
+        if (b.dead) continue;
+        for (const e of enemies) {
+          if (e.dead) continue;
+          if (Math.hypot(b.x-e.x, b.y-e.y) < e.r+b.r) {
+            b.dead=true;
+            e.takeDamage(25);
+            addPopup('-25', e.x, e.y-20, '#f88');
+            break;
+          }
+        }
+      }
+
+      // pickup collision
+      for (const pk of pickups) {
+        if (pk.dead) continue;
+        if (Math.hypot(player.x-pk.x, player.y-pk.y) < pk.r+12) {
+          pk.dead=true; pk.apply(player);
+        }
+      }
+
+      // check wave clear
+      const aliveEnemies=enemies.filter(e=>!e.dead);
+      if (spawnQueue.length===0 && aliveEnemies.length===0 && enemies.length>0) {
+        enemies=enemies.filter(e=>!e.fullyDead||!e.dead);
+        if (enemies.filter(e=>!e.dead).length===0) {
+          enemies=[]; gs.phase='between';
+          setTimeout(()=>beginCountdown(gs.wave+1), 400);
+        }
+      }
+    }
+
+    if (gs.phase==='countdown') {
+      countdownTimer-=dt;
+      if (countdownTimer<=0) finishCountdown(parseInt(document.getElementById('skip-btn').dataset.next||gs.wave+1));
+    }
+
+    // cleanup
+    bullets=bullets.filter(b=>!b.dead);
+    pickups=pickups.filter(p=>!p.dead);
+    for (const p of popups) p.t+=dt;
+    popups=popups.filter(p=>p.t<p.dur);
+    enemies=enemies.filter(e=>!e.fullyDead);
+  }
+
+  render();
+  requestAnimationFrame(loop);
+}
+
+// Input
+document.addEventListener('keydown', e=>{
+  keys[e.key.toLowerCase()]=true;
+  if (e.key.toLowerCase()==='r' && gs.phase==='playing') player.reload();
+});
+document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
+
+canvas.addEventListener('mousemove', e=>{
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=CW/rect.width, scaleY=CH/rect.height;
+  player.mouseX=(e.clientX-rect.left)*scaleX;
+  player.mouseY=(e.clientY-rect.top)*scaleY;
+});
+canvas.addEventListener('mousedown', e=>{ if(e.button===0){ mouseDown=true; if(gs.phase==='playing'){const b=player.shoot();if(b)bullets.push(b);} } });
+canvas.addEventListener('mouseup',   e=>{ if(e.button===0) mouseDown=false; });
+
+document.getElementById('start-btn').addEventListener('click', ()=>{
+  initAudio();
+  document.getElementById('overlay').style.display='none';
+  loadImages(()=>{
+    resetGame();
+  });
+});
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
