@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6193561251326215"
+     crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tools - CapyWorlds</title>
+  <style>
+    :root {
+      --bg: #13100c; --bg-hero: #2d1e0e; --bg2: #1e1812;
+      --border: #3d3020; --accent: #c8a456; --accent-rgb: 200,164,86;
+      --text: #e8ddd0; --text2: #b09880; --text3: #7a6a58;
+      --h1: #ffffff;
+    }
+    [data-theme="light"] {
+      --bg: #f5f0e8; --bg-hero: #e0d0a8; --bg2: #ffffff;
+      --border: #d4c4a0; --accent: #9a6e1e; --accent-rgb: 154,110,30;
+      --text: #2a1e0e; --text2: #7a5a40; --text3: #6a5a48; --h1: #1a0e06;
+    }
+    [data-theme="pink"] {
+      --bg: #1a0810; --bg-hero: #3d0a22; --bg2: #260a18;
+      --border: #6a2050; --accent: #e060a8; --accent-rgb: 224,96,168;
+      --text: #f8d8ec; --text2: #d890b8; --text3: #a05880; --h1: #fff0f8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+      transition: background 0.3s, color 0.3s;
+    }
+    .page-header {
+      width: 100%; text-align: center; padding: 48px 24px 36px;
+      background: radial-gradient(ellipse at 50% -10%, var(--bg-hero) 0%, var(--bg) 68%);
+      position: relative;
+    }
+    .page-header::after {
+      content: ''; position: absolute; bottom: 0; left: 15%; right: 15%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent);
+    }
+    .capy-art {
+      width: 150px; height: 140px; display: block;
+      margin: 0 auto 22px;
+      filter: drop-shadow(0 6px 20px rgba(var(--accent-rgb),0.18));
+    }
+    .page-header h1 { font-size: 36px; font-weight: 900; color: var(--h1); letter-spacing: 3px; }
+    .page-header h1 .accent { color: var(--accent); }
+    .page-header .sub { font-size: 13px; color: var(--text3); margin-top: 8px; }
+
+    .content { max-width: 680px; width: 100%; padding: 48px 24px; }
+
+    .section-title {
+      font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--accent); font-weight: 700; margin: 36px 0 14px;
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 500px) { .tools-grid { grid-template-columns: 1fr; } }
+
+    .tool-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+      padding: 18px 20px; text-decoration: none; color: inherit;
+      display: flex; gap: 14px; align-items: flex-start;
+      transition: border-color 0.2s, background 0.3s;
+    }
+    .tool-card:hover { border-color: var(--accent); }
+    .tool-icon { font-size: 24px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+    .tool-name { font-size: 14px; font-weight: 700; color: var(--h1); margin-bottom: 4px; }
+    .tool-desc { font-size: 12px; color: var(--text3); line-height: 1.6; }
+    .tool-url { font-size: 10px; color: var(--accent); margin-top: 6px; opacity: 0.7; }
+
+    .back-link {
+      display: block; text-align: center; margin-top: 40px;
+      color: var(--accent); text-decoration: none; font-size: 14px;
+      letter-spacing: 1px; opacity: 0.7; transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    .theme-switcher {
+      position: fixed; top: 14px; right: 14px; z-index: 200;
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
+      padding: 6px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .theme-switcher-label { font-size: 11px; color: var(--text3); letter-spacing: 0.5px; margin-right: 2px; user-select: none; }
+    .theme-dot { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; outline: none; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+    .theme-dot:hover { transform: scale(1.2); }
+    .theme-dot.active { border-color: var(--text); box-shadow: 0 0 0 1px var(--bg2); transform: scale(1.1); }
+    .theme-dot[data-t="dark"]  { background: radial-gradient(circle at 35% 35%, #c8a456, #5a3c10); }
+    .theme-dot[data-t="light"] { background: radial-gradient(circle at 35% 35%, #f5f0d8, #c8b480); }
+    .theme-dot[data-t="pink"]  { background: radial-gradient(circle at 35% 35%, #f880c0, #8a1858); }
+  </style>
+</head>
+<body>
+  <div class="theme-switcher">
+    <span class="theme-switcher-label">主題</span>
+    <button class="theme-dot" data-t="dark"  title="深色" onclick="setTheme('dark')"></button>
+    <button class="theme-dot" data-t="light" title="明亮" onclick="setTheme('light')"></button>
+    <button class="theme-dot" data-t="pink"  title="粉色" onclick="setTheme('pink')"></button>
+  </div>
+
+  <header class="page-header">
+    <svg class="capy-art" viewBox="0 0 150 140" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ground -->
+      <ellipse cx="75" cy="135" rx="65" ry="10" fill="#2d4a1e" opacity="0.35"/>
+      <!-- Body -->
+      <ellipse cx="72" cy="108" rx="46" ry="28" fill="#b8955a"/>
+      <!-- Tiny laptop on lap -->
+      <rect x="44" y="92" width="56" height="34" rx="4" fill="#1a3a5a"/>
+      <rect x="44" y="92" width="56" height="26" rx="3" fill="#0f2040"/>
+      <!-- Screen glow -->
+      <rect x="47" y="95" width="50" height="20" rx="2" fill="#1a6080" opacity="0.8"/>
+      <!-- Code lines on screen -->
+      <rect x="50" y="98" width="22" height="2" rx="1" fill="#4af8" opacity="0.9"/>
+      <rect x="50" y="102" width="36" height="2" rx="1" fill="#fa48" opacity="0.9"/>
+      <rect x="50" y="106" width="28" height="2" rx="1" fill="#4f88" opacity="0.9"/>
+      <rect x="50" y="110" width="18" height="2" rx="1" fill="#af48" opacity="0.9"/>
+      <!-- Screen shine -->
+      <rect x="88" y="96" width="7" height="12" rx="1" fill="white" opacity="0.06"/>
+      <!-- Keyboard base -->
+      <rect x="40" y="118" width="64" height="8" rx="2" fill="#243a52"/>
+      <!-- Left arm -->
+      <path d="M36 104 Q30 118 42 124" stroke="#b8955a" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <!-- Right arm -->
+      <path d="M108 104 Q114 118 102 124" stroke="#b8955a" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <!-- Head -->
+      <ellipse cx="74" cy="64" rx="38" ry="35" fill="#c09a62"/>
+      <!-- Snout -->
+      <ellipse cx="74" cy="78" rx="22" ry="16" fill="#d4aa78"/>
+      <!-- Ears -->
+      <ellipse cx="47" cy="38" rx="12" ry="14" fill="#b8955a"/>
+      <ellipse cx="101" cy="38" rx="12" ry="14" fill="#b8955a"/>
+      <ellipse cx="47" cy="38" rx="8" ry="10" fill="#d0a874"/>
+      <ellipse cx="101" cy="38" rx="8" ry="10" fill="#d0a874"/>
+      <!-- Eyes (focused) -->
+      <ellipse cx="64" cy="60" rx="7" ry="6" fill="#1a0e06"/>
+      <ellipse cx="86" cy="60" rx="7" ry="6" fill="#1a0e06"/>
+      <circle cx="62" cy="57" r="2" fill="white"/>
+      <circle cx="84" cy="57" r="2" fill="white"/>
+      <!-- Nostrils -->
+      <ellipse cx="68" cy="79" rx="3" ry="2" fill="#7a5035"/>
+      <ellipse cx="80" cy="79" rx="3" ry="2" fill="#7a5035"/>
+      <!-- Smile -->
+      <path d="M62 87 Q74 97 86 87" stroke="#7a5035" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- Sparkles -->
+      <text x="122" y="48" font-size="12" opacity="0.5">✦</text>
+      <text x="6"   y="58" font-size="9"  opacity="0.4">✦</text>
+    </svg>
+    <h1>🛠 <span class="accent">Tools</span></h1>
+    <p class="sub">常用工具與資源連結</p>
+  </header>
+
+  <main class="content">
+
+    <div class="section-title">⚙️ 線上開發工具</div>
+    <div class="tools-grid">
+      <a class="tool-card" href="https://jsonformatter.curiousconcept.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">📋</span>
+        <div>
+          <div class="tool-name">JSON Formatter</div>
+          <div class="tool-desc">JSON 格式化、驗證、壓縮，API 開發必備</div>
+          <div class="tool-url">jsonformatter.curiousconcept.com</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://coolors.co/" target="_blank" rel="noopener">
+        <span class="tool-icon">🎨</span>
+        <div>
+          <div class="tool-name">Coolors</div>
+          <div class="tool-desc">快速生成配色方案，支援調色盤匯出</div>
+          <div class="tool-url">coolors.co</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://regex101.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">🔍</span>
+        <div>
+          <div class="tool-name">Regex101</div>
+          <div class="tool-desc">正規表達式測試與解說，支援多種語言</div>
+          <div class="tool-url">regex101.com</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://caniuse.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">🌐</span>
+        <div>
+          <div class="tool-name">Can I Use</div>
+          <div class="tool-desc">查詢 HTML/CSS/JS 各瀏覽器支援度</div>
+          <div class="tool-url">caniuse.com</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://squoosh.app/" target="_blank" rel="noopener">
+        <span class="tool-icon">🖼</span>
+        <div>
+          <div class="tool-name">Squoosh</div>
+          <div class="tool-desc">Google 出品的圖片壓縮工具，純瀏覽器執行</div>
+          <div class="tool-url">squoosh.app</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://excalidraw.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">✏️</span>
+        <div>
+          <div class="tool-name">Excalidraw</div>
+          <div class="tool-desc">手繪風格白板工具，適合快速畫架構圖</div>
+          <div class="tool-url">excalidraw.com</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-title">🎮 遊戲開發資源</div>
+    <div class="tools-grid">
+      <a class="tool-card" href="https://itch.io/game-assets/free" target="_blank" rel="noopener">
+        <span class="tool-icon">🎨</span>
+        <div>
+          <div class="tool-name">itch.io 免費素材</div>
+          <div class="tool-desc">大量免費遊戲素材，圖片、音效、字型都有</div>
+          <div class="tool-url">itch.io/game-assets/free</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://www.piskelapp.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">🖍</span>
+        <div>
+          <div class="tool-name">Piskel</div>
+          <div class="tool-desc">免費線上像素藝術編輯器，支援動畫幀</div>
+          <div class="tool-url">piskelapp.com</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://www.bfxr.net/" target="_blank" rel="noopener">
+        <span class="tool-icon">🔊</span>
+        <div>
+          <div class="tool-name">Bfxr</div>
+          <div class="tool-desc">快速生成 8-bit 遊戲音效，完全免費</div>
+          <div class="tool-url">bfxr.net</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://fontawesome.com/icons" target="_blank" rel="noopener">
+        <span class="tool-icon">🅰</span>
+        <div>
+          <div class="tool-name">Font Awesome</div>
+          <div class="tool-desc">超過 2000 個免費 SVG icon，支援多種格式</div>
+          <div class="tool-url">fontawesome.com</div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-title">🔗 常用平台</div>
+    <div class="tools-grid">
+      <a class="tool-card" href="https://store.steampowered.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">🎮</span>
+        <div>
+          <div class="tool-name">Steam</div>
+          <div class="tool-desc">好友代碼 <strong>185976962</strong>，歡迎加好友一起玩</div>
+          <div class="tool-url">store.steampowered.com</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://discord.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">🎙</span>
+        <div>
+          <div class="tool-name">Discord</div>
+          <div class="tool-desc">DC 名字 <strong>6652000</strong>，歡迎來聊</div>
+          <div class="tool-url">discord.com</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://github.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">🐙</span>
+        <div>
+          <div class="tool-name">GitHub</div>
+          <div class="tool-desc">開源專案托管，各種輪子都能在這找到</div>
+          <div class="tool-url">github.com</div>
+        </div>
+      </a>
+      <a class="tool-card" href="https://www.youtube.com/" target="_blank" rel="noopener">
+        <span class="tool-icon">▶</span>
+        <div>
+          <div class="tool-name">YouTube</div>
+          <div class="tool-desc">程式教學、遊戲速通、音樂，什麼都有</div>
+          <div class="tool-url">youtube.com</div>
+        </div>
+      </a>
+    </div>
+
+    <a class="back-link" href="/">← 回到首頁 &nbsp; Back Home</a>
+  </main>
+
+<script>
+(function() {
+  const saved = localStorage.getItem('capyTheme') || 'dark';
+  function setTheme(t) {
+    if (t === 'dark') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('capyTheme', t);
+    document.querySelectorAll('.theme-dot').forEach(d => {
+      d.classList.toggle('active', d.dataset.t === t);
+    });
+  }
+  window.setTheme = setTheme;
+  setTheme(saved);
+})();
+</script>
+</body>
+</html>

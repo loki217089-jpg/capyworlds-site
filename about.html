@@ -79,13 +79,31 @@
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: 18px;
-      padding: 32px 28px;
+      padding: 28px 28px 24px;
+      margin-bottom: 16px;
     }
+    .card-label {
+      font-size: 10px; letter-spacing: 2.5px;
+      color: var(--accent); text-transform: uppercase;
+      font-weight: 700; margin-bottom: 14px;
+    }
+    .card p { font-size: 15px; color: var(--text2); line-height: 1.9; margin-bottom: 12px; }
+    .card p:last-of-type { margin-bottom: 0; }
 
-    .card p {
-      font-size: 16px;
-      color: var(--text2);
-      line-height: 1.8;
+    .contact-list { display:flex; flex-direction:column; gap:16px; margin-bottom:12px; }
+    .contact-item { display:flex; align-items:center; gap:14px; }
+    .c-icon { font-size:26px; line-height:1; }
+    .c-label { font-size:10px; color:var(--text3); margin-bottom:3px; letter-spacing:1px; text-transform:uppercase; }
+    .c-value { font-size:15px; color:var(--text); }
+    .c-value code {
+      background:rgba(var(--accent-rgb),.08); padding:2px 10px; border-radius:6px;
+      font-family:monospace; color:var(--accent); border:1px solid rgba(var(--accent-rgb),.25);
+    }
+    .c-note { font-size:13px; color:var(--text3); margin-top:8px; }
+    .tag-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .tag {
+      font-size:12px; color:var(--accent); background:rgba(var(--accent-rgb),.08);
+      border:1px solid rgba(var(--accent-rgb),.2); padding:3px 12px; border-radius:20px;
     }
 
     .back-link {
@@ -170,12 +188,53 @@
   </header>
 
   <main class="content">
+
     <div class="card">
-      <p>這是我的個人創作小宇宙。<br><br>
-      喜歡做遊戲、寫作、以及各種奇奇怪怪的創意專案。<br>
-      希望 CapyWorlds 能成為一個讓人放鬆、有趣的地方，就像卡皮巴拉一樣慢慢享受人生 🦫
-      </p>
+      <div class="card-label">🌱 起源</div>
+      <p>CapyWorlds 的起點很簡單——我和女友都超愛卡皮巴拉。</p>
+      <p>某天我們在刷手機，看到一隻卡皮巴拉坐在溫泉裡，旁邊圍了一堆小動物爬在牠身上，
+      牠就這樣面無表情、怡然自得。我們同時說出：「這也太帥了。」</p>
+      <p>卡皮巴拉的氣質讓人著迷——不疾不徐，隨遇而安，是眾生依賴的存在卻一點都不在乎。
+      後來我們開始蒐集卡皮巴拉梗圖，把牠設成頭像，最後乾脆以牠為名，
+      建了這個小宇宙。</p>
+      <div class="tag-list">
+        <span class="tag">🦫 卡皮巴拉愛好者</span>
+        <span class="tag">🎮 遊戲玩家</span>
+        <span class="tag">👾 獨立遊戲開發</span>
+      </div>
     </div>
+
+    <div class="card">
+      <div class="card-label">🎮 關於這個地方</div>
+      <p>遊戲是我從小玩到大的興趣，從掌機、PC 到現在自己做瀏覽器小遊戲，這條路一直沒斷過。
+      CapyWorlds 收錄了我做的各種小遊戲——有殭屍防禦、太空探索、即時戰略、節奏 RPG，
+      風格完全隨心情走。</p>
+      <p>沒有什麼宏大目標，就是想做的時候做，想玩的時候玩。
+      有靈感就更新，沒靈感就沉默，跟卡皮巴拉一樣慢慢來。</p>
+      <p>除了遊戲，也會不定期寫點東西——開發心得、遊戲雜感、或者只是碎碎念。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-label">💬 找到我</div>
+      <div class="contact-list">
+        <div class="contact-item">
+          <span class="c-icon">🎮</span>
+          <div>
+            <div class="c-label">Steam</div>
+            <div class="c-value">好友代碼 <code>185976962</code></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="c-icon">🎙</span>
+          <div>
+            <div class="c-label">Discord</div>
+            <div class="c-value"><code>6652000</code></div>
+          </div>
+        </div>
+      </div>
+      <p class="c-note">歡迎加好友，一起遊戲 🦫</p>
+    </div>
+
     <a class="back-link" href="/">← 回到首頁 &nbsp; Back Home</a>
   </main>
 

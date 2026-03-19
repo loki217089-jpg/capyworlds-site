@@ -75,23 +75,30 @@
       padding: 48px 24px;
     }
 
-    .placeholder-card {
-      background: var(--bg2);
-      border: 1px dashed var(--border);
-      border-radius: 18px;
-      padding: 40px 28px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
+    .section-title {
+      font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--accent); font-weight: 700;
+      margin: 36px 0 16px;
     }
-    .placeholder-card .pl-icon { font-size: 36px; opacity: 0.5; }
-    .placeholder-card .pl-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text3);
+    .section-title:first-child { margin-top: 0; }
+
+    .rec-item {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 22px;
+      margin-bottom: 12px; display: flex; gap: 16px; align-items: flex-start;
+      transition: background 0.3s, border-color 0.3s;
     }
+    .rec-emoji { font-size: 28px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+    .rec-title { font-size: 15px; font-weight: 700; color: var(--h1); margin-bottom: 5px; }
+    .rec-desc { font-size: 13px; color: var(--text2); line-height: 1.7; }
+    .rec-tag {
+      display: inline-block; margin-top: 8px;
+      font-size: 10px; color: var(--accent);
+      background: rgba(var(--accent-rgb),.08);
+      border: 1px solid rgba(var(--accent-rgb),.2);
+      border-radius: 20px; padding: 1px 10px;
+    }
+
     .placeholder-card .pl-desc {
       font-size: 13px;
       color: var(--text5);
@@ -197,14 +204,76 @@
   </header>
 
   <main class="content">
-    <div class="placeholder-card">
-      <div class="pl-icon">📖</div>
-      <div class="pl-title">書寫計劃整理中…</div>
-      <div class="pl-desc">
-        各種書寫、故事與創作計劃<br>
-        卡皮巴拉正在認真閱讀，稍後奉上好內容 🦫
+
+    <div class="section-title">🎮 遊戲推薦</div>
+
+    <div class="rec-item">
+      <span class="rec-emoji">🃏</span>
+      <div>
+        <div class="rec-title">月圓之夜</div>
+        <div class="rec-desc">卡牌 + Roguelike 的組合做到了極致。每一局都不一樣，但每張牌的互動都精心設計過。節奏感超好，玩了之後很難回頭。</div>
+        <span class="rec-tag">卡牌 / Roguelike</span>
       </div>
     </div>
+
+    <div class="rec-item">
+      <span class="rec-emoji">🧱</span>
+      <div>
+        <div class="rec-title">Minecraft</div>
+        <div class="rec-desc">幾百小時的童年。那時候蓋的東西現在看起來很陽春，但沉浸在裡面的感覺是真實的。沙盒遊戲的魅力在於它從不告訴你該做什麼。</div>
+        <span class="rec-tag">沙盒 / 創造</span>
+      </div>
+    </div>
+
+    <div class="rec-item">
+      <span class="rec-emoji">🗡️</span>
+      <div>
+        <div class="rec-title">Hollow Knight</div>
+        <div class="rec-desc">美術、音樂、地圖設計三位一體的傑作。難度不低，但每次克服 BOSS 之後的成就感非常真實。值得每一個喜歡動作遊戲的人玩完一次。</div>
+        <span class="rec-tag">動作 / 探索</span>
+      </div>
+    </div>
+
+    <div class="section-title">📖 書單</div>
+
+    <div class="rec-item">
+      <span class="rec-emoji">🔬</span>
+      <div>
+        <div class="rec-title">人類大歷史（Sapiens）</div>
+        <div class="rec-desc">把人類幾十萬年的歷史濃縮成一本書，讀完會對「理所當然」的事情重新思考。農業革命那章讓我印象最深。</div>
+        <span class="rec-tag">歷史 / 人文</span>
+      </div>
+    </div>
+
+    <div class="rec-item">
+      <span class="rec-emoji">🎭</span>
+      <div>
+        <div class="rec-title">我是貓（吾輩は猫である）</div>
+        <div class="rec-desc">夏目漱石的作品，從貓的視角觀察人類社會。帶著距離感的幽默很特別，讀起來有種說不出的舒服。</div>
+        <span class="rec-tag">日本文學 / 幽默</span>
+      </div>
+    </div>
+
+    <div class="section-title">🎬 影視</div>
+
+    <div class="rec-item">
+      <span class="rec-emoji">🌌</span>
+      <div>
+        <div class="rec-title">Interstellar 星際效應</div>
+        <div class="rec-desc">科幻電影做到這個程度很少見。視覺、音樂、劇情幾乎完美配合。那個黑洞場景我大概看了五六次。</div>
+        <span class="rec-tag">科幻 / 電影</span>
+      </div>
+    </div>
+
+    <div class="rec-item">
+      <span class="rec-emoji">⚔️</span>
+      <div>
+        <div class="rec-title">進擊的巨人</div>
+        <div class="rec-desc">最後幾季讓我對動漫故事敘述的上限有了新的認識。就算你猜到了一些，依然會為它著迷。</div>
+        <span class="rec-tag">動漫 / 劇情</span>
+      </div>
+    </div>
+
     <a class="back-link" href="/">← 回到首頁 &nbsp; Back Home</a>
   </main>
 
