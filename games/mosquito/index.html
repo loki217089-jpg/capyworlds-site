@@ -198,6 +198,18 @@
     <div class="cost" id="magnetCost">🩸 40</div>
   </div>
 
+  <div class="shop-section-title">🌀 被動技能</div>
+
+  <div class="shop-item" id="shopCoil" onclick="buyUpgrade('coil')">
+    <div class="icon">🌀</div>
+    <div class="info">
+      <div class="name">蚊香爐</div>
+      <div class="desc">自動燃燒蚊香，每 10 秒擊殺最近一隻蚊子（升級縮短間隔，最多 3 級）</div>
+      <div class="level" id="coilLevel">未購買</div>
+    </div>
+    <div class="cost" id="coilCost">🩸 35</div>
+  </div>
+
   </div><!-- end shop-scroll -->
   <button id="shopClose" onclick="closeShop()">關　閉　[S]</button>
 </div>
@@ -210,7 +222,7 @@ const ctx=canvas.getContext('2d');
 const W=960,H=660;
 const ATTACK_RADIUS=40;
 function bootsBonus(){ return upgrades.boots.owned ? upgrades.boots.level*18 : 0; }
-const BLEED_ATTACK_THRESHOLD=5; // 第6隻起開始攻擊玩家
+const BLEED_ATTACK_THRESHOLD=3; // 第4隻起開始攻擊玩家（提高早期危機感）
 const BLEED_ATTACK_INTERVAL=3000; // 每3秒攻擊一次
 
 // ── 難度設定 ──────────────────────────────────
@@ -250,6 +262,7 @@ const upgrades={
   boots:   {owned:false,level:0,maxLevel:3},
   magnet:  {owned:false,cooldown:0,maxCooldown:15000,active:false,activeTimer:5000},
   crit:    {owned:false,level:0,maxLevel:2},
+  coil:    {owned:false,level:0,maxLevel:3,timer:0,interval:10000}, // 蚊香爐（被動自動攻擊）
 };
 
 // ── 全域血量（跨局保留）──────────────────────
@@ -401,6 +414,43 @@ function createBG(){
   c.fillStyle=lg; c.beginPath(); c.ellipse(lx+3,210,140,100,0,0,Math.PI*2); c.fill();
   for(let x=0;x<W;x+=55+Math.random()*25){c.strokeStyle='rgba(255,180,60,0.025)';c.lineWidth=1;c.beginPath();c.moveTo(x,H*0.66);c.lineTo(x+25,H);c.stroke();}
   for(let i=0;i<4500;i++){const x=Math.random()*W,y=Math.random()*H,a=Math.random()*0.032;c.fillStyle=`rgba(255,220,140,${a})`;c.fillRect(x,y,1,1);}
+
+  // 受害者手臂（右側，提供蚊子視覺目標）
+  const ax=W-160, ay=H*0.66-10;
+  // 手臂輪廓（前臂）
+  c.save();
+  c.translate(ax, ay);
+  c.rotate(-0.35);
+  const armG=c.createLinearGradient(0,-10,80,10);
+  armG.addColorStop(0,'#8a5a38'); armG.addColorStop(0.5,'#7a4a2c'); armG.addColorStop(1,'#6a3a1a');
+  c.fillStyle=armG;
+  // 前臂主體
+  c.beginPath(); c.ellipse(40,0,62,22,0,0,Math.PI*2); c.fill();
+  // 皮膚光澤
+  c.fillStyle='rgba(180,120,80,0.18)';
+  c.beginPath(); c.ellipse(30,-6,40,9,0,0,Math.PI*2); c.fill();
+  // 手掌
+  c.fillStyle='#7a4a2c';
+  c.beginPath(); c.ellipse(98,4,24,18,0.3,0,Math.PI*2); c.fill();
+  // 手指（4條線）
+  for(let i=0;i<4;i++){
+    c.fillStyle='#7a4a2c';
+    c.beginPath(); c.ellipse(116+i*6,2+i*3,8,5,0.4,0,Math.PI*2); c.fill();
+  }
+  // 肘部陰影
+  c.fillStyle='rgba(40,15,5,0.22)';
+  c.beginPath(); c.ellipse(-16,2,18,14,0,0,Math.PI*2); c.fill();
+  c.restore();
+  // 紅腫包（蚊子叮的痕跡）
+  c.save(); c.translate(ax+28,ay-8);
+  for(let i=0;i<3;i++){
+    const bx2=Math.random()*40+10, by2=Math.random()*12-6;
+    const bg2=c.createRadialGradient(bx2,by2,0,bx2,by2,6);
+    bg2.addColorStop(0,'rgba(220,80,60,0.5)'); bg2.addColorStop(1,'transparent');
+    c.fillStyle=bg2; c.beginPath(); c.arc(bx2,by2,8,0,Math.PI*2); c.fill();
+  }
+  c.restore();
+
   const vig=c.createRadialGradient(W/2,H/2,H*0.28,W/2,H/2,H*0.95);
   vig.addColorStop(0,'transparent'); vig.addColorStop(1,'rgba(0,0,0,0.6)');
   c.fillStyle=vig; c.fillRect(0,0,W,H);
@@ -669,6 +719,17 @@ function buyUpgrade(type){
     if(!upgrades.crit.owned) upgrades.crit.owned=true;
     Audio.SFX.upgradeBuy();
     showMsg(`🎯 暴擊率提升！目前 ${upgrades.crit.level*20}% 機率雙倍傷害`);
+  } else if(type==='coil'){
+    const costs=[35,50,70];
+    if(upgrades.coil.level>=upgrades.coil.maxLevel){showMsg('蚊香爐已滿級');return;}
+    const cost=costs[upgrades.coil.level];
+    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    totalBlood-=cost; upgrades.coil.level++;
+    if(!upgrades.coil.owned) upgrades.coil.owned=true;
+    const intervals=[10000,7000,5000];
+    upgrades.coil.interval=intervals[upgrades.coil.level-1];
+    Audio.SFX.upgradeBuy();
+    showMsg(`🌀 蚊香爐升到 Lv${upgrades.coil.level}！每 ${upgrades.coil.interval/1000} 秒自動擊殺`);
   }
   updateShopUI();
 }
@@ -773,6 +834,23 @@ function updateShopUI(){
     else if(cd>0){mgnEl.classList.add('maxed');mgnLv.textContent=`充能中 ${cd}秒`;mgnCost.textContent='充能中';}
     else{mgnEl.classList.remove('maxed');mgnLv.textContent='✅ 就緒，點此或按 [T] 啟動';mgnCost.textContent='啟動';}
   } else {mgnEl.classList.remove('maxed');mgnLv.textContent='未購買';mgnCost.textContent='🩸 40';}
+  // 蚊香爐
+  const coilEl=document.getElementById('shopCoil');
+  const coilLv=document.getElementById('coilLevel');
+  const coilCost=document.getElementById('coilCost');
+  const costs=[35,50,70];
+  if(upgrades.coil.owned){
+    const remaining=Math.max(0,Math.ceil((upgrades.coil.interval-(upgrades.coil.timer||0))/1000));
+    if(upgrades.coil.level>=upgrades.coil.maxLevel){
+      coilEl.classList.add('maxed');
+      coilLv.textContent=`Lv 3 (每${upgrades.coil.interval/1000}秒) 下次 ${remaining}s`;
+      coilCost.textContent='已滿級';
+    } else {
+      coilEl.classList.remove('maxed');
+      coilLv.textContent=`Lv ${upgrades.coil.level} (每${upgrades.coil.interval/1000}秒) 下次 ${remaining}s`;
+      coilCost.textContent=`🩸 ${costs[upgrades.coil.level]}`;
+    }
+  } else { coilEl.classList.remove('maxed'); coilLv.textContent='未購買'; coilCost.textContent='🩸 35'; }
 }
 
 function useBomb(){
@@ -961,9 +1039,10 @@ function resumeGame(){
 // ── 遊戲生命週期 ──────────────────────────────
 function startGame(){
   Audio.stopBGM();
-  // 護盾重置
+  // 護盾/蚊香爐重置
   upgrades.shield.active=false;
   upgrades.zap.cooldown=0;
+  upgrades.coil.timer=0;
   state={
     phase:'playing',score:0,hp:5+upgrades.maxhp.level,maxHp:5+upgrades.maxhp.level,time:0,combo:0,comboTimer:0,maxCombo:0,
     bossKills:0,nextBoss:currentDiff.bossInterval,
@@ -1075,7 +1154,25 @@ function drawHUD(){
 
 
 
-  // 吸血警告（5隻以上顯示）
+  // Boss 警告紅色邊框
+  const hasBoss=state.mosquitoes.some(m=>m.alive&&m.type==='boss');
+  if(hasBoss){
+    const bossFlash=0.35+Math.sin(Date.now()*0.009)*0.25;
+    ctx.save();
+    ctx.strokeStyle=`rgba(220,30,50,${bossFlash})`;
+    ctx.lineWidth=6;
+    ctx.strokeRect(3,3,W-6,H-6);
+    // 角落血滴紋理
+    const corners=[[0,0],[W,0],[0,H],[W,H]];
+    corners.forEach(([cx,cy])=>{
+      const gr=ctx.createRadialGradient(cx,cy,0,cx,cy,80);
+      gr.addColorStop(0,`rgba(180,0,30,${bossFlash*0.5})`); gr.addColorStop(1,'transparent');
+      ctx.fillStyle=gr; ctx.fillRect(cx-80,cy-80,160,160);
+    });
+    ctx.restore();
+  }
+
+  // 吸血警告（超門檻顯示）
   const aliveCount=state.mosquitoes.filter(m=>m.alive&&m.type!=='boss').length;
   if(aliveCount>BLEED_ATTACK_THRESHOLD){
     const excess=aliveCount-BLEED_ATTACK_THRESHOLD;
@@ -1096,6 +1193,7 @@ function drawHUD(){
   if(upgrades.freeze&&upgrades.freeze.owned) hints.push(upgrades.freeze.active?'[R]❄生效中':upgrades.freeze.cooldown>0?`[R]❄${Math.ceil(upgrades.freeze.cooldown/1000)}s`:'[R]❄就緒');
   if(upgrades.bomb.stock>0) hints.push(`[F]💣×${upgrades.bomb.stock}`);
   if(upgrades.magnet.owned) hints.push(upgrades.magnet.active?'[T]🧲生效中':upgrades.magnet.cooldown>0?`[T]🧲${Math.ceil(upgrades.magnet.cooldown/1000)}s`:'[T]🧲就緒');
+  if(upgrades.coil.owned){const rem=Math.max(0,Math.ceil((upgrades.coil.interval-(upgrades.coil.timer||0))/1000));hints.push(`🌀${rem}s`);}
   hints.push('[S]商店  [P]暫停');
   ctx.fillStyle='#5a4a2a';
   ctx.fillText(hints.join('  '),12,H-8);
@@ -1293,6 +1391,23 @@ function loop(ts){
 
   // 扣血攻擊
   updateBleedAttacks(dt);
+
+  // 蚊香爐被動：定時自動擊殺最近一隻蚊子
+  if(upgrades.coil.owned&&state.mosquitoes.some(m=>m.alive&&m.type!=='boss')){
+    upgrades.coil.timer=(upgrades.coil.timer||0)+dt;
+    if(upgrades.coil.timer>=upgrades.coil.interval){
+      upgrades.coil.timer=0;
+      const targets=state.mosquitoes.filter(m=>m.alive&&m.type!=='boss');
+      if(targets.length>0){
+        // 擊殺隨機一隻（偏好螢幕邊緣的，最危險的）
+        const tgt=targets[Math.floor(Math.random()*targets.length)];
+        tgt.alive=false;
+        killMosquito(tgt);
+        spawnParticles(tgt.x,tgt.y,'#c8ff80',14);
+        state.floatingTexts.push(new FloatingText(tgt.x,tgt.y-20,'🌀 煙燻！','#a8e060',17));
+      }
+    }
+  }
 
   state.mosquitoes=state.mosquitoes.filter(m=>m.alive);
   state.mosquitoes.forEach(m=>m.update(dt));
