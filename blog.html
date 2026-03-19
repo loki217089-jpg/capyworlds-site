@@ -92,18 +92,26 @@
       padding: 48px 24px;
     }
 
-    .placeholder-card {
+    .post {
       background: var(--bg2);
-      border: 1px dashed var(--border);
+      border: 1px solid var(--border);
       border-radius: 18px;
-      padding: 40px 28px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      transition: background 0.3s;
+      padding: 28px;
+      margin-bottom: 20px;
+      transition: background 0.3s, border-color 0.3s;
     }
+    .post-meta { display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+    .post-date { font-size:11px; color:var(--text3); }
+    .post-tag {
+      font-size:10px; color:var(--accent);
+      background:rgba(var(--accent-rgb),.1);
+      border:1px solid rgba(var(--accent-rgb),.2);
+      border-radius:20px; padding:2px 10px;
+    }
+    .post-title { font-size:20px; font-weight:800; color:var(--h1); margin-bottom:16px; line-height:1.4; }
+    .post-body { font-size:15px; color:var(--text2); line-height:1.9; }
+    .post-body p { margin-bottom:12px; }
+    .post-body p:last-child { margin-bottom:0; }
     .placeholder-card .pl-icon { font-size: 36px; opacity: 0.5; }
     .placeholder-card .pl-title {
       font-size: 16px;
@@ -195,14 +203,47 @@
   </header>
 
   <main class="content">
-    <div class="placeholder-card">
-      <div class="pl-icon">✍️</div>
-      <div class="pl-title">文章陸續更新中…</div>
-      <div class="pl-desc">
-        各種想法、開發心得、遊戲設計筆記<br>
-        敬請期待 CapyWorlds 卡皮巴拉的碎碎念
+
+    <div class="post">
+      <div class="post-meta">
+        <span class="post-date">2026-03-18</span>
+        <span class="post-tag">開發筆記</span>
+      </div>
+      <div class="post-title">做了一個即時戰略遊戲，然後學到了一些事</div>
+      <div class="post-body">
+        <p>最近做了一款叫《機甲蟲蟲危機》的遊戲，是橫向排式即時戰略——三排戰場，玩家在左邊部署士兵，蟲族機甲從右邊湧來，靠資源管理和兵種搭配守住基地。</p>
+        <p>這個企劃開始的時候，我其實想做傳統 RTS，全滑鼠操作、框選單位、右鍵移動。結果做著做著覺得太複雜，改成「選兵種、點戰場排、自動出擊」的簡化版。沒想到這個決定讓整個遊戲的節奏清晰很多。</p>
+        <p>做遊戲最難的地方不是程式，而是「為什麼要這樣設計」。每個數字背後都要有一個說得通的理由：兵種傷害多少、金幣幾秒獲得一枚、波次間隔多久。調錯了感覺完全不一樣。</p>
+        <p>用了 Robot Warfare 的素材包，裡面有很完整的士兵和機甲蟲族 pixel art。整合 sprite sheet 的時候花了些時間搞清楚格式，但成品的視覺效果讓我很滿意。下次想做音樂跟遊戲事件同步的遊戲，讓聲音也成為玩法的一部分。</p>
       </div>
     </div>
+
+    <div class="post">
+      <div class="post-meta">
+        <span class="post-date">2025-12-03</span>
+        <span class="post-tag">遊戲</span>
+      </div>
+      <div class="post-title">那些從小陪到大的遊戲</div>
+      <div class="post-body">
+        <p>最早接觸的是掌機上的神奇寶貝，當時根本不知道什麼叫「策略」，就是一路亂打到最後。後來玩了 Minecraft，在裡面花了幾百小時蓋沒什麼用的建築，但就是樂在其中。</p>
+        <p>長大一點開始碰 Steam，玩了一堆策略遊戲：文明系列、全戰系列、還有各種 Roguelike。有一段時間沉迷《月圓之夜》，覺得卡牌加 Roguelike 的組合太完美了。</p>
+        <p>現在比較難有大塊時間坐下來打遊戲，但遊戲的影響已經體現在另一個地方：做遊戲。自己從頭做一款遊戲和玩別人做的遊戲，感受差很多。玩家的角度是「好不好玩」，設計者的角度是「為什麼好玩」。我現在做的都是小品，但每次做完都會很認真思考一件事：這個東西，換我來玩，我會繼續玩嗎？</p>
+      </div>
+    </div>
+
+    <div class="post">
+      <div class="post-meta">
+        <span class="post-date">2025-11-12</span>
+        <span class="post-tag">隨筆</span>
+      </div>
+      <div class="post-title">為什麼有 CapyWorlds</div>
+      <div class="post-body">
+        <p>我跟女友某天在刷手機的時候，看到一隻卡皮巴拉坐在溫泉裡，旁邊圍了一圈小動物爬在牠身上，牠就這樣面無表情、怡然自得。我們兩個同時說出：「這也太帥了。」</p>
+        <p>卡皮巴拉的氣質讓人著迷——不疾不徐，什麼都無所謂，卻是眾生依賴的存在。後來我們開始到處蒐集卡皮巴拉梗圖，甚至把牠設成頭像。</p>
+        <p>CapyWorlds 就是在這樣的氣氛下誕生的。沒有什麼宏大的目標，就是一個能放遊戲、放文章、放各種雜七雜八東西的地方。有緣分的時候再見面就好——就跟卡皮巴拉的哲學一樣。</p>
+      </div>
+    </div>
+
     <a class="back-link" href="/">← 回到首頁 &nbsp; Back Home</a>
   </main>
 
