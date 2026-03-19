@@ -76,3 +76,58 @@ BLOCK2
 - 所有遊戲都是純前端，無外部依賴
 - 使用繁體中文 UI
 - 視覺風格跟隨現有設計（深色背景、金色/青色強調色）
+
+---
+
+## 使用者電腦環境（素材上傳路徑）
+
+使用者有兩台電腦，請在對話開始時先確認是哪台，才給正確路徑指令。
+
+### 辨認方式
+叫使用者在 CMD 跑：
+```cmd
+echo %COMPUTERNAME%
+```
+
+### 筆電（目前已確認）
+| 項目 | 路徑 |
+|------|------|
+| Git repo（本機） | `C:\Users\User\capyworlds` |
+| 素材下載落地位置 | `C:\Users\User\Desktop\capyworlds\assets\` |
+| 上傳素材指令 | 見下方「素材上傳 SOP」 |
+
+### ACER 主機（路徑待確認）
+第一次用 ACER 時請先跑 `echo %COMPUTERNAME%` 和 `echo %USERPROFILE%`，回報給 Claude 更新此欄位。
+
+---
+
+## 素材上傳 SOP（Windows CMD）
+
+每次上傳新素材資料夾到 GitHub assets，照這個流程：
+
+```cmd
+:: 1. 把素材從落地位置複製進 git repo（筆電）
+xcopy "C:\Users\User\Desktop\capyworlds\assets\<資料夾名稱>" "C:\Users\User\capyworlds\assets\<資料夾名稱>\" /E /I /Y
+
+:: 2. 進 git repo
+cd C:\Users\User\capyworlds
+
+:: 3. 確認 git 有看到新資料夾
+git status
+
+:: 4. 加入 commit push
+git add "assets\<資料夾名稱>"
+git commit -m "Add <資料夾名稱>"
+git push origin main
+```
+
+**常見錯誤：** `pathspec did not match any files` → 代表複製沒成功，先確認 `git status` 有沒有看到資料夾。
+
+---
+
+## 歷史對話重點紀錄
+
+- **2026/3/19** 彈幕按鈕移到右上角，配色改用主題變數（與主題切換器一致）
+- **2026/3/19** 節拍戰士 bug 修：第二關「繼續」按鈕按了 overlay 不消失 → 已修 `showOverlay`
+- **2026/3/19** 節拍戰士音效：從 WebAudio 合成音改為素材庫真實音效（PickUp/Impact/PowerUp/Success/Negative 系列）
+- **2026/3/19** 素材 `PostApocalypse_AssetPack_v1.1.2` 待上傳（路徑確認後請繼續）
