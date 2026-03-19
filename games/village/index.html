@@ -218,6 +218,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','PingFang TC'
 #notif{position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-4px);background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:7px 16px;font-size:.75rem;color:var(--text);z-index:300;pointer-events:none;opacity:0;transition:opacity .3s,transform .3s;white-space:nowrap;max-width:90vw;text-overflow:ellipsis;overflow:hidden}
 #notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ───── CLOUDS ───── */
+.cloud{position:absolute;pointer-events:none;z-index:3;opacity:.55;font-size:1.4rem;animation:cloud-drift linear infinite}
+@keyframes cloud-drift{0%{transform:translateX(-60px)}100%{transform:translateX(calc(100vw + 60px))}}
+
 /* ───── SCROLLBAR ───── */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -540,6 +544,50 @@ const GIFTS = [
   {id:'gem',     ic:'💎', name:'寶石',  cost:18},
 ];
 
+// ══════════════════════════════════════════════
+//  DAILY QUESTS
+// ══════════════════════════════════════════════
+const QUEST_POOL = [
+  {id:'talk',    ic:'💬', title:'打個招呼',     desc:'跟任一村民聊聊天',           reward:{happiness:8},  flag:d=>`talked_${d}`},
+  {id:'gather',  ic:'🍎', title:'採集食物',     desc:'手動採集一次食物',            reward:{happiness:5,food:5}, flag:d=>`gathered_food_${d}`},
+  {id:'wood',    ic:'🪵', title:'採集木材',     desc:'手動採集一次木材',            reward:{happiness:5,wood:4}, flag:d=>`gathered_wood_${d}`},
+  {id:'gift',    ic:'🎁', title:'送出禮物',     desc:'送村民任何一份禮物',          reward:{happiness:12,food:3}, flag:d=>`gift_${d}`},
+  {id:'walk',    ic:'🚶', title:'一起散步',     desc:'跟村民去散步（需達朋友）',    reward:{happiness:10}, flag:d=>`walk_${d}`},
+  {id:'furniture',ic:'🏠','title':'添置家具',   desc:'為小屋添置任何一件家具',      reward:{happiness:10,wood:5}, flag:d=>`furniture_${d}`},
+  {id:'log',     ic:'📜', title:'觀察村子',     desc:'今天日誌至少有 3 條動態',     reward:{happiness:6},  flag:d=>`log3_${d}`},
+];
+
+function pickDailyQuests(day) {
+  const seed = day * 31 + 7;
+  const shuffled = [...QUEST_POOL].sort((a,b)=>{
+    const h1 = ((seed * 13 + QUEST_POOL.indexOf(a) * 17) % 97);
+    const h2 = ((seed * 13 + QUEST_POOL.indexOf(b) * 17) % 97);
+    return h1 - h2;
+  });
+  return shuffled.slice(0, 3).map(q => ({...q, done: false}));
+}
+
+function checkQuests() {
+  if (!G.quests || G.quests.day !== G.day) return;
+  let changed = false;
+  G.quests.list.forEach(q => {
+    if (q.done) return;
+    const flag = q.flag(G.day);
+    if (G.flags[flag]) {
+      q.done = true;
+      changed = true;
+      const r = q.reward;
+      if (r.happiness) G.happiness = Math.min(100, G.happiness + r.happiness);
+      if (r.food) G.food = Math.min(999, G.food + r.food);
+      if (r.wood) G.wood = Math.min(999, G.wood + r.wood);
+      const bonus = [r.happiness?`💛+${r.happiness}`:'', r.food?`🍎+${r.food}`:'', r.wood?`🪵+${r.wood}`:''].filter(Boolean).join(' ');
+      addLog(`✅ 任務完成：${q.title}！獎勵 ${bonus}`, 'special');
+      notify(`✅ ${q.title} 完成！${bonus}`);
+    }
+  });
+  if (changed) { renderResources(); if(_tab==='home') renderTab(); save(); }
+}
+
 const HOURLY_EVENTS = [
   v => `${v.name}在田裡哼著歌，歌聲傳到了整個村子。`,
   v => `${v.name}靜靜坐在魚塘邊，看著水面發呆。`,
@@ -567,6 +615,7 @@ function newState(playerName, villageName) {
     log: [],
     flags: {},
     actDone: {},       // key: `${vlgrId}_${actType}` → lastDay
+    quests: {day: -1, list: []},
     gatherCd: {food:0, wood:0}, // real-time ms cooldown
     visitCount: 0,
     lastVisit: Date.now(),
@@ -609,6 +658,9 @@ function notify(msg) {
 function addLog(text, type='') {
   G.log.unshift({text, type, time: TIME_NAMES[G.hour], day:G.day});
   if (G.log.length > 35) G.log.pop();
+  // log3 quest: 今天至少3條日誌
+  const todayLogs = G.log.filter(l=>l.day===G.day).length;
+  if (todayLogs >= 3) { G.flags[`log3_${G.day}`] = true; checkQuests(); }
   renderLog();
 }
 
@@ -648,6 +700,10 @@ function showGame() {
   document.getElementById('intro').style.display = 'none';
   document.getElementById('game').style.display = 'flex';
   document.getElementById('game').style.flexDirection = 'column';
+  // 確保當天有任務
+  if (!G.quests || G.quests.day !== G.day) {
+    G.quests = { day: G.day, list: pickDailyQuests(G.day) };
+  }
   initUI();
   startTick();
 }
@@ -707,6 +763,10 @@ function tick() {
 function newDay() {
   G.day++;
   G.seasonDay++;
+  // 生成每日任務
+  if (!G.quests || G.quests.day !== G.day) {
+    G.quests = { day: G.day, list: pickDailyQuests(G.day) };
+  }
   G.food = Math.min(999, G.food + 6);
   G.wood = Math.min(999, G.wood + 4);
   G.happiness = Math.min(100, G.happiness + 2);
@@ -867,6 +927,18 @@ function renderMap() {
     h += `<div style="position:absolute;top:8%;left:35%;font-size:.55rem;opacity:.4;pointer-events:none">⭐</div>`;
   }
 
+  // Floating clouds (day only)
+  if (isDay) {
+    const cloudData = [
+      {top:6,  delay:0,   dur:28, ic:'☁️'},
+      {top:14, delay:10,  dur:22, ic:'🌤️'},
+      {top:8,  delay:17,  dur:35, ic:'☁️'},
+    ];
+    cloudData.forEach(cl => {
+      h += `<div class="cloud" style="top:${cl.top}%;animation-duration:${cl.dur}s;animation-delay:-${cl.delay}s">${cl.ic}</div>`;
+    });
+  }
+
   // Decorative ground elements
   MAP_DECO[sn].forEach(d => {
     h += `<div style="position:absolute;left:${d.x}%;top:${d.y}%;transform:translateX(-50%);font-size:1rem;pointer-events:none;z-index:4;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))">${d.ic}</div>`;
@@ -940,7 +1012,26 @@ function buildHomeTab() {
   const foodCd = Math.max(0, Math.ceil(((G.gatherCd?.food||0) - now) / 1000));
   const woodCd = Math.max(0, Math.ceil(((G.gatherCd?.wood||0) - now) / 1000));
 
-  let s = `<div class="card">
+  // 每日任務
+  const quests = G.quests && G.quests.day === G.day ? G.quests.list : pickDailyQuests(G.day);
+  const doneCount = quests.filter(q=>q.done).length;
+  let s = `<div class="card" style="border-color:rgba(240,192,64,.25)">
+    <div class="card-title">📋 今日任務 <span style="font-size:.62rem;color:var(--text3);font-weight:400">${doneCount}/${quests.length} 完成</span></div>`;
+  quests.forEach(q => {
+    const r = q.reward;
+    const bonus = [r.happiness?`💛+${r.happiness}`:'', r.food?`🍎+${r.food}`:'', r.wood?`🪵+${r.wood}`:''].filter(Boolean).join(' ');
+    s += `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <span style="font-size:1.2rem;flex-shrink:0">${q.done?'✅':q.ic}</span>
+      <div style="flex:1">
+        <div style="font-size:.75rem;color:${q.done?'var(--text3)':'var(--text)'};text-decoration:${q.done?'line-through':'none'};font-weight:700">${q.title}</div>
+        <div style="font-size:.62rem;color:var(--text3)">${q.desc}</div>
+      </div>
+      <span style="font-size:.6rem;color:var(--gold);flex-shrink:0">${bonus}</span>
+    </div>`;
+  });
+  s += `</div>`;
+
+  s += `<div class="card">
     <div class="card-title">🌿 採集資源 <span style="font-size:.62rem;color:var(--text3);font-weight:400">每5分鐘可用一次</span></div>
     <div style="font-size:.7rem;color:var(--text3);margin-bottom:8px">食物和木材也會<b style="color:var(--text2)">自動緩慢增加</b>，每天日出時補一批。</div>
     <div class="gather-row">
@@ -1013,6 +1104,33 @@ function buildVillageTab() {
     <div class="stat-row"><span class="stat-lbl">📔 日記頁數</span><span class="stat-val">${G.diary.length} 頁</span></div>
   </div>`;
 
+  // 村子里程碑進度條
+  const MILESTONES = [
+    {bond:50,   label:'村民開始認識你', ic:'🌱'},
+    {bond:100,  label:'村子有了好氣氛', ic:'🌿'},
+    {bond:200,  label:'大家視你為老朋友', ic:'🌳'},
+    {bond:350,  label:'你成了村子的靈魂', ic:'🏆'},
+    {bond:500,  label:'傳說的守護者', ic:'✨'},
+  ];
+  const nextMile = MILESTONES.find(m => bond < m.bond) || null;
+  const prevMile = MILESTONES.slice().reverse().find(m => bond >= m.bond) || null;
+  if (nextMile) {
+    const base = prevMile ? prevMile.bond : 0;
+    const progress = Math.round((bond - base) / (nextMile.bond - base) * 100);
+    s += `<div class="card" style="border-color:rgba(240,192,64,.2)">
+      <div class="card-title">🌟 村子成長進度</div>
+      <div style="font-size:.65rem;color:var(--text3);margin-bottom:6px">目標：${nextMile.ic} ${nextMile.label}（友誼 ${Math.floor(bond)}/${nextMile.bond}）</div>
+      <div style="height:8px;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden;margin-bottom:6px">
+        <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,var(--gold3),var(--gold));border-radius:5px;transition:width .7s"></div>
+      </div>
+      ${prevMile?`<div style="font-size:.6rem;color:var(--gold)">已達成：${prevMile.ic} ${prevMile.label}</div>`:''}
+    </div>`;
+  } else if (prevMile) {
+    s += `<div class="card" style="border-color:rgba(240,192,64,.35)">
+      <div style="text-align:center;padding:6px 0;color:var(--gold);font-size:.85rem">✨ 村子已達到最高境界！</div>
+    </div>`;
+  }
+
   s += `<div class="card"><div class="card-title">🦫 村民關係</div>`;
   VLGR_DATA.forEach((d,i) => {
     const v = G.villagers[i];
@@ -1078,6 +1196,7 @@ function buyFurniture(id) {
   G.wood -= f.cost;
   G.home.items.push(id);
   G.home.comfort += f.comfort;
+  G.flags[`furniture_${G.day}`] = true;
   addLog(`🏠 小屋添置了 ${f.ic}${f.name}，舒適度提升了！`, 'event');
   addDiary(`為小屋添置了${f.name}。這裡越來越有家的感覺了。`);
   notify(`✨ 添置了 ${f.ic}${f.name}！舒適+${f.comfort}`);
@@ -1171,6 +1290,7 @@ function talkMore(id) {
   sfx('chat');
 
   if (!sameDay) addLog(`${G.playerName}跟${d.name}聊了聊天。`);
+  G.flags[`talked_${G.day}`] = true; checkQuests();
   renderVlgrRow();
   renderResources();
   if (_tab==='village') renderTab();
@@ -1227,6 +1347,7 @@ function giveGift(vlId, giftId) {
   const curr = relInfo(v.friendship);
   if (prev !== curr.tier) onRelUp(vlId, curr);
 
+  G.flags[`gift_${G.day}`] = true;
   const resp = sub(d.giftResp);
   addLog(`${G.playerName}送了${g.ic}${g.name}給${d.name}。`, 'event');
   addDiary(`送了${g.name}給${d.name}。他/她看起來非常開心。`);
@@ -1276,8 +1397,9 @@ function gather(type) {
     notify(`⏳ 還需等待 ${left} 秒`); return;
   }
   G.gatherCd[type] = now + CD;
-  if (type === 'food') { G.food = Math.min(999, G.food + 8); notify('🍎 採集了食物 +8！'); addLog('你在農場附近採集了一批食物。'); }
-  else { G.wood = Math.min(999, G.wood + 6); notify('🪵 採集了木材 +6！'); addLog('你砍了幾棵樹，收集到木材。'); }
+  if (type === 'food') { G.food = Math.min(999, G.food + 8); notify('🍎 採集了食物 +8！'); addLog('你在農場附近採集了一批食物。'); G.flags[`gathered_food_${G.day}`]=true; }
+  else { G.wood = Math.min(999, G.wood + 6); notify('🪵 採集了木材 +6！'); addLog('你砍了幾棵樹，收集到木材。'); G.flags[`gathered_wood_${G.day}`]=true; }
+  checkQuests();
   renderResources();
   renderTab();
   save();
@@ -1357,6 +1479,7 @@ function doWalk(vlId) {
   const line = msgs[Math.floor(Math.random()*msgs.length)];
   v.friendship = Math.min(100, v.friendship + 5);
   G.happiness = Math.min(100, G.happiness + 5);
+  G.flags[`walk_${G.day}`] = true;
   addLog(`🚶 ${G.playerName}跟${d.name}一起散步了！`, 'event');
   addDiary(`跟${d.name}在村子裡散步。簡單的事，卻很快樂。`);
   showFest('🚶', `與${d.name}散步`, line + '\n\n友誼 +5 · 幸福 +5');
