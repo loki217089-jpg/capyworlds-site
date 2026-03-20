@@ -137,12 +137,12 @@ body {
   image-rendering: pixelated;
   animation: gemAnim 0.72s steps(6) infinite;
 }
-.gem-gold    { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 1/GEM 1 - GOLD - Spritesheet.png'); }
-.gem-blue    { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 2/GEM 2 - BLUE - Spritesheet.png'); }
-.gem-red     { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 3/GEM 3 - RED - Spritesheet.png'); }
-.gem-green   { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 4/GEM 4 - LIGHT GREEN - Spritesheet.png'); }
-.gem-purple  { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 5/GEM 5 - PURPLE - Spritesheet.png'); }
-.gem-teal    { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 6/GEM 6 - TURQUOISE - Spritesheet.png'); }
+.gem-gold   { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 1/GEM 1 - GOLD - Spritesheet.png');        box-shadow: inset 0 0 10px rgba(255,215,0,0.45),  0 0 6px rgba(255,215,0,0.25);  background-color:#1a1500; }
+.gem-blue   { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 2/GEM 2 - BLUE - Spritesheet.png');        box-shadow: inset 0 0 10px rgba(68,136,255,0.45), 0 0 6px rgba(68,136,255,0.25); background-color:#00081a; }
+.gem-red    { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 3/GEM 3 - RED - Spritesheet.png');         box-shadow: inset 0 0 10px rgba(255,51,51,0.45),  0 0 6px rgba(255,51,51,0.25);  background-color:#1a0000; }
+.gem-green  { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 4/GEM 4 - LIGHT GREEN - Spritesheet.png'); box-shadow: inset 0 0 10px rgba(68,204,68,0.45),  0 0 6px rgba(68,204,68,0.25);  background-color:#001400; }
+.gem-purple { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 5/GEM 5 - PURPLE - Spritesheet.png');      box-shadow: inset 0 0 10px rgba(170,68,255,0.45), 0 0 6px rgba(170,68,255,0.25); background-color:#0d0019; }
+.gem-teal   { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 6/GEM 6 - TURQUOISE - Spritesheet.png');   box-shadow: inset 0 0 10px rgba(0,204,204,0.45),  0 0 6px rgba(0,204,204,0.25);  background-color:#001a1a; }
 </style>
 /* ---- Right Panel ---- */
 #panel {
@@ -305,6 +305,48 @@ body {
   0%   { transform:translateY(0); opacity:1; }
   100% { transform:translateY(-60px); opacity:0; }
 }
+/* ---- Screen Flash ---- */
+#comboFlashEl {
+  position:fixed; inset:0; pointer-events:none; z-index:300; opacity:0;
+}
+@keyframes screenFlash {
+  0%   { opacity:0.55; }
+  100% { opacity:0; }
+}
+#comboFlashEl.flash { animation:screenFlash 0.38s ease forwards; }
+/* ---- Big Combo Text ---- */
+.big-combo {
+  position:fixed; top:45%; left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  font-size:2.8rem; font-weight:900; letter-spacing:2px;
+  color:#ff4444; text-shadow:0 0 18px #ff0000, 0 0 36px #ff000055;
+  pointer-events:none; z-index:400;
+  animation:bigComboAnim 0.72s ease forwards;
+}
+@keyframes bigComboAnim {
+  0%   { transform:translate(-50%,-50%) scale(0); opacity:1; }
+  30%  { transform:translate(-50%,-58%) scale(1.4); opacity:1; }
+  100% { transform:translate(-50%,-70%) scale(1.1); opacity:0; }
+}
+/* ---- Milestone Banner ---- */
+.milestone-banner {
+  position:fixed; top:72px; left:50%;
+  transform:translateX(-50%) translateY(-20px);
+  background:linear-gradient(135deg,#3a2000,#6a4000);
+  border:2px solid #ffd700; border-radius:12px;
+  padding:10px 28px; color:#ffd700; font-size:1.05rem; font-weight:bold;
+  text-align:center; z-index:500; white-space:nowrap;
+  box-shadow:0 0 28px rgba(255,215,0,0.5);
+  animation:milestoneAnim 2.2s ease forwards;
+}
+@keyframes milestoneAnim {
+  0%   { opacity:0; transform:translateX(-50%) translateY(-20px); }
+  14%  { opacity:1; transform:translateX(-50%) translateY(0); }
+  78%  { opacity:1; transform:translateX(-50%) translateY(0); }
+  100% { opacity:0; transform:translateX(-50%) translateY(0); }
+}
+/* ---- Low Moves Warning ---- */
+.hud-stat .val.danger { color:#ff4444 !important; }
 /* ---- Buttons ---- */
 .btn {
   padding:12px 32px;
@@ -332,6 +374,7 @@ body {
 </style>
 </head>
 <body>
+<div id="comboFlashEl"></div>
 <!-- ========== Start Screen ========== -->
 <div id="startScreen">
   <h1>💎 寶石三消</h1>
@@ -341,7 +384,7 @@ body {
     點選兩個相鄰格子交換位置，消除 3 個以上相同寶石。<br>
     連段越多，分數倍率越高！<br><br>
     <b>卡片系統</b><br>
-    消除格子賺取農幣 🪙，用農幣抽卡。<br>
+    消除格子賺取金幣 🪙，用金幣抽卡。<br>
     稀有卡片可在三消中觸發強力技能：<br>
     <div class="rarity-row">
       <span class="r-badge r-N-b">N 普通</span>
@@ -358,7 +401,7 @@ body {
   <div class="hud-stat"><span class="lbl">分數</span><span class="val" id="hudScore">0</span></div>
   <div class="hud-stat"><span class="lbl">連段</span><span class="val combo" id="hudCombo">x1</span></div>
   <div class="hud-stat"><span class="lbl">步數</span><span class="val" id="hudMoves">30</span></div>
-  <div class="hud-stat"><span class="lbl">農幣</span><span class="val coins" id="hudCoins">0 🪙</span></div>
+  <div class="hud-stat"><span class="lbl">金幣</span><span class="val coins" id="hudCoins">0 🪙</span></div>
 </div>
 
 <!-- ========== Game Screen ========== -->
@@ -379,7 +422,7 @@ body {
       </div>
     </div>
     <div id="gachaSection">
-      <div class="panel-title">🎰 農幣抽卡</div>
+      <div class="panel-title">🎰 金幣抽卡</div>
       <div id="coinDisplay">0 🪙</div>
       <button class="pull-btn pull-1" id="btnPull1" onclick="doPull(1)">單抽 × 1（30🪙）</button>
       <button class="pull-btn pull-10" id="btnPull10" onclick="doPull(10)">十連抽（250🪙）</button>
@@ -401,6 +444,7 @@ body {
 <div id="overlay">
   <h2>💎 遊戲結束</h2>
   <div class="final-score" id="finalScore"></div>
+  <button class="btn" id="btnContinue" onclick="continueGame()" style="display:none;background:rgba(255,215,0,0.1);font-size:0.95rem;">花 50🪙 繼續（+10步）</button>
   <button class="btn" onclick="startGame()">再玩一局</button>
   <button class="btn-sm" onclick="goHome()">回首頁</button>
 </div>
@@ -439,6 +483,8 @@ const CARD_POOL = [
 ];
 const RARITY_WEIGHTS = { N:55, R:30, SR:12, SSR:3 };
 const RARITY_LABELS  = { N:'普通', R:'稀有', SR:'超稀有', SSR:'傳說' };
+const MILESTONES = [500, 1000, 3000, 5000, 10000, 20000, 50000];
+let passedMilestones = new Set();
 
 // ============================================================
 // AUDIO
@@ -662,10 +708,13 @@ async function processMatches(matched) {
   clearTimeout(comboTimer);
   combo++;
   if (combo > 1) playSFX('combo');
+  if (combo >= 2) showComboFlash(combo);
+  if (combo >= 3) showBigCombo(combo);
   comboTimer = setTimeout(() => { combo = 1; updateHUD(); }, COMBO_DECAY_MS);
 
   // show float score on board center
   showFloatScore(`+${gained}`, total, mult);
+  checkMilestone();
   updateHUD();
 
   // clear matched cells
@@ -695,6 +744,46 @@ function markCells(matched, cls) {
   for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) {
     if(matched[r][c]) cells[r*COLS+c].classList.add(cls);
   }
+}
+
+function showComboFlash(n) {
+  const colors = ['','#ffd70022','#ff990033','#ff440044','#ff000055','#aa00ff66'];
+  const el = document.getElementById('comboFlashEl');
+  el.style.background = colors[Math.min(n-1, colors.length-1)];
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+}
+
+function showBigCombo(n) {
+  const el = document.createElement('div');
+  el.className = 'big-combo';
+  el.textContent = `COMBO ×${n}`;
+  const hues = [0,15,30,270,300];
+  const h = hues[Math.min(n-3, hues.length-1)];
+  el.style.color = `hsl(${h},100%,60%)`;
+  el.style.textShadow = `0 0 18px hsl(${h},100%,50%), 0 0 36px hsl(${h},100%,30%)`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 750);
+}
+
+function checkMilestone() {
+  for (const m of MILESTONES) {
+    if (score >= m && !passedMilestones.has(m)) {
+      passedMilestones.add(m);
+      moves += 3;
+      updateHUD();
+      showMilestoneBanner(m);
+    }
+  }
+}
+
+function showMilestoneBanner(m) {
+  const el = document.createElement('div');
+  el.className = 'milestone-banner';
+  el.innerHTML = `🏆 達成 ${m.toLocaleString()} 分！&nbsp;<span style="font-size:0.82rem;opacity:0.85">+3步獎勵</span>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2300);
 }
 </script>
 <script>
@@ -877,7 +966,19 @@ function doPull(n) {
   });
 
   document.getElementById('gachaResult').style.display='flex';
-  playSFX('power');
+
+  const hasSSR = pendingGachaCards.some(c => c.rarity === 'SSR');
+  const hasSR  = pendingGachaCards.some(c => c.rarity === 'SR');
+  if (hasSSR) {
+    const el = document.getElementById('comboFlashEl');
+    el.style.background = 'radial-gradient(circle, rgba(255,215,0,0.55) 0%, rgba(255,150,0,0.25) 50%, transparent 75%)';
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+    playSFX('magic', 0.95);
+  } else if (hasSR) {
+    playSFX('magic', 0.7);
+  } else {
+    playSFX('power');
+  }
 }
 
 function closeGacha() {
@@ -997,6 +1098,10 @@ function updateHUD() {
   // combo flash
   const comboEl = document.getElementById('hudCombo');
   if(combo>1) { comboEl.classList.add('combo-anim'); setTimeout(()=>comboEl.classList.remove('combo-anim'),400); }
+  // low moves warning
+  const movesEl = document.getElementById('hudMoves');
+  movesEl.classList.toggle('danger', moves <= 5);
+  if (moves <= 5 && moves > 0) { movesEl.classList.add('combo-anim'); setTimeout(()=>movesEl.classList.remove('combo-anim'),400); }
 }
 
 // ============================================================
@@ -1044,6 +1149,7 @@ function startGame() {
   cardSlots=[null,null,null];
   activeEffects={};
   pendingGachaCards=[];
+  passedMilestones=new Set();
   selected=null;
   busy=false;
   window._pendingEffect=null;
@@ -1076,7 +1182,21 @@ function endGame() {
   document.getElementById('finalScore').innerHTML =
     `本局得分：<b style="color:#ffd700">${score.toLocaleString()}</b><br>
      歷史最高：<b style="color:#00d4aa">${best.toLocaleString()}</b>`;
+  const btnCont = document.getElementById('btnContinue');
+  btnCont.style.display = coins >= 50 ? 'inline-block' : 'none';
+  btnCont.textContent = `花 50🪙 繼續（+10步）現有：${coins}🪙`;
   ov.style.display='flex';
+}
+
+function continueGame() {
+  if (coins < 50) return;
+  coins -= 50;
+  moves += 10;
+  busy = false;
+  document.getElementById('overlay').style.display='none';
+  updateHUD();
+  renderPanel();
+  playBGM();
 }
 
 function goHome() {
