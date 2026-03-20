@@ -10,11 +10,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@400;700&display=swap');
 :root{--gold:#f0c040;--gold2:#ffd97d;--dark:#0a0608;--panel:#12080f;--panel2:#1c0f18;--panel3:#251528;--border:#4a2040;--red2:#e74c3c;--green2:#2ecc71;--purple2:#9b59b6;--blue2:#3498db;--orange:#e67e22;--text:#e8d5b0;--text2:#b8a080;--shadow:rgba(240,192,64,0.3);}
 html{font-size:17px;}*{margin:0;padding:0;box-sizing:border-box;}
-html{font-size:17px;}
 body{background:var(--dark);color:var(--text);font-family:'Noto Serif TC',serif;min-height:100vh;overflow-x:hidden;background-image:radial-gradient(ellipse at 20% 50%,rgba(80,20,60,.3) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(40,10,80,.3) 0%,transparent 60%);}
 .hdr{text-align:center;padding:18px;border-bottom:2px solid var(--border);background:linear-gradient(180deg,rgba(30,10,24,.95),transparent);}
 .hdr h1{font-family:'Noto Sans TC',sans-serif;font-size:2.73rem;color:var(--gold);text-shadow:0 0 20px var(--shadow);letter-spacing:4px;}
-.hdr .sub{font-size:.110.5rem;color:var(--text2);letter-spacing:5px;text-transform:uppercase;margin-top:3px;}
+.hdr .sub{font-size:1.105rem;color:var(--text2);letter-spacing:5px;text-transform:uppercase;margin-top:3px;}
 .rbar{display:flex;gap:10px;padding:10px 16px;background:rgba(18,8,15,.9);border-bottom:1px solid var(--border);flex-wrap:wrap;justify-content:center;}
 .res{display:flex;align-items:center;gap:6px;font-size:.9rem;background:rgba(255,255,255,.04);padding:5px 13px;border-radius:20px;border:1px solid rgba(74,32,64,.5);}
 .res .val{color:var(--gold);font-weight:700;min-width:44px;}
@@ -23,40 +22,40 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Serif TC',serif;
 .panel{background:var(--panel);padding:16px;overflow-y:auto;max-height:calc(100vh - 130px);}
 .panel.left{border-right:1px solid var(--border);}
 .panel.right{border-left:1px solid var(--border);}
-.ptitle{font-size:.93.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:11px;font-family:'Noto Sans TC',sans-serif;font-weight:700;}
+.ptitle{font-size:.936rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:11px;font-family:'Noto Sans TC',sans-serif;font-weight:700;}
 .av-box{text-align:center;margin-bottom:14px;}
 .av-sp{font-size:4.94rem;display:block;filter:drop-shadow(0 0 10px var(--shadow));animation:flt 3s ease-in-out infinite;}
 @keyframes flt{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .av-name{font-family:'Noto Sans TC',sans-serif;font-size:1rem;color:var(--gold);margin-top:5px;}
-.av-cls{font-size:.101.4rem;color:var(--purple2);letter-spacing:2px;}
-.av-lv{font-size:.97.5rem;color:var(--text2);margin-top:3px;}
-.bw{margin:5px 0;}.bl{font-size:.97.5rem;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:3px;}
+.av-cls{font-size:1.014rem;color:var(--purple2);letter-spacing:2px;}
+.av-lv{font-size:.975rem;color:var(--text2);margin-top:3px;}
+.bw{margin:5px 0;}.bl{font-size:.975rem;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:3px;}
 .bb{height:11px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;border:1px solid rgba(74,32,64,.4);}
 .bf{height:100%;border-radius:4px;transition:width .4s;position:relative;}
 .bf::after{content:'';position:absolute;top:0;left:0;right:0;height:40%;background:rgba(255,255,255,.2);border-radius:4px;}
 .bhp .bf{background:linear-gradient(90deg,#c0392b,#e74c3c);}
 .bmp .bf{background:linear-gradient(90deg,#2980b9,#3498db);}
 .bexp .bf{background:linear-gradient(90deg,#8e44ad,#9b59b6);}
-.sr{display:flex;justify-content:space-between;font-size:.106.6rem;padding:4px 0;border-bottom:1px solid rgba(74,32,64,.2);}
+.sr{display:flex;justify-content:space-between;font-size:1.066rem;padding:4px 0;border-bottom:1px solid rgba(74,32,64,.2);}
 .sr:last-child{border-bottom:none;}
 .sn{color:var(--text2);}.sv{color:var(--gold);font-weight:700;}
-.btn{width:100%;padding:8px 12px;border:1px solid var(--border);background:rgba(74,32,64,.3);color:var(--text);font-family:'Noto Serif TC',serif;font-size:.110.5rem;cursor:pointer;border-radius:4px;transition:all .2s;margin:3px 0;text-align:left;display:flex;align-items:center;justify-content:space-between;}
+.btn{width:100%;padding:8px 12px;border:1px solid var(--border);background:rgba(74,32,64,.3);color:var(--text);font-family:'Noto Serif TC',serif;font-size:1.105rem;cursor:pointer;border-radius:4px;transition:all .2s;margin:3px 0;text-align:left;display:flex;align-items:center;justify-content:space-between;}
 .btn:hover{background:rgba(74,32,64,.6);border-color:var(--gold);color:var(--gold);}
 .btn.gld{border-color:var(--gold);background:rgba(240,192,64,.15);color:var(--gold);}
 .btn.gld:hover{background:rgba(240,192,64,.3);}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
 .skgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0;}
-.skbtn{padding:9px 6px;border:1px solid var(--border);background:rgba(74,32,64,.2);color:var(--text);font-size:.101.4rem;cursor:pointer;border-radius:6px;text-align:center;transition:all .2s;position:relative;}
+.skbtn{padding:9px 6px;border:1px solid var(--border);background:rgba(74,32,64,.2);color:var(--text);font-size:1.014rem;cursor:pointer;border-radius:6px;text-align:center;transition:all .2s;position:relative;}
 .skbtn:hover{border-color:var(--gold);background:rgba(240,192,64,.1);}
 .skic{font-size:1.95rem;display:block;}
 .sknm{color:var(--gold);font-size:.7rem;margin-top:3px;}
-.skcd{position:absolute;top:3px;right:5px;font-size:.84.5rem;color:var(--red2);}
+.skcd{position:absolute;top:3px;right:5px;font-size:.845rem;color:var(--red2);}
 .skbtn.ocd{opacity:.5;cursor:not-allowed;}
 .field{padding:14px;display:flex;flex-direction:column;gap:10px;}
 .di{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px 14px;}
 .dnm{font-family:'Cinzel Decorative',cursive;font-size:.8rem;color:var(--gold);}
-.dsub{font-size:.81.9rem;color:var(--text2);}
-.dang{font-size:.81.9rem;padding:2px 8px;border-radius:10px;}
+.dsub{font-size:.819rem;color:var(--text2);}
+.dang{font-size:.819rem;padding:2px 8px;border-radius:10px;}
 .d1{background:rgba(39,174,96,.2);color:var(--green2);border:1px solid #27ae60;}
 .d2{background:rgba(230,126,34,.2);color:#f39c12;border:1px solid var(--orange);}
 .d3{background:rgba(192,57,43,.2);color:var(--red2);border:1px solid #c0392b;}
@@ -74,13 +73,13 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Serif TC',serif;
 .csp.ea{animation:ea 2s ease-in-out infinite;}
 @keyframes ha{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
 @keyframes ea{0%,100%{transform:scaleX(-1) translateX(0)}50%{transform:scaleX(-1) translateX(-3px)}}
-.cnm{font-size:.84.5rem;color:var(--gold);margin-top:3px;}
+.cnm{font-size:.845rem;color:var(--gold);margin-top:3px;}
 .chpb{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:3px;border:1px solid rgba(74,32,64,.4);}
 .chpf{height:100%;background:linear-gradient(90deg,#c0392b,#e74c3c);transition:width .3s;}
 .ehpf{background:linear-gradient(90deg,#8e44ad,#9b59b6);}
-.cht{font-size:.74.1rem;color:var(--text2);margin-top:2px;}
+.cht{font-size:.741rem;color:var(--text2);margin-top:2px;}
 .vs{font-family:'Cinzel Decorative',cursive;font-size:1.43rem;color:var(--border);}
-.blog{background:rgba(10,6,8,.7);border:1px solid rgba(74,32,64,.4);border-radius:6px;padding:7px 10px;height:140px;overflow-y:auto;font-size:.81.9rem;line-height:1.6;}
+.blog{background:rgba(10,6,8,.7);border:1px solid rgba(74,32,64,.4);border-radius:6px;padding:7px 10px;height:140px;overflow-y:auto;font-size:.819rem;line-height:1.6;}
 .blog::-webkit-scrollbar{width:4px;}.blog::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .ll{padding:1px 0;}.lh{color:var(--gold2);}.le{color:var(--red2);}.ls{color:var(--text2);font-style:italic;}.lc{color:#ff6b35;font-weight:700;}.lsk{color:var(--purple2);}.lr{color:var(--green2);font-weight:700;}
 .dnum{position:absolute;font-weight:900;font-size:1.56rem;pointer-events:none;z-index:10;animation:df 1.2s ease-out forwards;text-shadow:2px 2px 4px rgba(0,0,0,.8);}
@@ -89,29 +88,29 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Serif TC',serif;
 .slash{position:absolute;font-size:2.99rem;pointer-events:none;z-index:9;animation:sl .4s ease-out forwards;}
 @keyframes sl{0%{opacity:1;transform:scale(.5) rotate(-20deg)}50%{opacity:1;transform:scale(1.2) rotate(20deg)}100%{opacity:0;transform:scale(.8) rotate(45deg)}}
 .bctrl{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;}
-.cbtn{padding:7px 15px;border:1px solid var(--border);background:rgba(74,32,64,.3);color:var(--text);font-family:'Noto Serif TC',serif;font-size:.94.9rem;cursor:pointer;border-radius:20px;transition:all .2s;}
+.cbtn{padding:7px 15px;border:1px solid var(--border);background:rgba(74,32,64,.3);color:var(--text);font-family:'Noto Serif TC',serif;font-size:.949rem;cursor:pointer;border-radius:20px;transition:all .2s;}
 .cbtn:hover{background:rgba(74,32,64,.6);border-color:var(--gold);}
 .cbtn.act{background:rgba(240,192,64,.2);border-color:var(--gold);color:var(--gold);}
 .spds{display:flex;gap:4px;}
-.spd{padding:5px 11px;border:1px solid var(--border);background:rgba(74,32,64,.2);color:var(--text2);font-size:.88.4rem;cursor:pointer;border-radius:14px;transition:all .2s;}
+.spd{padding:5px 11px;border:1px solid var(--border);background:rgba(74,32,64,.2);color:var(--text2);font-size:.884rem;cursor:pointer;border-radius:14px;transition:all .2s;}
 .spd.act{background:rgba(240,192,64,.2);border-color:var(--gold);color:var(--gold);}
 .tabs{display:flex;margin-bottom:10px;border-bottom:1px solid var(--border);}
-.tab{flex:1;padding:5px 3px;font-size:.75.4rem;letter-spacing:1px;cursor:pointer;text-align:center;color:var(--text2);transition:all .2s;border-bottom:2px solid transparent;}
+.tab{flex:1;padding:5px 3px;font-size:.754rem;letter-spacing:1px;cursor:pointer;text-align:center;color:var(--text2);transition:all .2s;border-bottom:2px solid transparent;}
 .tab.act{color:var(--gold);border-bottom-color:var(--gold);}
 .ui{background:var(--panel3);border:1px solid rgba(74,32,64,.4);border-radius:6px;padding:8px;margin:4px 0;}
 .ui:hover{border-color:var(--gold);}
 .uh{display:flex;align-items:center;gap:5px;margin-bottom:3px;}
-.uic{font-size:1rem;}.unm{font-size:.88.4rem;color:var(--gold);flex:1;}.ulv{font-size:.74.1rem;color:var(--purple2);}
-.uds{font-size:.74.1rem;color:var(--text2);margin-bottom:3px;line-height:1.4;}
-.uef{font-size:.74.1rem;color:var(--green2);margin-bottom:3px;}
+.uic{font-size:1rem;}.unm{font-size:.884rem;color:var(--gold);flex:1;}.ulv{font-size:.741rem;color:var(--purple2);}
+.uds{font-size:.741rem;color:var(--text2);margin-bottom:3px;line-height:1.4;}
+.uef{font-size:.741rem;color:var(--green2);margin-bottom:3px;}
 .eqgr{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:6px 0;}
 .eqs{background:var(--panel3);border:1px solid rgba(74,32,64,.4);border-radius:6px;padding:7px;cursor:pointer;transition:all .2s;text-align:center;min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
 .eqs:hover{border-color:var(--gold);}
-.eqs .eqic{font-size:1.69rem;}.eqs .eqnm{font-size:.72.8rem;color:var(--gold);}.eqs .eqst{font-size:.67.6rem;color:var(--green2);}.eqs .eqlb{font-size:.67.6rem;color:var(--text2);}
+.eqs .eqic{font-size:1.69rem;}.eqs .eqnm{font-size:.728rem;color:var(--gold);}.eqs .eqst{font-size:.676rem;color:var(--green2);}.eqs .eqlb{font-size:.676rem;color:var(--text2);}
 .eqs.emp{opacity:.4;}.rc{border-color:rgba(100,100,100,.5)!important;}.rr{border-color:rgba(41,128,185,.6)!important;}.re{border-color:rgba(142,68,173,.7)!important;}.rl{border-color:rgba(240,192,64,.8)!important;box-shadow:0 0 8px rgba(240,192,64,.2);}
-.stb{padding:2px 6px;border-radius:10px;font-size:.74.1rem;border:1px solid;display:inline-block;margin:2px 2px 0 0;}
+.stb{padding:2px 6px;border-radius:10px;font-size:.741rem;border:1px solid;display:inline-block;margin:2px 2px 0 0;}
 .stbu{background:rgba(39,174,96,.15);color:var(--green2);border-color:#27ae60;}
-.notif{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--gold);color:var(--gold);padding:9px 18px;border-radius:20px;font-size:.98.8rem;z-index:1000;animation:nf 2.5s ease forwards;pointer-events:none;white-space:nowrap;}
+.notif{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--gold);color:var(--gold);padding:9px 18px;border-radius:20px;font-size:.988rem;z-index:1000;animation:nf 2.5s ease forwards;pointer-events:none;white-space:nowrap;}
 @keyframes nf{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}75%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
 .lvfl{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(240,192,64,.3) 0%,transparent 70%);pointer-events:none;z-index:999;animation:lf 1s ease forwards;}
 @keyframes lf{0%{opacity:1}100%{opacity:0}}
@@ -119,7 +118,24 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Serif TC',serif;
 .deadt{font-family:'Cinzel Decorative',cursive;font-size:1.69rem;color:var(--red2);text-shadow:0 0 20px rgba(231,76,60,.5);}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--panel);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 #bosswarn{text-align:center;display:none;animation:flt 1s ease-in-out infinite;}
-.bosstxt{color:var(--red2);font-family:'Cinzel Decorative',cursive;font-size:.107.9rem;}
+.bosstxt{color:var(--red2);font-family:'Cinzel Decorative',cursive;font-size:1.079rem;}
+/* Boss Intro Cutscene */
+#bossIntro{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;opacity:0;transition:opacity .35s;}
+#bossIntro.show{opacity:1;pointer-events:all;}
+#bossIntro.hide{animation:biOut .6s ease forwards;}
+@keyframes biOut{to{opacity:0}}
+.bi-flash{position:absolute;inset:0;background:rgba(180,0,0,.22);animation:biFlash 1.4s ease-out forwards;}
+@keyframes biFlash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.bi-scan{position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0,transparent 3px,rgba(180,0,0,.04) 3px,rgba(180,0,0,.04) 4px);pointer-events:none;}
+.bi-floor{font-size:.9rem;color:var(--text2);letter-spacing:.35em;animation:biUp .5s .15s both;}
+.bi-alert{font-family:'Cinzel Decorative',cursive;font-size:1.35rem;letter-spacing:.12em;animation:biUp .5s .45s both;text-shadow:0 0 30px currentColor;}
+.bi-line{height:2px;background:linear-gradient(90deg,transparent,currentColor,transparent);margin:8px 0;animation:biLine .5s 1s both;}
+.bi-name{font-family:'Cinzel Decorative',cursive;font-size:2.4rem;color:#fff;animation:biUp .5s .85s both;text-shadow:0 0 40px rgba(255,80,80,.9),0 0 80px rgba(200,0,0,.5);}
+.bi-hint{font-size:.72rem;color:var(--text2);margin-top:18px;animation:biUp .4s 1.6s both;}
+@keyframes biUp{from{opacity:0;transform:translateY(28px) scale(.82)}to{opacity:1;transform:none}}
+@keyframes biLine{from{opacity:0;width:0}to{opacity:1;width:180px}}
+@keyframes biShake{0%,100%{transform:translate(0,0)}10%{transform:translate(-8px,4px)}20%{transform:translate(8px,-4px)}30%{transform:translate(-6px,6px)}40%{transform:translate(6px,-6px)}50%{transform:translate(-4px,2px)}60%{transform:translate(4px,-2px)}70%{transform:translate(-2px,4px)}80%{transform:translate(2px,-4px)}90%{transform:translate(-3px,1px)}}
+.bi-shake{animation:biShake 0.55s ease;}
 
 /* COMBO 閃爍動畫 */
 #comboNum { animation: none; }
@@ -638,7 +654,7 @@ kbd {
   <div class="sr"><span class="sn">🍀 暴擊率</span><span class="sv" id="scr">8%</span></div>
   <div class="sr"><span class="sn">💢 暴擊傷害</span><span class="sv" id="scd">150%</span></div>
   <div class="ptitle" style="margin-top:10px">狀態效果</div>
-  <div id="stfx"><span style="font-size:.80.6rem;color:var(--text2)">無效果</span></div>
+  <div id="stfx"><span style="font-size:.806rem;color:var(--text2)">無效果</span></div>
   <div class="ptitle" style="margin-top:10px">技能</div>
   <div class="skgrid" id="skgrid"></div>
   <div class="ptitle" style="margin-top:8px">統計</div>
@@ -916,8 +932,7 @@ function loadGame() {
     G.lastLogin = d.lastLogin || 0;
     G.loginStreak = d.loginStreak || 0;
 
-    // 技能冷卻（確保8格）
-    const savedCDs = d.skillCDs || {};
+    // 技能冷卻（每次讀檔重置，不保留冷卻狀態）
     G.skillCDs = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0};
 
     // 裝備（確保6格）
@@ -1010,8 +1025,8 @@ function importSave(event) {
   event.target.value = '';
 }
 
-// 自動存檔每30秒
-setInterval(() => { saveGame(); }, 10000); // 每10秒自動存檔
+// 自動存檔每10秒
+setInterval(() => { saveGame(); }, 10000);
 // 關閉前存檔
 window.addEventListener('beforeunload', saveGame);
 
@@ -1123,7 +1138,6 @@ function getJob(){
 }
 
 function getTA(){ return getCls().ta; }
-const TA_BASE=[{n:'血肉之軀',ic:'❤️',ds:'每級+5%HP',mx:5,tp:'hp'},{n:'魔法天賦',ic:'🔮',ds:'冷卻-10%/級',mx:3,tp:'cd'},{n:'戰鬥直覺',ic:'👁️',ds:'+3%暴擊/級',mx:4,tp:'cr'},{n:'鬼神附體',ic:'👹',ds:'+15%暴傷/級',mx:3,tp:'cm'},{n:'再生之力',ic:'🌱',ds:'戰鬥中回血',mx:3,tp:'rg'},{n:'金幣增益',ic:'💰',ds:'+20%金幣/級',mx:5,tp:'go'}];
 const DNG=[{id:0,n:'廢棄礦坑',ic:'🏚',bg:'⛏',dc:'d1',dt:'普通',un:1,ep:['🐀','🦟','🕷️','🦇'],en:['地窖老鼠','地穴蝙蝠','毒蜘蛛','礦坑骷髏'],bn:['礦坑之王','暗影王者']},{id:1,n:'毒沼森林',ic:'🌿',bg:'🌲',dc:'d2',dt:'危險',un:10,ep:['🐍','🐸','🦎','🌵'],en:['沼澤毒蛙','食人花','森林蟒蛇'],bn:['毒沼主宰','腐敗樹靈']},{id:2,n:'地獄火山',ic:'🌋',bg:'🔥',dc:'d2',dt:'危險',un:25,ep:['🦁','🐺','🐗','🦅'],en:['熔岩精靈','火焰史萊姆','岩石巨人'],bn:['火山龍王','熔岩巨人']},{id:3,n:'冰霜神殿',ic:'❄️',bg:'❄',dc:'d3',dt:'極危',un:50,ep:['👻','💀','🧟','👺'],en:['霜凍幽靈','冰封惡魔','骨兵'],bn:['冰霜古神','永凍亡靈王']},{id:4,n:'虛空裂縫',ic:'🌀',bg:'⭐',dc:'d3',dt:'極危',un:100,ep:['👾','🤖','🎭','🌑'],en:['虛空碎片','混沌觸手','次元蟲'],bn:['虛空主宰','宇宙毀滅者']}];
 const RAR_COL={common:'#aaaaaa',rare:'#4a9eff',epic:'#b44fff',legend:'#f0c040',mythic:'#ff4444'};
 const RAR_LBL={common:'普通',rare:'稀有',epic:'史詩',legend:'傳說',mythic:'神話'};
@@ -1239,11 +1253,35 @@ function addLog(m,c=''){const l=$('blog');const e=document.createElement('div');
 function notify(m){const e=document.createElement('div');e.className='notif';e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),2600);}
 function spawnD(t,c){const b=$('baarea');const e=document.createElement('div');e.className='dnum '+c;e.textContent=t;e.style.top=(35+Math.random()*40)+'px';b.appendChild(e);setTimeout(()=>e.remove(),1200);}
 function spawnS(s){const b=$('baarea');const e=document.createElement('div');e.className='slash';e.textContent=s==='h'?'💥':'🗡️';e.style.top=(55+Math.random()*20)+'px';e.style.left=s==='h'?'55%':'22%';b.appendChild(e);setTimeout(()=>e.remove(),400);}
+function showBossIntro(nm,fl){
+  let ov=$('bossIntro');
+  if(!ov){ov=document.createElement('div');ov.id='bossIntro';document.body.appendChild(ov);}
+  const isAbssal=fl%100===0,isElite=fl%50===0;
+  const tier=isAbssal?'💀 深淵BOSS 降臨':isElite?'⭐ 精英BOSS 登場':'⚠ BOSS 關卡 ⚠';
+  const tc=isAbssal?'#ff4040':isElite?'#f0c040':'var(--red2)';
+  ov.innerHTML=`<div class="bi-flash"></div><div class="bi-scan"></div><div class="bi-floor">— F L O O R &nbsp; ${fl} —</div><div class="bi-alert" style="color:${tc}">${tier}</div><div class="bi-line" style="color:${tc};width:180px"></div><div class="bi-name" id="biName">${nm}</div><div class="bi-line" style="color:${tc};width:180px"></div><div class="bi-hint">點擊任意處繼續</div>`;
+  ov.classList.remove('hide');ov.classList.add('show');
+  // 暫停自動戰鬥，避免過場中被打
+  const prevAuto=G.auto;G.auto=false;
+  // 登場音效
+  playSound('bossRoar');
+  // Boss 名字出現時螢幕震動 (850ms = bi-name 的 animation delay)
+  setTimeout(()=>{
+    const nameEl=$('biName');if(nameEl){nameEl.classList.add('bi-shake');setTimeout(()=>nameEl.classList.remove('bi-shake'),560);}
+  },880);
+  const dismiss=()=>{
+    ov.classList.remove('show');ov.classList.add('hide');
+    setTimeout(()=>ov.classList.remove('hide'),700);
+    ov.removeEventListener('click',dismiss);
+    G.auto=prevAuto; // 恢復戰鬥狀態
+  };
+  ov.addEventListener('click',dismiss);setTimeout(dismiss,3200);
+}
 function mkEnemy(){
   const dn=d();const fl=G.floor;const boss=fl%10===0;G.isBoss=boss;
   $('bosswarn').style.display=boss?'block':'none';
   const s=st();const mult=1+(fl-1)*.18+G.dungId*.5;
-  if(boss){const nm=dn.bn[Math.floor(Math.random()*dn.bn.length)];const sp=dn.ep[Math.floor(Math.random()*dn.ep.length)];const hp=Math.floor((s.mxhp*4+40)*mult*2);return{n:nm,sp,hp,mxhp:hp,atk:Math.floor((s.atk*.8+8)*mult*1.5),def:Math.floor(s.def*.4*mult),boss:true,expV:Math.floor(50*mult*2),goldV:Math.floor(30*mult*2)};}
+  if(boss){const nm=dn.bn[Math.floor(Math.random()*dn.bn.length)];const sp=dn.ep[Math.floor(Math.random()*dn.ep.length)];const hp=Math.floor((s.mxhp*4+40)*mult*2);showBossIntro(nm,fl);return{n:nm,sp,hp,mxhp:hp,atk:Math.floor((s.atk*.8+8)*mult*1.5),def:Math.floor(s.def*.4*mult),boss:true,expV:Math.floor(50*mult*2),goldV:Math.floor(30*mult*2)};}
   const nm=dn.en[Math.floor(Math.random()*dn.en.length)];const sp=dn.ep[Math.floor(Math.random()*dn.ep.length)];const hp=Math.floor((s.mxhp*.6+20)*mult);return{n:nm,sp,hp,mxhp:hp,atk:Math.floor((s.atk*.5+5)*mult),def:Math.floor(s.def*.2*mult),boss:false,expV:Math.floor(15*mult),goldV:Math.floor(8*mult)};
 }
 function render(){
@@ -1264,7 +1302,7 @@ function render(){
   $('potn').textContent=G.pots;
   if(G.enemy){const ep=Math.max(0,G.enemy.hp/G.enemy.mxhp*100);$('esp').textContent=G.enemy.sp;$('enm').textContent=G.enemy.n;$('ehpb').style.width=ep+'%';$('ehpt').textContent=Math.floor(G.enemy.hp)+'/'+G.enemy.mxhp;}
   const dn=d();$('dnnm').textContent=dn.ic+' '+dn.n;$('dndg').className='dang '+dn.dc;$('dndg').textContent='★ '+dn.dt;$('babg').textContent=dn.bg;
-  const stfx=$('stfx');if(!G.statusFx.length)stfx.innerHTML='<span style="font-size:.80.6rem;color:var(--text2)">無效果</span>';else stfx.innerHTML=G.statusFx.map(ef=>`<span class="stb stbu">${ef.ic} ${ef.n}</span>`).join('');
+  const stfx=$('stfx');if(!G.statusFx.length)stfx.innerHTML='<span style="font-size:.806rem;color:var(--text2)">無效果</span>';else stfx.innerHTML=G.statusFx.map(ef=>`<span class="stb stbu">${ef.ic} ${ef.n}</span>`).join('');
   rsk();
 }
 function rsk(){
@@ -1328,7 +1366,7 @@ function statDiff(newSt, oldSt){
 function req(){
   const c=$('peq');
   // 已裝備槽
-  let eqHtml=`<button onclick="autoEquipBest()" style="width:100%;margin-bottom:10px;background:linear-gradient(90deg,rgba(240,192,64,.12),rgba(180,79,255,.12));border:1px solid rgba(240,192,64,.5);border-radius:8px;padding:8px;font-size:.74rem;font-weight:800;color:#f0c040;cursor:pointer;letter-spacing:1px;font-family:inherit">⚡ 一鍵最佳裝備</button>`;
+  let eqHtml=`<button data-action="autoequip" style="width:100%;margin-bottom:10px;background:linear-gradient(90deg,rgba(240,192,64,.12),rgba(180,79,255,.12));border:1px solid rgba(240,192,64,.5);border-radius:8px;padding:8px;font-size:.74rem;font-weight:800;color:#f0c040;cursor:pointer;letter-spacing:1px;font-family:inherit">⚡ 一鍵最佳裝備</button>`;
   eqHtml+='<div style="font-size:.72rem;color:var(--text2);margin-bottom:8px;font-weight:700">已裝備（點擊卸下）</div>';
   eqHtml+='<div class="eqgr" id="eqg">';
   SLT.forEach((sl,i)=>{
@@ -1418,6 +1456,8 @@ function req(){
   c.querySelectorAll('.eqs[data-unequip]').forEach(el => {
     el.addEventListener('click', () => unequip(parseInt(el.dataset.unequip)));
   });
+  const autoEquipBtn = c.querySelector('[data-action="autoequip"]');
+  if (autoEquipBtn) autoEquipBtn.addEventListener('click', autoEquipBest);
   const sellAllBtn = c.querySelector('[data-action="sellall"]');
   if (sellAllBtn) sellAllBtn.addEventListener('click', sellAll);
   c.querySelectorAll('[data-equip]').forEach(el => {
@@ -1456,7 +1496,7 @@ function rta(){
   });
   c.innerHTML=html;
 }
-function rdn(){const c=$('pdn');c.innerHTML='<div style="font-size:.6rem;color:var(--text2);margin-bottom:8px">選擇探索地城</div>';DNG.forEach((dn,i)=>{const un=G.bestFloor>=dn.un;const act=G.dungId===i;c.innerHTML+=`<div class="ui" style="opacity:${un?1:.4}"><div class="uh"><span class="uic">${dn.ic}</span><span class="unm">${dn.n}</span><span class="dang ${dn.dc}" style="font-size:.67.6rem;padding:1px 5px">${dn.dt}</span></div><div class="uds">解鎖: F${dn.un}</div><button class="btn ${act?'gld':''}${!un?' ':'  '}" ${!un?'disabled':''} onclick="goDng(${i})">${act?'✓ 當前':un?'前往探索':'🔒 未解鎖'}</button></div>`;});}
+function rdn(){const c=$('pdn');c.innerHTML='<div style="font-size:.6rem;color:var(--text2);margin-bottom:8px">選擇探索地城</div>';DNG.forEach((dn,i)=>{const un=G.bestFloor>=dn.un;const act=G.dungId===i;c.innerHTML+=`<div class="ui" style="opacity:${un?1:.4}"><div class="uh"><span class="uic">${dn.ic}</span><span class="unm">${dn.n}</span><span class="dang ${dn.dc}" style="font-size:.676rem;padding:1px 5px">${dn.dt}</span></div><div class="uds">解鎖: F${dn.un}</div><button class="btn ${act?'gld':''}${!un?' ':'  '}" ${!un?'disabled':''} onclick="goDng(${i})">${act?'✓ 當前':un?'前往探索':'🔒 未解鎖'}</button></div>`;});}
 function sw(t){['up','eq','ta','dn','cl','mt'].forEach(x=>{if(!$('p'+x))return;$('p'+x).style.display=x===t?'block':'none';if($('t'+x))$('t'+x).classList.toggle('act',x===t);});if(t==='up')rup();else if(t==='eq')req();else if(t==='ta')rta();else if(t==='dn')rdn();else if(t==='cl')rcl();else if(t==='mt')rmt();}
 let lastT=Date.now();
 setInterval(()=>{
@@ -1464,7 +1504,7 @@ setInterval(()=>{
   const now=Date.now();const dt=(now-lastT)*G.speed;lastT=now;
   const h=G.hero;const s=st();
   h.mp=Math.min(s.mxmp,h.mp+s.mxmp*.01*dt/1000);
-  if(G.talents[4]>0)h.hp=Math.min(s.mxhp,h.hp+s.mxhp*.004*G.talents[4]*dt/1000);
+  if(G.talents[4]>0)h.hp=Math.min(s.mxhp,h.hp+s.mxhp*.008*G.talents[4]*dt/1000);
   // DOT 傷害 & 再生處理
   G.statusFx.forEach(ef=>{
     if(ef.stat==='dot'&&G.enemy&&G.enemy.hp>0){
@@ -1481,7 +1521,8 @@ setInterval(()=>{
   if(!G.enemy||G.enemy.hp<=0){G.enemy=mkEnemy();render();return;}
   const atkSpd=Math.max(400,1200-s.spd*15);
   G.atkTimer+=dt;if(G.atkTimer>=atkSpd){G.atkTimer=0;hAtk(s);}
-  G.enmTimer+=dt;if(G.enmTimer>=1500){G.enmTimer=0;eAtk(s);}
+  const enmSpd=Math.max(800,1500-G.floor*4);
+  G.enmTimer+=dt;if(G.enmTimer>=enmSpd){G.enmTimer=0;eAtk(s);}
   render();
 },100);
 function hAtk(s){if(!G.enemy||G.enemy.hp<=0)return;let dmg=s.atk+Math.floor(Math.random()*s.atk*.3);const cr=Math.random()*100<s.crit;if(cr)dmg=Math.floor(dmg*s.cdmg/100);const red=Math.max(1,dmg-Math.floor(G.enemy.def*.5));G.enemy.hp-=red;if(red>G.maxDmg)G.maxDmg=red;spawnS('h');playSound(cr?'crit':'hit');if(cr){spawnD('💥'+red,'hd cr');addLog(`⚔ 暴擊！造成 ${red} 傷害！`,'lc');}else spawnD(red+'','hd');if(G.enemy.hp<=0)eDie();else maybeSpawnRune();}
@@ -1620,27 +1661,26 @@ function useSkillEx(sk,cdKey){
   spawnSkillFx(sk.fx,ba);
   // 呼叫原技能邏輯
   const s=st();
-  const _sk=sk;
-  if(_sk.type==='mag'||_sk.type==='phys'){
+  if(sk.type==='mag'||sk.type==='phys'){
     if(!G.enemy)return;
-    const isMag=_sk.type==='mag';
-    const hits=_sk.hits||1;let total=0;
+    const isMag=sk.type==='mag';
+    const hits=sk.hits||1;let total=0;
     for(let h=0;h<hits;h++){
-      let dmg=isMag?Math.floor(s.mag*_sk.mult):Math.floor(s.atk*_sk.mult);
-      const cr=Math.random()*100<(s.crit+(_sk.mult>=5?50:0));
+      let dmg=isMag?Math.floor(s.mag*sk.mult):Math.floor(s.atk*sk.mult);
+      const cr=Math.random()*100<(s.crit+(sk.mult>=5?50:0));
       if(cr)dmg=Math.floor(dmg*s.cdmg/100);
       const red=isMag?Math.max(1,dmg):Math.max(1,dmg-Math.floor(G.enemy.def*.5));
       G.enemy.hp-=red;total+=red;if(red>G.maxDmg)G.maxDmg=red;
     }
-    addLog(`${_sk.ic}${_sk.n}！造成 ${total} 傷害${hits>1?` (×${hits}連)`:''}`,'lc');
+    addLog(`${sk.ic}${sk.n}！造成 ${total} 傷害${hits>1?` (×${hits}連)`:''}`,'lc');
     if(G.enemy.hp<=0)eDie();else render();
   }
-  if(_sk.type==='heal'){const s2=st();const hp=Math.floor(s2.mxhp*(_sk.heal||.3));G.hero.hp=Math.min(s2.mxhp,G.hero.hp+hp);G.statusFx.push({n:'再生',ic:'💚',stat:'regen',v:Math.floor(s2.mxhp*.02),dur:5000});addLog(`${_sk.ic}${_sk.n}！回復 ${hp} HP！`,'ls');render();}
-  if(_sk.type==='dot'){if(!G.enemy)return;const s2=st();G.enemy.poisoned=true;G.enemy.dotDmg=Math.floor(s2.mag*(_sk.mult||0.8));G.enemy.dotTick=_sk.dotTick||5;G.enemy.dotUntil=Date.now()+(_sk.dotDur||4000);addLog(`${_sk.ic}${_sk.n}！敵人中毒！`,'lsk');render();}
-  if(_sk.type==='shield'){const s2=st();const shieldHp=Math.floor(s2.mxhp*(_sk.shieldPct||.4));G.hero.shield=shieldHp;G.statusFx.push({n:'護盾',ic:'🛡️',stat:'shield',v:shieldHp,dur:5000});addLog(`${_sk.ic}${_sk.n}！護盾 ${shieldHp}！`,'ls');render();}
-  if(_sk.type==='slow'){if(G.enemy){G.enemy.slowed=true;G.enemy.slowUntil=Date.now()+4000;}G.statusFx.push({n:'減速',ic:'⏳',stat:'slow',v:.7,dur:4000});addLog(`${_sk.ic}${_sk.n}！敵人減速！`,'lsk');render();}
-  if(_sk.type==='buff'){G.statusFx.push({ic:_sk.ic,n:_sk.n,stat:_sk.buffStat,v:_sk.buffPct,until:Date.now()+(_sk.buffDur||5000)});addLog(`${_sk.ic}${_sk.n}！屬性提升！`,'lsk');render();}
-  if(_sk.type==='taunt'){if(G.enemy){G.enemy.atkDebuff=(G.enemy.atkDebuff||1)*0.5;G.enemy.debuffUntil=Date.now()+4000;}addLog(`${_sk.ic}${_sk.n}！敵人攻擊-50%！`,'lsk');render();}
+  if(sk.type==='heal'){const s2=st();const hp=Math.floor(s2.mxhp*(sk.heal||.3));G.hero.hp=Math.min(s2.mxhp,G.hero.hp+hp);G.statusFx.push({n:'再生',ic:'💚',stat:'regen',v:Math.floor(s2.mxhp*.02),dur:5000});addLog(`${sk.ic}${sk.n}！回復 ${hp} HP！`,'ls');render();}
+  if(sk.type==='dot'){if(!G.enemy)return;const s2=st();G.enemy.poisoned=true;G.enemy.dotDmg=Math.floor(s2.mag*(sk.mult||0.8));G.enemy.dotTick=sk.dotTick||5;G.enemy.dotUntil=Date.now()+(sk.dotDur||4000);addLog(`${sk.ic}${sk.n}！敵人中毒！`,'lsk');render();}
+  if(sk.type==='shield'){const s2=st();const shieldHp=Math.floor(s2.mxhp*(sk.shieldPct||.4));G.hero.shield=shieldHp;G.statusFx.push({n:'護盾',ic:'🛡️',stat:'shield',v:shieldHp,dur:5000});addLog(`${sk.ic}${sk.n}！護盾 ${shieldHp}！`,'ls');render();}
+  if(sk.type==='slow'){if(G.enemy){G.enemy.slowed=true;G.enemy.slowUntil=Date.now()+4000;}G.statusFx.push({n:'減速',ic:'⏳',stat:'slow',v:.7,dur:4000});addLog(`${sk.ic}${sk.n}！敵人減速！`,'lsk');render();}
+  if(sk.type==='buff'){G.statusFx.push({ic:sk.ic,n:sk.n,stat:sk.buffStat,v:sk.buffPct,until:Date.now()+(sk.buffDur||5000)});addLog(`${sk.ic}${sk.n}！屬性提升！`,'lsk');render();}
+  if(sk.type==='taunt'){if(G.enemy){G.enemy.atkDebuff=(G.enemy.atkDebuff||1)*0.5;G.enemy.debuffUntil=Date.now()+4000;}addLog(`${sk.ic}${sk.n}！敵人攻擊-50%！`,'lsk');render();}
 }
 
 function useSkill(i){
@@ -2003,7 +2043,7 @@ G.enemy=mkEnemy();render();rup();
 
 // ==================== 音效系統 ====================
 const AC = new (window.AudioContext || window.webkitAudioContext)();
-let musicOn = true, sfxOn = true, musicGain, bgmOsc = [], bgmInterval;
+let musicOn = true, sfxOn = true, musicGain, bgmInterval;
 
 function playSound(type) {
   if (!sfxOn) return;
@@ -2054,6 +2094,31 @@ function playSound(type) {
       g.gain.setValueAtTime(0.25, AC.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.5);
       o.start(); o.stop(AC.currentTime + 0.5);
+    } else if (type === 'bossRoar') {
+      // 低頻轟鳴
+      const o1 = AC.createOscillator(); o1.connect(g); o1.type = 'sawtooth';
+      o1.frequency.setValueAtTime(55, AC.currentTime);
+      o1.frequency.exponentialRampToValueAtTime(35, AC.currentTime + 0.9);
+      g.gain.setValueAtTime(0.28, AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.9);
+      o1.start(); o1.stop(AC.currentTime + 0.9);
+      // 金屬衝擊
+      const g2 = AC.createGain(); g2.connect(AC.destination);
+      const o2 = AC.createOscillator(); o2.connect(g2); o2.type = 'square';
+      o2.frequency.setValueAtTime(220, AC.currentTime + 0.05);
+      o2.frequency.exponentialRampToValueAtTime(80, AC.currentTime + 0.4);
+      g2.gain.setValueAtTime(0.18, AC.currentTime + 0.05);
+      g2.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.4);
+      o2.start(AC.currentTime + 0.05); o2.stop(AC.currentTime + 0.4);
+      // Noise burst
+      const len = Math.floor(AC.sampleRate * 0.25);
+      const buf = AC.createBuffer(1, len, AC.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.max(0, 1-i/len);
+      const src = AC.createBufferSource(); src.buffer = buf;
+      const gn = AC.createGain(); gn.gain.value = 0.2;
+      src.connect(gn); gn.connect(AC.destination);
+      src.start(AC.currentTime); src.stop(AC.currentTime + 0.25);
     }
   } catch(e) {}
 }

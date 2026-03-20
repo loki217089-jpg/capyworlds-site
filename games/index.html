@@ -124,12 +124,14 @@
     .game-card:hover {
       transform: translateY(-6px);
       border-color: var(--card-accent, var(--accent));
-      box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 0 1px var(--card-accent, var(--accent)) inset;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6),
+                  0 0 0 1px var(--card-accent, var(--accent)) inset,
+                  0 0 24px -4px var(--card-accent, var(--accent));
     }
 
     /* Card banner */
     .card-banner {
-      height: 90px;
+      height: 130px;
       background: var(--banner-bg, #2a2018);
       display: flex;
       align-items: center;
@@ -141,13 +143,22 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at 50% 100%, var(--banner-glow, rgba(200,164,86,0.25)) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 50% 120%, var(--banner-glow, rgba(200,164,86,0.4)) 0%, transparent 65%);
     }
     .card-banner .game-emoji {
-      font-size: 52px;
+      font-size: 68px;
       position: relative;
       z-index: 1;
-      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+      filter: drop-shadow(0 4px 16px rgba(0,0,0,0.7));
+      line-height: 1;
+    }
+    .card-banner .game-icon {
+      position: relative;
+      z-index: 1;
+      width: 72px;
+      height: 72px;
+      opacity: 0.92;
+      filter: drop-shadow(0 4px 16px var(--banner-glow, rgba(200,164,86,0.5)));
     }
 
     /* Card body */
@@ -540,9 +551,16 @@
 
       <!-- Beat Warrior rhythm game -->
       <a class="game-card" href="beat-warrior/"
-         style="--card-accent:#a060ff; --banner-bg:#0c0820; --banner-glow:rgba(160,80,255,0.32);">
+         style="--card-accent:#a060ff; --banner-bg:#0c0820; --banner-glow:rgba(160,80,255,0.38);">
         <div class="card-banner">
-          <div class="game-emoji">⚔</div>
+          <svg class="game-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="14" y1="58" x2="58" y2="14" stroke="white" stroke-width="6" stroke-linecap="round"/>
+            <line x1="14" y1="14" x2="58" y2="58" stroke="white" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="14" cy="58" r="5" fill="white"/>
+            <circle cx="58" cy="14" r="5" fill="white"/>
+            <circle cx="14" cy="14" r="5" fill="white"/>
+            <circle cx="58" cy="58" r="5" fill="white"/>
+          </svg>
         </div>
         <div class="card-body">
           <div class="game-title">節拍戰士</div>
@@ -560,9 +578,20 @@
 
       <!-- Zombie Spread -->
       <a class="game-card" href="zombie-spread/"
-         style="--card-accent:#4f8; --banner-bg:#030d03; --banner-glow:rgba(64,255,100,0.28);">
+         style="--card-accent:#4f8; --banner-bg:#030d03; --banner-glow:rgba(64,255,100,0.35);">
         <div class="card-banner">
-          <div class="game-emoji">☣</div>
+          <svg class="game-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Biohazard symbol -->
+            <circle cx="36" cy="36" r="6" fill="white"/>
+            <!-- Three arcs -->
+            <path d="M36 30 A14 14 0 0 1 48.1 37" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
+            <path d="M48.1 37 A14 14 0 0 1 23.9 37" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
+            <path d="M23.9 37 A14 14 0 0 1 36 30" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
+            <!-- Outer ring segments -->
+            <path d="M36 17 A19 19 0 0 1 53.4 26.5" stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
+            <path d="M53.4 45.5 A19 19 0 0 1 18.6 45.5" stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
+            <path d="M18.6 26.5 A19 19 0 0 1 36 17" stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
+          </svg>
         </div>
         <div class="card-body">
           <div class="game-title">末日求生</div>

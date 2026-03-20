@@ -111,7 +111,7 @@ body::after {
 @keyframes pulse { 0%,100%{box-shadow:0 0 16px rgba(0,255,65,.2)} 50%{box-shadow:0 0 32px rgba(0,255,65,.5)} }
 
 /* ── HUB ── */
-#screen-hub { padding: 14px; gap: 10px; max-width: 900px; width: 100%; align-self: center; }
+#screen-hub { padding: 14px; gap: 10px; max-width: 900px; width: 100%; align-self: center; margin: 0 auto; }
 .hub-hdr {
   width: 100%; display: flex; justify-content: space-between; align-items: center;
   border-bottom: 1px solid var(--border); padding-bottom: 10px;
@@ -485,6 +485,20 @@ body::after {
   pointer-events:none; z-index:200; animation:fltup .85s ease forwards;
 }
 @keyframes fltup { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-52px)} }
+/* Drive Intro Cutscene */
+#driveIntro{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'VT323',monospace;pointer-events:none;opacity:0;transition:opacity .3s;}
+#driveIntro.show{opacity:1;pointer-events:all;}
+#driveIntro.hide{animation:diOut .5s ease forwards;}
+@keyframes diOut{to{opacity:0}}
+.di-title{font-size:2rem;color:var(--green);margin-bottom:6px;text-shadow:0 0 20px var(--green);letter-spacing:.05em;}
+.di-sub{font-size:1rem;color:var(--dim);margin-bottom:18px;letter-spacing:.2em;}
+.di-log{width:380px;min-height:110px;text-align:left;color:var(--green3);font-size:15px;line-height:1.75;}
+.di-log div::before{content:'> ';color:var(--dim);}
+.di-scanbar{width:380px;height:3px;background:rgba(0,255,65,.12);margin:14px 0 6px;overflow:hidden;}
+.di-scanfill{height:100%;width:0;background:var(--green);box-shadow:0 0 8px var(--green);transition:width .05s linear;}
+.di-pct{font-size:14px;color:var(--dim);margin-bottom:18px;}
+.di-hint{font-size:13px;color:rgba(0,255,65,.3);animation:flt 1.2s ease-in-out infinite;}
+.di-scanline{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,var(--scanline) 2px,var(--scanline) 4px);pointer-events:none;}
 </style>
 </head>
 <body>
@@ -1030,7 +1044,7 @@ document.addEventListener('mousemove', e => {
   const c = document.getElementById('cursor');
   c.style.left = e.clientX + 'px';
   c.style.top  = e.clientY + 'px';
-  if (G && G.running) {
+  if (G && G.running && !G.paused) {
     // iframe 相容：座標轉換為相對 canvas 左上角
     const rect = G.canvas.getBoundingClientRect();
     const cx = e.clientX - rect.left;
@@ -1054,6 +1068,12 @@ document.addEventListener('keydown', e => {
   if (e.code === 'KeyT') {
     if (!G || !G.running || G.paused) return;
     openSummon();
+  }
+  // 爆發召喚選擇：鍵盤 1/2/3
+  if (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3') {
+    if (!document.getElementById('summon-pop').classList.contains('on')) return;
+    const idx = parseInt(e.code.replace('Digit','')) - 1;
+    if (_summonPicks[idx]) { e.preventDefault(); _pickSummon(_summonPicks[idx]); }
   }
 });
 
@@ -1231,8 +1251,91 @@ function buyUpgrade(id, cost) {
 let G = null;
 let rafId = null;
 
+const _GLITCH_CHARS = '!@#$%^&*<>?/\\|[]{}01█▓▒░';
+function _glitchResolve(el, finalText, cb) {
+  let tick = 0;
+  const total = 6;
+  const t = setInterval(() => {
+    tick++;
+    if (tick >= total) { clearInterval(t); el.textContent = finalText; if (cb) cb(); return; }
+    el.textContent = finalText.split('').map((c, j) =>
+      (j < tick * Math.ceil(finalText.length / total)) ? c :
+      (Math.random() < 0.5 ? _GLITCH_CHARS[Math.floor(Math.random()*_GLITCH_CHARS.length)] : c)
+    ).join('');
+  }, 45);
+}
+function _diBeep(urgent) {
+  if (!AC || !sfxOn) return;
+  try {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    o.type = 'square';
+    o.frequency.value = urgent ? 880 : 440;
+    g.gain.setValueAtTime(0.06, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.08);
+    o.start(); o.stop(AC.currentTime + 0.08);
+  } catch(e) {}
+}
+function showDriveBoot(drv, done) {
+  let ov = document.getElementById('driveIntro');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'driveIntro'; document.body.appendChild(ov); }
+  const threatLv = drv.id >= 3 ? '極危 ██████' : drv.id >= 2 ? '高危 ████░░' : drv.id >= 1 ? '中等 ███░░░' : '低危 ██░░░░';
+  const threatCol = drv.id >= 3 ? 'var(--red)' : drv.id >= 2 ? 'var(--yellow)' : drv.id >= 1 ? 'var(--blue)' : 'var(--green)';
+  ov.innerHTML = `<div class="di-scanline"></div><div class="di-title">${drv.icon} ${drv.name}</div><div class="di-sub" style="color:${threatCol}">威脅等級：${threatLv}</div><div class="di-log" id="di-log"></div><div class="di-scanbar"><div class="di-scanfill" id="di-fill"></div></div><div class="di-pct" id="di-pct">掃描中... 0%</div><div class="di-hint">[ 點擊跳過 ]</div>`;
+  ov.classList.remove('hide'); ov.classList.add('show');
+  sfx('boss_enter'); // 登場音效
+  const lines = [
+    drv.desc,
+    '載入病毒特徵碼庫.......... [OK]',
+    '分析磁碟扇區結構........... [完成]',
+    '偵測到惡意進程 — 防禦矩陣啟動',
+    '警告: 入侵已開始 — 系統緊急告急',
+  ];
+  const logEl = document.getElementById('di-log');
+  const fillEl = document.getElementById('di-fill');
+  const pctEl  = document.getElementById('di-pct');
+  let i = 0, dismissed = false;
+  const dismiss = () => {
+    if (dismissed) return; dismissed = true;
+    ov.removeEventListener('click', dismiss);
+    ov.classList.remove('show'); ov.classList.add('hide');
+    setTimeout(done, 520);
+  };
+  ov.addEventListener('click', dismiss);
+  const addLine = () => {
+    if (dismissed) return;
+    if (i >= lines.length) {
+      let p = 0;
+      const bar = setInterval(() => {
+        if (dismissed) { clearInterval(bar); return; }
+        p = Math.min(100, p + 2);
+        fillEl.style.width = p + '%';
+        pctEl.textContent = '掃描中... ' + p + '%';
+        if (p % 20 === 0) _diBeep(false);
+        if (p >= 100) { clearInterval(bar); pctEl.textContent = '掃描完成 — 進入磁碟'; _diBeep(true); setTimeout(dismiss, 500); }
+      }, 20);
+      return;
+    }
+    const lineText = lines[i++];
+    const isUrgent = lineText.startsWith('警告');
+    const div = document.createElement('div');
+    div.textContent = lineText; // 先放真實文字佔位
+    logEl.appendChild(div);
+    _diBeep(isUrgent);
+    if (isUrgent) div.style.color = 'var(--red)';
+    _glitchResolve(div, lineText); // 亂碼 → resolve 動畫
+    fillEl.style.width = (i / lines.length * 55) + '%';
+    pctEl.textContent = '掃描中... ' + Math.round(i / lines.length * 55) + '%';
+    setTimeout(addLine, 240 + Math.random() * 180);
+  };
+  setTimeout(addLine, 280);
+}
 function startGame() {
   sfx('click');
+  const drv = DRIVES[selDrive];
+  showDriveBoot(drv, _doStartGame);
+}
+function _doStartGame() {
   showScreen('game');
   const canvas = document.getElementById('game-canvas');
   resizeCanvas(canvas);
@@ -2281,8 +2384,22 @@ function render() {
   }
 }
 // ═══════════════════════════════════════════════
+let _summonPicks = []; // 供鍵盤 1/2/3 使用
+function _pickSummon(ev) {
+  ev.fx(G);
+  G.combo=Math.max(0,G.combo-2);
+  G.summonCD=G.summonCDMax;
+  // 恢復 paused 前記錄的玩家位置，避免位移到 UI 按鈕位置
+  if(G._preSummonPx !== undefined) { G.px=G._preSummonPx; G.py=G._preSummonPy; }
+  G.paused=false;
+  _summonPicks=[];
+  document.getElementById('summon-pop').classList.remove('on');
+  refreshComboPips(); updateSummonBtn();
+}
 function openSummon() {
   if(!G||!G.summonReady) return;
+  // 記錄現在的玩家位置（在 paused=true 之前）
+  G._preSummonPx = G.px; G._preSummonPy = G.py;
   G.paused=true;
   sfx('summon');
   const isMax = G.combo>=G.maxCombo;
@@ -2293,25 +2410,18 @@ function openSummon() {
   box.className = isMax?'maxpow':'';
   title.style.color = isMax?'var(--comboMax)':'var(--combo1)';
   title.textContent = isMax?`⚡ MAX COMBO 超級召喚！`:`⚡ 爆發召喚 ×${comboMul().toFixed(1)}`;
-  sub.textContent = '選擇一個效果觸發';
+  sub.textContent = '選擇一個效果觸發  [ 1 / 2 / 3 ]';
   let pool;
   if(isMax) pool=[...POOL_T2,...POOL_CHAOS];
   else if(G.combo>=3) pool=[...POOL_T1,...POOL_T2];
   else pool=[...POOL_T1];
-  const picks = pool.sort(()=>Math.random()-.5).slice(0,3);
+  _summonPicks = pool.sort(()=>Math.random()-.5).slice(0,3);
   ch.innerHTML='';
-  picks.forEach(ev=>{
+  _summonPicks.forEach((ev,i)=>{
     const d=document.createElement('div');
     d.className='schoice';
-    d.innerHTML=`<div class="schoice-icon">${ev.icon}</div><div style="flex:1"><div class="schoice-name">${ev.name}</div><div class="schoice-desc">${ev.desc}</div></div><div class="schoice-pow" style="color:${ev.col}">${ev.pow}</div>`;
-    d.onclick=()=>{
-      ev.fx(G);
-      G.combo=Math.max(0,G.combo-2);
-      G.summonCD=G.summonCDMax;
-      G.paused=false;
-      document.getElementById('summon-pop').classList.remove('on');
-      refreshComboPips(); updateSummonBtn();
-    };
+    d.innerHTML=`<div class="schoice-icon">${ev.icon}</div><div style="flex:1"><div class="schoice-name">${ev.name} <span style="font-size:.7em;opacity:.5">[${i+1}]</span></div><div class="schoice-desc">${ev.desc}</div></div><div class="schoice-pow" style="color:${ev.col}">${ev.pow}</div>`;
+    d.onclick=()=>_pickSummon(ev);
     ch.appendChild(d);
   });
   document.getElementById('summon-pop').classList.add('on');
