@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>農場三消 · CapyWorlds</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #1a1a2e;
+  color: #e0d5c5;
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  overflow-x: hidden;
+}
+/* ---- Start Screen ---- */
+#startScreen {
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 520px;
+}
+#startScreen h1 {
+  font-size: 2.8rem;
+  color: #ffd700;
+  text-shadow: 0 0 24px #ffa500aa;
+  margin-bottom: 8px;
+}
+#startScreen .subtitle {
+  color: #aaa;
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
+.rules-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 20px 0;
+  text-align: left;
+  font-size: 0.88rem;
+  color: #ccc;
+  line-height: 1.8;
+}
+.rules-box b { color: #ffd700; }
+.rarity-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.r-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: bold;
+}
+.r-N-b  { background:#444; color:#ccc; }
+.r-R-b  { background:#1a4a8a; color:#7ab8ff; }
+.r-SR-b { background:#4a1a8a; color:#c87aff; }
+.r-SSR-b{ background:#8a5a00; color:#ffd700; }
+/* ---- HUD Bar ---- */
+#hudBar {
+  display: none;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 860px;
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+.hud-stat { text-align: center; flex: 1; }
+.hud-stat .lbl { display: block; font-size: 0.68rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+.hud-stat .val { font-size: 1.5rem; font-weight: bold; color: #ffd700; }
+.hud-stat .val.combo { color: #ff6b6b; }
+.hud-stat .val.coins { color: #00d4aa; }
+/* ---- Game Layout ---- */
+#gameScreen {
+  display: none;
+  flex-direction: row;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 860px;
+  padding: 0 10px;
+}
+/* ---- Board ---- */
+#boardWrap { flex: 0 0 auto; }
+#board {
+  display: grid;
+  grid-template-columns: repeat(8, 58px);
+  grid-template-rows: repeat(8, 58px);
+  gap: 3px;
+  background: #0a0a18;
+  padding: 6px;
+  border-radius: 12px;
+  border: 2px solid #2a2a4a;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+.cell {
+  width: 58px; height: 58px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  cursor: pointer;
+  transition: transform 0.12s, filter 0.12s, background 0.12s;
+  background: rgba(255,255,255,0.04);
+  position: relative;
+}
+.cell:hover { transform: scale(1.09); filter: brightness(1.25); }
+.cell.selected {
+  outline: 3px solid #ffd700;
+  outline-offset: -2px;
+  transform: scale(1.1);
+  filter: brightness(1.35);
+  background: rgba(255,215,0,0.12);
+}
+.cell.hint-glow { filter: brightness(1.4) drop-shadow(0 0 6px #fff); }
+.cell.locked {
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: brightness(0.5);
+}
+</style>
+/* ---- Right Panel ---- */
+#panel {
+  flex: 1;
+  min-width: 200px;
+  max-width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.panel-title {
+  font-size: 0.72rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+/* ---- Card Slots ---- */
+#activeCards { display: flex; flex-direction: column; gap: 8px; }
+.card-slot {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid #2a2a4a;
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: default;
+  transition: all 0.2s;
+  position: relative;
+}
+.card-slot.has-card { cursor: pointer; }
+.card-slot.has-card:hover { background: rgba(255,255,255,0.08); }
+.card-slot.burning {
+  border-color: #ffd700;
+  box-shadow: 0 0 14px rgba(255,215,0,0.35);
+  animation: burnPulse 1s ease-in-out infinite;
+}
+@keyframes burnPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(255,215,0,0.25); }
+  50%      { box-shadow: 0 0 22px rgba(255,215,0,0.6);  }
+}
+.card-icon {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  font-weight: bold;
+}
+.r-N  .card-icon { background:#3a3a3a; color:#ccc; border:1px solid #666; }
+.r-R  .card-icon { background:#0d2a5a; color:#7ab8ff; border:1px solid #4a80cc; }
+.r-SR .card-icon { background:#2a0d5a; color:#d07aff; border:1px solid #8a4acc; }
+.r-SSR .card-icon { background:#5a3a00; color:#ffd700; border:1px solid #ccaa00; box-shadow:0 0 8px rgba(255,215,0,0.4); }
+.card-body { flex:1; min-width:0; }
+.card-name { font-size:0.88rem; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card-desc { font-size:0.7rem; color:#999; margin-top:2px; line-height:1.3; }
+.card-timer { font-size:0.75rem; color:#ffd700; font-weight:bold; margin-top:3px; }
+.card-use-hint { font-size:0.68rem; color:#555; font-style:italic; }
+.empty-slot-txt { font-size:0.75rem; color:#444; }
+/* ---- Gacha Section ---- */
+#gachaSection {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid #2a2a4a;
+  border-radius: 10px;
+  padding: 12px;
+}
+#coinDisplay { font-size:1.3rem; color:#00d4aa; font-weight:bold; margin: 4px 0 10px; }
+.pull-btn {
+  width: 100%;
+  padding: 9px;
+  margin: 3px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: bold;
+  transition: all 0.15s;
+  border: 1px solid;
+}
+.pull-btn.pull-1 { background:#1a2a1a; border-color:#00d4aa; color:#00d4aa; }
+.pull-btn.pull-10 { background:#2a1a0e; border-color:#ffd700; color:#ffd700; }
+.pull-btn:hover:not(:disabled) { filter:brightness(1.3); }
+.pull-btn:disabled { opacity:0.35; cursor:not-allowed; }
+/* ---- Gacha Result ---- */
+#gachaResult {
+  position: fixed; inset:0;
+  background: rgba(0,0,0,0.82);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  gap: 16px;
+}
+.gacha-cards-row { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+.gacha-card {
+  width: 100px;
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  border: 2px solid;
+  animation: cardReveal 0.4s ease backwards;
+}
+.gacha-card.r-N  { background:#222; border-color:#666; color:#ccc; }
+.gacha-card.r-R  { background:#0a1a3a; border-color:#4a80cc; color:#7ab8ff; }
+.gacha-card.r-SR { background:#1a0a3a; border-color:#8a4acc; color:#d07aff; }
+.gacha-card.r-SSR{ background:#3a2a00; border-color:#ccaa00; color:#ffd700; box-shadow:0 0 20px rgba(255,215,0,0.5); }
+@keyframes cardReveal {
+  0%   { transform:scale(0) rotateY(90deg); opacity:0; }
+  100% { transform:scale(1) rotateY(0deg);  opacity:1; }
+}
+.gacha-card .gc-icon { font-size:2.2rem; }
+.gacha-card .gc-rarity { font-size:0.7rem; font-weight:bold; margin:4px 0 2px; }
+.gacha-card .gc-name { font-size:0.8rem; font-weight:bold; }
+/* ---- Overlay (Game Over) ---- */
+#overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  z-index:200;
+  gap:16px;
+  text-align:center;
+}
+#overlay h2 { font-size:2.4rem; color:#ffd700; }
+#overlay .final-score { font-size:1.2rem; color:#ccc; }
+/* ---- Animations ---- */
+@keyframes popOut {
+  0%   { transform:scale(1); opacity:1; }
+  40%  { transform:scale(1.5); opacity:0.9; }
+  100% { transform:scale(0); opacity:0; }
+}
+@keyframes dropIn {
+  0%   { transform:translateY(-50px); opacity:0; }
+  100% { transform:translateY(0); opacity:1; }
+}
+@keyframes comboFlash {
+  0%   { color:#ffd700; transform:scale(1); }
+  50%  { color:#ff4444; transform:scale(1.3); }
+  100% { color:#ff6b6b; transform:scale(1); }
+}
+.cell.matched { animation:popOut 0.32s ease forwards; }
+.cell.dropping { animation:dropIn 0.22s ease; }
+.combo-anim { animation:comboFlash 0.4s ease; }
+/* ---- Floating Score ---- */
+.float-score {
+  position:absolute;
+  font-size:1rem;
+  font-weight:bold;
+  color:#ffd700;
+  pointer-events:none;
+  animation:floatUp 0.9s ease forwards;
+  z-index:50;
+  white-space:nowrap;
+}
+@keyframes floatUp {
+  0%   { transform:translateY(0); opacity:1; }
+  100% { transform:translateY(-60px); opacity:0; }
+}
+/* ---- Buttons ---- */
+.btn {
+  padding:12px 32px;
+  border:2px solid #ffd700;
+  background:transparent;
+  color:#ffd700;
+  font-size:1.05rem;
+  cursor:pointer;
+  border-radius:6px;
+  transition:all 0.2s;
+  margin:4px;
+}
+.btn:hover { background:#ffd700; color:#1a1a2e; }
+.btn-sm {
+  padding:8px 20px;
+  border:1px solid #555;
+  background:transparent;
+  color:#aaa;
+  font-size:0.85rem;
+  cursor:pointer;
+  border-radius:6px;
+  transition:all 0.15s;
+}
+.btn-sm:hover { border-color:#aaa; color:#fff; }
+</style>
+</head>
+<body>
+<!-- ========== Start Screen ========== -->
+<div id="startScreen">
+  <h1>🌾 農場三消</h1>
+  <p class="subtitle">消除農作物・抽卡增強・衝高分！</p>
+  <div class="rules-box">
+    <b>遊玩方式</b><br>
+    點選兩個相鄰格子交換位置，消除 3 個以上相同農作物。<br>
+    連段越多，分數倍率越高！<br><br>
+    <b>卡片系統</b><br>
+    消除格子賺取農幣 🪙，用農幣抽卡。<br>
+    稀有卡片可在三消中觸發強力技能：<br>
+    <div class="rarity-row">
+      <span class="r-badge r-N-b">N 普通</span>
+      <span class="r-badge r-R-b">R 稀有</span>
+      <span class="r-badge r-SR-b">SR 超稀有</span>
+      <span class="r-badge r-SSR-b">SSR 傳說</span>
+    </div>
+  </div>
+  <button class="btn" onclick="startGame()">開始遊戲</button>
+</div>
+
+<!-- ========== HUD ========== -->
+<div id="hudBar">
+  <div class="hud-stat"><span class="lbl">分數</span><span class="val" id="hudScore">0</span></div>
+  <div class="hud-stat"><span class="lbl">連段</span><span class="val combo" id="hudCombo">x1</span></div>
+  <div class="hud-stat"><span class="lbl">步數</span><span class="val" id="hudMoves">30</span></div>
+  <div class="hud-stat"><span class="lbl">農幣</span><span class="val coins" id="hudCoins">0 🪙</span></div>
+</div>
+
+<!-- ========== Game Screen ========== -->
+<div id="gameScreen">
+  <!-- Board -->
+  <div id="boardWrap">
+    <div id="board"></div>
+  </div>
+
+  <!-- Right Panel -->
+  <div id="panel">
+    <div>
+      <div class="panel-title">🃏 持有卡片（最多3張）</div>
+      <div id="activeCards">
+        <div class="card-slot" id="slot0"><span class="empty-slot-txt">空位</span></div>
+        <div class="card-slot" id="slot1"><span class="empty-slot-txt">空位</span></div>
+        <div class="card-slot" id="slot2"><span class="empty-slot-txt">空位</span></div>
+      </div>
+    </div>
+    <div id="gachaSection">
+      <div class="panel-title">🎰 農幣抽卡</div>
+      <div id="coinDisplay">0 🪙</div>
+      <button class="pull-btn pull-1" id="btnPull1" onclick="doPull(1)">單抽 × 1（30🪙）</button>
+      <button class="pull-btn pull-10" id="btnPull10" onclick="doPull(10)">十連抽（250🪙）</button>
+    </div>
+    <div style="text-align:center;">
+      <button class="btn-sm" onclick="endGame()">結束遊戲</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Gacha Result Overlay ========== -->
+<div id="gachaResult">
+  <h3 style="color:#ffd700;font-size:1.6rem;">✨ 抽卡結果</h3>
+  <div class="gacha-cards-row" id="gachaCardsRow"></div>
+  <button class="btn" onclick="closeGacha()">加入牌組</button>
+</div>
+
+<!-- ========== Game Over Overlay ========== -->
+<div id="overlay">
+  <h2>🌾 遊戲結束</h2>
+  <div class="final-score" id="finalScore"></div>
+  <button class="btn" onclick="startGame()">再玩一局</button>
+  <button class="btn-sm" onclick="goHome()">回首頁</button>
+</div>
+
+<script>
+// ============================================================
+// CONSTANTS & CARD DEFINITIONS
+// ============================================================
+const TILES = ['🥕','🥔','🎃','🌾','🥬','🍄'];
+const TILE_COLORS = ['#cc4400','#8a6a30','#cc7700','#aaaa00','#228822','#882288'];
+const COLS = 8, ROWS = 8;
+const MOVES_INIT = 30;
+const PULL1_COST = 30, PULL10_COST = 250;
+const COMBO_DECAY_MS = 3000; // combo resets after 3s no match
+
+const CARD_POOL = [
+  // N cards
+  { id:'n1', rarity:'N', icon:'🌱', name:'豐收之芽', desc:'消除時額外+2🪙', effect:'coins+2' },
+  { id:'n2', rarity:'N', icon:'💧', name:'澆水壺',   desc:'本局步數+3',    effect:'moves+3' },
+  { id:'n3', rarity:'N', icon:'🐛', name:'土裡蟲',   desc:'分數x1.2（20步）',effect:'score*1.2', duration:20 },
+  // R cards
+  { id:'r1', rarity:'R', icon:'⚡', name:'閃電鋤',   desc:'點擊消除整行',  effect:'row_clear', uses:1 },
+  { id:'r2', rarity:'R', icon:'💥', name:'炸彈肥料', desc:'點擊炸3x3範圍', effect:'bomb_3x3',  uses:1 },
+  { id:'r3', rarity:'R', icon:'🔄', name:'旋風播種', desc:'盤面洗牌',      effect:'shuffle',   uses:1 },
+  { id:'r4', rarity:'R', icon:'🌈', name:'彩虹蔬菜', desc:'下次消除+雙倍分數', effect:'next_x2', uses:1 },
+  // SR cards
+  { id:'sr1', rarity:'SR', icon:'🌩️', name:'暴風犁',  desc:'消除整行+整列', effect:'cross_clear', uses:1 },
+  { id:'sr2', rarity:'SR', icon:'🎯', name:'精準農夫', desc:'分數x2（15步）', effect:'score*2', duration:15 },
+  { id:'sr3', rarity:'SR', icon:'🌀', name:'龍捲風',  desc:'消除場上最多的農作物全部清除', effect:'clear_most', uses:1 },
+  { id:'sr4', rarity:'SR', icon:'⏰', name:'時光倒流', desc:'步數+8',        effect:'moves+8' },
+  // SSR cards
+  { id:'ssr1', rarity:'SSR', icon:'👑', name:'豐收王',   desc:'分數x3（20步）', effect:'score*3', duration:20 },
+  { id:'ssr2', rarity:'SSR', icon:'🌟', name:'星光種子', desc:'每次消除額外爆炸周圍格子', effect:'auto_bomb', duration:15 },
+  { id:'ssr3', rarity:'SSR', icon:'🔮', name:'水晶球',   desc:'自動找最佳三消並執行（5次）', effect:'auto_match', uses:5 },
+  { id:'ssr4', rarity:'SSR', icon:'🐉', name:'神農龍',   desc:'全場清除+分數x5', effect:'nuke', uses:1 },
+];
+const RARITY_WEIGHTS = { N:55, R:30, SR:12, SSR:3 };
+const RARITY_LABELS  = { N:'普通', R:'稀有', SR:'超稀有', SSR:'傳說' };
+
+// ============================================================
+// AUDIO
+// ============================================================
+const BGM_SRC  = '../../assets/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Temple Puzzle.ogg';
+const SFX_SRCS = {
+  match:  '../../assets/sfx/GameSFX3/PickUp/Retro PickUp 10.wav',
+  power:  '../../assets/sfx/GameSFX3/PowerUp/Retro PowerUP 09.wav',
+  magic:  '../../assets/sfx/GameSFX2/Magic/Retro Magic 06.wav',
+  combo:  '../../assets/sfx/GameSFX1/Electronic Burst/Retro Electronic Burst 03.wav',
+};
+let bgmAudio = null;
+const sfxCache = {};
+
+function playBGM() {
+  try {
+    if (!bgmAudio) { bgmAudio = new Audio(BGM_SRC); bgmAudio.loop = true; bgmAudio.volume = 0.35; }
+    bgmAudio.currentTime = 0;
+    bgmAudio.play().catch(()=>{});
+  } catch(e){}
+}
+function stopBGM() { if(bgmAudio) bgmAudio.pause(); }
+
+function playSFX(name, vol=0.7) {
+  try {
+    if (!SFX_SRCS[name]) return;
+    if (!sfxCache[name]) sfxCache[name] = new Audio(SFX_SRCS[name]);
+    const s = sfxCache[name].cloneNode();
+    s.volume = vol;
+    s.play().catch(()=>{});
+  } catch(e){}
+}
+</script>
+<script>
+// ============================================================
+// GAME STATE
+// ============================================================
+let board = [];        // 8x8 tile indices (0-5), -1 = empty
+let selected = null;   // {r,c} or null
+let score = 0;
+let moves = MOVES_INIT;
+let coins = 0;
+let combo = 1;
+let comboTimer = null;
+let busy = false;      // lock during animations
+let cardSlots = [null, null, null]; // up to 3 cards
+let pendingGachaCards = [];
+let activeEffects = {}; // { effectKey: {stepsLeft, mult, ...} }
+
+// ============================================================
+// BOARD GENERATION
+// ============================================================
+function newBoard() {
+  board = [];
+  for (let r = 0; r < ROWS; r++) {
+    board.push([]);
+    for (let c = 0; c < COLS; c++) {
+      let t;
+      do { t = Math.floor(Math.random() * TILES.length); }
+      while (wouldMatch(board, r, c, t));
+      board[r].push(t);
+    }
+  }
+}
+
+function wouldMatch(b, r, c, t) {
+  // check horizontal
+  if (c >= 2 && b[r][c-1] === t && b[r][c-2] === t) return true;
+  // check vertical
+  if (r >= 2 && b[r-1][c] === t && b[r-2][c] === t) return true;
+  return false;
+}
+
+// ============================================================
+// MATCH FINDING
+// ============================================================
+function findAllMatches() {
+  const matched = Array.from({length:ROWS}, ()=>Array(COLS).fill(false));
+  let found = false;
+
+  // Horizontal
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS - 2; c++) {
+      const t = board[r][c];
+      if (t < 0) continue;
+      if (board[r][c+1] === t && board[r][c+2] === t) {
+        let end = c + 2;
+        while (end+1 < COLS && board[r][end+1] === t) end++;
+        for (let x = c; x <= end; x++) { matched[r][x] = true; found = true; }
+        c = end;
+      }
+    }
+  }
+  // Vertical
+  for (let c = 0; c < COLS; c++) {
+    for (let r = 0; r < ROWS - 2; r++) {
+      const t = board[r][c];
+      if (t < 0) continue;
+      if (board[r+1][c] === t && board[r+2][c] === t) {
+        let end = r + 2;
+        while (end+1 < ROWS && board[end+1][c] === t) end++;
+        for (let x = r; x <= end; x++) { matched[x][c] = true; found = true; }
+        r = end;
+      }
+    }
+  }
+  return found ? matched : null;
+}
+
+// Find a valid move hint
+function findHint() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const dirs = [{dr:0,dc:1},{dr:1,dc:0}];
+      for (const {dr,dc} of dirs) {
+        const r2=r+dr, c2=c+dc;
+        if (r2>=ROWS||c2>=COLS) continue;
+        // swap and check
+        [board[r][c], board[r2][c2]] = [board[r2][c2], board[r][c]];
+        const m = findAllMatches();
+        [board[r][c], board[r2][c2]] = [board[r2][c2], board[r][c]];
+        if (m) return [{r,c},{r:r2,c:c2}];
+      }
+    }
+  }
+  return null;
+}
+
+// ============================================================
+// APPLY GRAVITY + REFILL
+// ============================================================
+function applyGravity() {
+  for (let c = 0; c < COLS; c++) {
+    let write = ROWS - 1;
+    for (let r = ROWS-1; r >= 0; r--) {
+      if (board[r][c] >= 0) { board[write][c] = board[r][c]; write--; }
+    }
+    while (write >= 0) { board[write][c] = -1; write--; }
+  }
+}
+
+function refillBoard() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c] < 0) board[r][c] = Math.floor(Math.random() * TILES.length);
+    }
+  }
+}
+
+// ============================================================
+// SWAP & PROCESS
+// ============================================================
+async function trySwap(r1,c1,r2,c2) {
+  if (busy) return;
+  busy = true;
+
+  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+  renderBoard();
+
+  const matched = findAllMatches();
+  if (!matched) {
+    // invalid swap — revert
+    await sleep(180);
+    [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+    renderBoard();
+    busy = false;
+    return;
+  }
+
+  moves--;
+  updateHUD();
+  await processMatches(matched);
+  busy = false;
+
+  if (moves <= 0) { endGame(); return; }
+  // check no valid moves
+  if (!findHint()) {
+    await doShuffle();
+  }
+}
+
+async function processMatches(matched) {
+  // count tiles matched & types
+  let total = 0;
+  const typeCounts = Array(TILES.length).fill(0);
+  for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) {
+    if(matched[r][c]) { typeCounts[board[r][c]]++; total++; }
+  }
+
+  // auto_bomb SSR effect: expand matched cells
+  if (hasEffect('auto_bomb')) {
+    for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) {
+      if (matched[r][c]) {
+        for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) {
+          const nr=r+dr, nc=c+dc;
+          if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) matched[nr][nc]=true;
+        }
+      }
+    }
+    // recount
+    total=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(matched[r][c])total++;
+  }
+
+  // animate pop
+  markCells(matched, 'matched');
+  playSFX('match');
+  await sleep(340);
+
+  // score
+  let mult = combo * getScoreMult();
+  if (hasEffect('next_x2')) { mult *= 2; consumeUse('next_x2'); }
+  const gained = Math.floor(total * 10 * mult);
+  score += gained;
+
+  // coins
+  let coinGain = Math.floor(total * 1.5);
+  if (hasEffect('coins+2')) coinGain += 2 * Math.ceil(total/3);
+  coins += coinGain;
+
+  // combo
+  clearTimeout(comboTimer);
+  combo++;
+  if (combo > 1) playSFX('combo');
+  comboTimer = setTimeout(() => { combo = 1; updateHUD(); }, COMBO_DECAY_MS);
+
+  // show float score on board center
+  showFloatScore(`+${gained}`, total, mult);
+  updateHUD();
+
+  // clear matched cells
+  for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(matched[r][c]) board[r][c]=-1;
+
+  applyGravity();
+  refillBoard();
+  renderBoard(true);
+  await sleep(260);
+
+  // chain check
+  const next = findAllMatches();
+  if (next) await processMatches(next);
+
+  // tick duration effects
+  tickEffects();
+  renderPanel();
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function markCells(matched, cls) {
+  const cells = document.querySelectorAll('.cell');
+  for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) {
+    if(matched[r][c]) cells[r*COLS+c].classList.add(cls);
+  }
+}
+</script>
+<script>
+// ============================================================
+// EFFECT SYSTEM
+// ============================================================
+function hasEffect(key) {
+  return !!activeEffects[key];
+}
+
+function getScoreMult() {
+  let m = 1;
+  if (activeEffects['score*1.2']) m *= 1.2;
+  if (activeEffects['score*2'])   m *= 2;
+  if (activeEffects['score*3'])   m *= 3;
+  return m;
+}
+
+function consumeUse(key) {
+  if (!activeEffects[key]) return;
+  activeEffects[key].uses--;
+  if (activeEffects[key].uses <= 0) delete activeEffects[key];
+}
+
+function tickEffects() {
+  for (const k of Object.keys(activeEffects)) {
+    if (activeEffects[k].type === 'duration') {
+      activeEffects[k].stepsLeft--;
+      if (activeEffects[k].stepsLeft <= 0) delete activeEffects[k];
+    }
+  }
+}
+
+function activateCard(slotIdx) {
+  const card = cardSlots[slotIdx];
+  if (!card) return;
+  const eff = card.effect;
+
+  // Immediate effects (no click target needed)
+  if (eff === 'moves+3') { moves += 3; updateHUD(); cardSlots[slotIdx]=null; renderPanel(); return; }
+  if (eff === 'moves+8') { moves += 8; updateHUD(); cardSlots[slotIdx]=null; renderPanel(); return; }
+  if (eff === 'shuffle') { doShuffle(); cardSlots[slotIdx]=null; renderPanel(); return; }
+  if (eff === 'clear_most') {
+    // find most common tile type
+    const cnt = Array(TILES.length).fill(0);
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c]>=0) cnt[board[r][c]]++;
+    const t = cnt.indexOf(Math.max(...cnt));
+    const mat = Array.from({length:ROWS},()=>Array(COLS).fill(false));
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c]===t) mat[r][c]=true;
+    processMatches(mat);
+    cardSlots[slotIdx]=null; renderPanel(); playSFX('magic'); return;
+  }
+  if (eff === 'nuke') {
+    score += Math.floor(score * 5);
+    const mat = Array.from({length:ROWS},()=>Array(COLS).fill(true));
+    processMatches(mat);
+    cardSlots[slotIdx]=null; renderPanel(); playSFX('magic'); return;
+  }
+
+  // Duration effects
+  if (eff.startsWith('score*')) {
+    const mult = parseFloat(eff.split('*')[1]);
+    const dur  = card.duration || 15;
+    activeEffects[eff] = { type:'duration', stepsLeft: dur, mult };
+    cardSlots[slotIdx]=null; renderPanel(); playSFX('power'); return;
+  }
+  if (eff === 'coins+2') {
+    activeEffects[eff] = { type:'duration', stepsLeft: 20 };
+    cardSlots[slotIdx]=null; renderPanel(); return;
+  }
+  if (eff === 'auto_bomb') {
+    activeEffects[eff] = { type:'duration', stepsLeft: card.duration||15 };
+    cardSlots[slotIdx]=null; renderPanel(); playSFX('power'); return;
+  }
+
+  // Click-target effects: row_clear, bomb_3x3, cross_clear, next_x2, auto_match
+  if (eff === 'next_x2') {
+    activeEffects['next_x2'] = { type:'uses', uses:1 };
+    cardSlots[slotIdx]=null; renderPanel(); playSFX('power'); return;
+  }
+  if (eff === 'auto_match') {
+    const uses = card.uses || 5;
+    activeEffects['auto_match'] = { type:'uses', uses, cardSlot: slotIdx };
+    doAutoMatch(); cardSlots[slotIdx]=null; renderPanel(); playSFX('magic'); return;
+  }
+  // Board-targeting effects: set pending mode
+  if (['row_clear','bomb_3x3','cross_clear'].includes(eff)) {
+    window._pendingEffect = { eff, slotIdx };
+    highlightAllCells(true);
+    renderPanel();
+    return;
+  }
+}
+
+function applyTargetEffect(r, c) {
+  if (!window._pendingEffect) return;
+  const {eff, slotIdx} = window._pendingEffect;
+  window._pendingEffect = null;
+  highlightAllCells(false);
+
+  const mat = Array.from({length:ROWS},()=>Array(COLS).fill(false));
+  if (eff === 'row_clear') {
+    for(let cc=0;cc<COLS;cc++) mat[r][cc]=true;
+  } else if (eff === 'bomb_3x3') {
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) {
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) mat[nr][nc]=true;
+    }
+  } else if (eff === 'cross_clear') {
+    for(let cc=0;cc<COLS;cc++) mat[r][cc]=true;
+    for(let rr=0;rr<ROWS;rr++) mat[rr][c]=true;
+  }
+
+  cardSlots[slotIdx]=null;
+  renderPanel();
+  playSFX('magic');
+  if(!busy) processMatches(mat);
+}
+
+async function doAutoMatch() {
+  if (busy) return;
+  const hint = findHint();
+  if (!hint) return;
+  const [{r:r1,c:c1},{r:r2,c:c2}] = hint;
+  await trySwap(r1,c1,r2,c2);
+}
+
+async function doShuffle() {
+  busy = true;
+  playSFX('magic');
+  // Fisher-Yates on flat array
+  const flat = [];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) flat.push(board[r][c]);
+  for(let i=flat.length-1;i>0;i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [flat[i],flat[j]]=[flat[j],flat[i]];
+  }
+  let i=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c]=flat[i++];
+  renderBoard();
+  await sleep(300);
+  // cascade any existing matches
+  const m = findAllMatches();
+  if(m) await processMatches(m);
+  busy = false;
+}
+
+// ============================================================
+// GACHA
+// ============================================================
+function weightedPull() {
+  const pool = [];
+  for(const [r, w] of Object.entries(RARITY_WEIGHTS)) {
+    const cards = CARD_POOL.filter(c=>c.rarity===r);
+    for(let i=0;i<w;i++) pool.push(cards[Math.floor(Math.random()*cards.length)]);
+  }
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function doPull(n) {
+  const cost = n===1 ? PULL1_COST : PULL10_COST;
+  if (coins < cost) return;
+  coins -= cost;
+  updateHUD();
+
+  pendingGachaCards = [];
+  for(let i=0;i<n;i++) pendingGachaCards.push(weightedPull());
+
+  // render gacha result
+  const row = document.getElementById('gachaCardsRow');
+  row.innerHTML = '';
+  pendingGachaCards.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = `gacha-card r-${card.rarity}`;
+    el.style.animationDelay = `${i*0.12}s`;
+    el.innerHTML = `<div class="gc-icon">${card.icon}</div>
+      <div class="gc-rarity">${card.rarity} · ${RARITY_LABELS[card.rarity]}</div>
+      <div class="gc-name">${card.name}</div>`;
+    row.appendChild(el);
+  });
+
+  document.getElementById('gachaResult').style.display='flex';
+  playSFX('power');
+}
+
+function closeGacha() {
+  document.getElementById('gachaResult').style.display='none';
+  // add to slots (priority: higher rarity, prefer SSR>SR>R>N)
+  const order = ['SSR','SR','R','N'];
+  const sorted = [...pendingGachaCards].sort((a,b)=>order.indexOf(a.rarity)-order.indexOf(b.rarity));
+  for(const card of sorted) {
+    const empty = cardSlots.indexOf(null);
+    if(empty>=0) cardSlots[empty] = JSON.parse(JSON.stringify(card));
+    // else discard (full)
+  }
+  pendingGachaCards=[];
+  renderPanel();
+}
+
+// ============================================================
+// SCORE FLOAT
+// ============================================================
+function showFloatScore(text, tiles, mult) {
+  const boardEl = document.getElementById('board');
+  const el = document.createElement('div');
+  el.className = 'float-score';
+  el.textContent = text + (mult>1 ? ` ×${mult.toFixed(1)}` : '');
+  el.style.left = '50%';
+  el.style.top  = '40%';
+  el.style.transform = 'translateX(-50%)';
+  el.style.fontSize = mult >= 3 ? '1.5rem' : mult >= 2 ? '1.2rem' : '1rem';
+  el.style.color = mult >= 3 ? '#ff4444' : mult >= 2 ? '#ff9900' : '#ffd700';
+  boardEl.style.position='relative';
+  boardEl.appendChild(el);
+  setTimeout(()=>el.remove(), 950);
+}
+
+function highlightAllCells(on) {
+  document.querySelectorAll('.cell').forEach(el=>{
+    el.classList.toggle('hint-glow', on);
+  });
+}
+</script>
+<script>
+// ============================================================
+// RENDERING
+// ============================================================
+function renderBoard(dropping=false) {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  for (let r=0;r<ROWS;r++) {
+    for (let c=0;c<COLS;c++) {
+      const t = board[r][c];
+      const el = document.createElement('div');
+      el.className = 'cell' + (dropping && t>=0 ? ' dropping' : '');
+      if (window._pendingEffect) el.classList.add('hint-glow');
+      el.textContent = t>=0 ? TILES[t] : '';
+      el.dataset.r = r; el.dataset.c = c;
+      el.addEventListener('click', onCellClick);
+      boardEl.appendChild(el);
+    }
+  }
+}
+
+function renderPanel() {
+  // Card slots
+  for(let i=0;i<3;i++) {
+    const slot = document.getElementById(`slot${i}`);
+    const card = cardSlots[i];
+    slot.innerHTML='';
+    slot.className='card-slot';
+    if (!card) {
+      slot.classList.add('empty');
+      slot.innerHTML='<span class="empty-slot-txt">空位</span>';
+      slot.onclick=null;
+      continue;
+    }
+    slot.classList.add('has-card', `r-${card.rarity}`);
+    // burning if effect active
+    const effKey = card.effect;
+    if (activeEffects[effKey]) slot.classList.add('burning');
+
+    const eff = activeEffects[effKey];
+    const timerTxt = eff ? (eff.type==='duration' ? `剩餘 ${eff.stepsLeft} 步` : `剩 ${eff.uses} 次`) : '';
+
+    slot.innerHTML = `
+      <div class="card-icon">${card.icon}</div>
+      <div class="card-body">
+        <div class="card-name">${card.name} <span style="font-size:0.65rem;color:${rarityColor(card.rarity)}">[${card.rarity}]</span></div>
+        <div class="card-desc">${card.desc}</div>
+        ${timerTxt ? `<div class="card-timer">⏳ ${timerTxt}</div>` : ''}
+        ${!eff ? '<div class="card-use-hint">點擊發動</div>' : ''}
+      </div>`;
+    slot.onclick = () => activateCard(i);
+  }
+
+  // Coin display
+  document.getElementById('coinDisplay').textContent = `${coins} 🪙`;
+  const canPull1  = coins >= PULL1_COST;
+  const canPull10 = coins >= PULL10_COST;
+  document.getElementById('btnPull1').disabled  = !canPull1;
+  document.getElementById('btnPull10').disabled = !canPull10;
+
+  // Slot count badge
+  const filled = cardSlots.filter(Boolean).length;
+  document.querySelectorAll('.pull-btn').forEach(b=>{
+    b.disabled = b.disabled || filled===3;
+  });
+}
+
+function rarityColor(r) {
+  return { N:'#aaa', R:'#7ab8ff', SR:'#d07aff', SSR:'#ffd700' }[r] || '#aaa';
+}
+
+function updateHUD() {
+  document.getElementById('hudScore').textContent  = score.toLocaleString();
+  document.getElementById('hudCombo').textContent  = `x${combo}`;
+  document.getElementById('hudMoves').textContent  = moves;
+  document.getElementById('hudCoins').textContent  = `${coins} 🪙`;
+  // combo flash
+  const comboEl = document.getElementById('hudCombo');
+  if(combo>1) { comboEl.classList.add('combo-anim'); setTimeout(()=>comboEl.classList.remove('combo-anim'),400); }
+}
+
+// ============================================================
+// CELL CLICK HANDLER
+// ============================================================
+function onCellClick(e) {
+  if (busy) return;
+  const r = parseInt(e.currentTarget.dataset.r);
+  const c = parseInt(e.currentTarget.dataset.c);
+
+  // If pending target effect
+  if (window._pendingEffect) {
+    applyTargetEffect(r, c);
+    return;
+  }
+
+  if (!selected) {
+    selected = {r,c};
+    renderBoard(); // to apply selected class
+    document.querySelectorAll('.cell')[r*COLS+c].classList.add('selected');
+    return;
+  }
+
+  const {r:sr, c:sc} = selected;
+  selected = null;
+
+  if (sr===r && sc===c) { renderBoard(); return; } // deselect
+
+  const dist = Math.abs(sr-r) + Math.abs(sc-c);
+  if (dist === 1) {
+    trySwap(sr,sc,r,c);
+  } else {
+    // re-select new cell
+    selected = {r,c};
+    renderBoard();
+    document.querySelectorAll('.cell')[r*COLS+c].classList.add('selected');
+  }
+}
+
+// ============================================================
+// GAME FLOW
+// ============================================================
+function startGame() {
+  score=0; moves=MOVES_INIT; coins=0; combo=1;
+  cardSlots=[null,null,null];
+  activeEffects={};
+  pendingGachaCards=[];
+  selected=null;
+  busy=false;
+  window._pendingEffect=null;
+  clearTimeout(comboTimer);
+
+  newBoard();
+  // ensure no initial matches
+  let m = findAllMatches();
+  while(m) { newBoard(); m=findAllMatches(); }
+
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('hudBar').style.display='flex';
+  document.getElementById('gameScreen').style.display='flex';
+  document.getElementById('gachaResult').style.display='none';
+
+  renderBoard();
+  updateHUD();
+  renderPanel();
+  playBGM();
+}
+
+function endGame() {
+  stopBGM();
+  busy=true;
+  const ov = document.getElementById('overlay');
+  const hi = parseInt(localStorage.getItem('farmMatchHi')||0);
+  if(score>hi) localStorage.setItem('farmMatchHi', score);
+  const best = Math.max(score, hi);
+  document.getElementById('finalScore').innerHTML =
+    `本局得分：<b style="color:#ffd700">${score.toLocaleString()}</b><br>
+     歷史最高：<b style="color:#00d4aa">${best.toLocaleString()}</b>`;
+  ov.style.display='flex';
+}
+
+function goHome() {
+  window.location.href='../../index.html';
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('hudBar').style.display='none';
+  document.getElementById('gameScreen').style.display='none';
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('gachaResult').style.display='none';
+});
+</script>
+</body>
+</html>
