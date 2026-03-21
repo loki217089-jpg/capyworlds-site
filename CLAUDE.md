@@ -78,21 +78,38 @@ BLOCK2
 
 ### 現有素材包總覽（2026/3/21）
 
+#### 🎵 音效 `assets/sfx/`
+
 | 路徑 | 內容 |
 |------|------|
 | `assets/sfx/GameSFX0/` | Alarms, Animal, Ascending, Blops, Bounce, Charge, Cinematic, Descending, Electric, Explosion |
 | `assets/sfx/GameSFX1/` | Electric, Electronic Burst, Events/Negative, Explosion, Impact |
 | `assets/sfx/GameSFX2/` | FootStep, HiTech, Impact, Interferences, Magic, Music/Events/Success/Negative |
 | `assets/sfx/GameSFX3/` | PickUp, PowerUp, Roar, Swoosh, Vehicles, Water, Weapon（Gun/Laser/Reload/Grenade/Missile/Arrow/Bomb/Plasma）, Weird, z_Various |
-| `assets/instruments/` | Retro Instrument：choir bass、crystal 等多種音色（C00–C12） |
-| `assets/JDSherbert - Minigame Music Pack [FREE]/` | 10 首 OGG BGM（輕鬆/休閒風：Streetlights、Blackjack、Smooth Driving 等） |
-| `assets/Free Pixel Effects Pack/` | 20 張特效 spritesheet（魔法/火焰/渦旋/冰凍等） |
-| `assets/Icons_Essential/Icons/` | 60+ 像素圖示 PNG（Coin、Key、Chest、Gamepad 等） |
-| `assets/PostApocalypse_AssetPack_v1.1.2/` | 末日風格：角色/敵人/物件/Tile/音效/音樂 |
-| `assets/Robot Warfare Asset Pack 24-11-21/` | 機甲戰爭：Soldiers、Robots、Effects、Projectiles、Tileset、UI |
-| `assets/Pixel Crawler - Free Pack 2.0.4/` | 地下城爬行：環境 Tileset（地板/牆/水）、角色 |
-| `assets/Sunnyside World/` | 明亮農場/世界風格素材 |
-| `assets/Tiny RPG Character Asset Pack v1.03b/` | 小型 RPG：Soldier & Orc sprite |
+
+#### 🎶 背景音樂 `assets/music/`
+
+| 路徑 | 內容 |
+|------|------|
+| `assets/music/JDSherbert - Minigame Music Pack [FREE]/` | 10 首 OGG BGM（輕鬆/休閒風：Streetlights、Blackjack、Smooth Driving 等） |
+| `assets/music/instruments/` | Retro Instrument：choir bass、crystal 等多種音色（C00–C12） |
+
+#### 🖼️ 圖片素材 `assets/images/`
+
+| 路徑 | 內容 |
+|------|------|
+| `assets/images/Free Pixel Effects Pack/` | 20 張特效 spritesheet（魔法/火焰/渦旋/冰凍等） |
+| `assets/images/Icons_Essential/Icons/` | 60+ 像素圖示 PNG（Coin、Key、Chest、Gamepad 等） |
+| `assets/images/Pixel Crawler - Free Pack 2.0.4/` | 地下城爬行：環境 Tileset（地板/牆/水）、角色 |
+| `assets/images/Sunnyside World/` | 明亮農場/世界風格素材 |
+| `assets/images/Tiny RPG Character Asset Pack v1.03b -Free Soldier&Orc/` | 小型 RPG v1.03b：Soldier & Orc sprite（最新版） |
+
+#### 📦 混合遊戲素材包（含圖片+音效） `assets/packs/`
+
+| 路徑 | 內容 |
+|------|------|
+| `assets/packs/PostApocalypse_AssetPack_v1.1.2/` | 末日風格：角色/敵人/物件/Tile/音效/音樂 |
+| `assets/packs/Robot Warfare Asset Pack 24-11-21/` | 機甲戰爭：Soldiers、Robots、Effects、Projectiles、Tileset、UI |
 
 ### 缺乏的素材類型（建議下載）
 
