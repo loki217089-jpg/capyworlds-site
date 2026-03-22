@@ -255,6 +255,8 @@ document.addEventListener('keydown', e=>{
   if(e.code==='KeyC') playerGuard();
 });
 document.addEventListener('keyup', e=>{ keys[e.code]=false; });
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+window.addEventListener('blur', ()=>{ Object.keys(keys).forEach(k=>{ keys[k]=false; }); });
 
 // ==================== 玩家技能 ====================
 function playerDash(){
