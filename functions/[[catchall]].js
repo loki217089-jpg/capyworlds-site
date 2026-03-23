@@ -228,6 +228,6 @@ export async function onRequest({ request, env }) {
     return Response.json({ ok: true }, { headers: cors });
   }
 
-  // 非 API 路由 → 交回 Pages 靜態處理（404）
-  return new Response('Not Found', { status: 404 });
+  // 非 API 路由 → 交回 Pages 靜態資產處理
+  return env.ASSETS.fetch(request);
 }
