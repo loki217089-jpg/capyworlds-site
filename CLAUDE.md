@@ -264,7 +264,10 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 
 ### 農場三消 `farm-match/`
 - Gacha 元素、N/R/SR/SSR 稀有度、連擊系統
-- 尚待深度測試
+- 卡片技能豐富多樣（炸行/3×3炸/十字清/全場核彈），爆發感強
+- 里程碑分數獎勵步數，給玩家持續動力，不易中途放棄
+- 無存檔機制，一局結束金幣/卡片全清，難以累積長線成就感
+- 後期缺乏難度曲線，寶石種類固定、無關卡障礙物
 
 ### FPS 射擊 `fps/`
 - 完整光線追蹤引擎、爆頭機制、3 種武器
