@@ -238,9 +238,9 @@ const STICKERS = [
 ];
 
 // ── State ──
-let myPid = localStorage.getItem('chat_pid') || (() => {
+let myPid = sessionStorage.getItem('chat_pid') || (() => {
   const p = Math.random().toString(36).slice(2,12);
-  localStorage.setItem('chat_pid', p); return p;
+  sessionStorage.setItem('chat_pid', p); return p;
 })();
 let myGender = '', myName = '', roomId = '', myRole = '';
 let lastMsgId = 0, pollTimer = null, timerInterval = null;
