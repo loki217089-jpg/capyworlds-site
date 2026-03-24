@@ -155,6 +155,16 @@
 - 所有遊戲都是純前端，無外部依賴（無 npm、無框架）
 - 每款遊戲只有一個 `index.html`（CSS 與 JS 全部 inline）
 - 語言：繁體中文 + 英文雙語（預設繁體中文，右上角切換按鈕「繁中 / EN」，切換後 i18n 物件全部替換文字）
+- **⚠️ 雙語文字出框警告**：英文字串通常比中文長 1.5～2 倍，製作或修改 UI 時必須同時確認兩種語言不出框
+  - **Canvas `fillText`**：務必傳第 4 個參數 `maxWidth`（通常 `容器寬度 - padding`），讓文字自動壓縮而非溢出
+    ```javascript
+    // ✅ 正確
+    ctx.fillText(text, x, y, btnWidth - 10);
+    // ❌ 錯誤（長文字會溢出）
+    ctx.fillText(text, x, y);
+    ```
+  - **HTML/CSS 元素**：按鈕、標籤加 `overflow:hidden; text-overflow:ellipsis; white-space:nowrap`，或用 `min-width` 配合 `flex-shrink`
+  - **新增 i18n 字串時**：先比對英文版長度，若超過中文版 1.5 倍以上要縮短英文或改排版
 - 視覺風格跟隨現有設計（深色背景、金色/青色強調色）
 - 手機遊戲：Canvas 必須用 JS 縮放填滿螢幕
 - `touch-action: none` 只加在 canvas 元素，不加在 body
