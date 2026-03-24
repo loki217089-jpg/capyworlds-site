@@ -223,7 +223,7 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 | `fps/` | FPS 射擊遊戲 | 第一人稱射擊 | ~930 |
 | `hero/` | 勇者傳說 | 放置 RPG | ~3369 |
 | `mosquito/` | 進化蚊子 | 放置進化 | ~1546 |
-| `space-roguelike/` | 虛空領航員 | 太空 Roguelike | ~2565 |
+| `space-roguelike/` | 虛空領航員 | 太空 Roguelike | ~3000 |
 | `village/` | 水豚小村 | 村落模擬 | ~1655 |
 | `virus/` | VIRUS.EXE 系統清除 | 駭客防禦 | ~2446 |
 | `zombie-idle/` | 殭屍蔓延 Zombie Idle | 放置點擊 | ~1651 |
@@ -280,7 +280,7 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 
 ### 虛空領航員 `space-roguelike/`
 - 太空探索+採礦、燃料管理、Meta 升級
-- ~2565 行，武器種類偏少
+- 8 種武器（雷射/散射/重砲/導彈/波動/連射/等離子/閃電鏈），~3000 行
 
 ### 水豚小村 `village/`
 - 收集/採集冷卻、行為日誌系統
