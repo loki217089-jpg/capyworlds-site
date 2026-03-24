@@ -881,6 +881,10 @@ function tickSpawn(dt){
 // ─── Upgrade Panel ────────────────────────────────────────
 function toggleUpg(){
   STATE.upgPanelOpen=!STATE.upgPanelOpen;
+  // 開升級面板時暫停，關閉時恢復（Boss 戰中不影響）
+  if(!STATE.bossActive){
+    STATE.paused=STATE.upgPanelOpen;
+  }
   document.getElementById('upg-panel').classList.toggle('open',STATE.upgPanelOpen);
   if(STATE.upgPanelOpen) renderUpgPanel();
 }
@@ -1001,7 +1005,8 @@ function bossClear(){
   document.getElementById('boss-btn').disabled=true;
   setTimeout(()=>{
     document.getElementById('boss-ov').classList.remove('show');
-    STATE.bossActive=false; STATE.paused=false;
+    STATE.bossActive=false;
+    // 保持 paused=true，等玩家點「啟航！」再 unpause，防止 Boss 重複觸發
     showUnlock();
   },1400);
 }
@@ -1028,6 +1033,7 @@ function nextCountry(){
   STATE.country=Math.min(STATE.country+1,COUNTRIES.length-1);
   STATE.progress=0; STATE.scroll=0; STATE.countriesCleared++;
   STATE.cargo={}; STATE.floatItems=[]; spawnAccum=0;
+  STATE.paused=false; // 在這裡才 unpause，避免解鎖畫面期間遊戲繼續跑
   updateHUD(); save();
 }
 
