@@ -35,12 +35,12 @@
   .leg:last-child{border-right:none;}
   .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
   /* 商店面板 */
-  #shopPanel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;background:rgba(12,8,2,0.97);border:2px solid var(--amber);width:580px;max-height:88vh;border-radius:4px;padding:20px 24px 16px;font-family:'Share Tech Mono',monospace;display:none;flex-direction:column;}
+  #shopPanel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;background:rgba(12,8,2,0.97);border:2px solid var(--amber);width:min(580px, calc(100vw - 32px));max-height:88vh;border-radius:4px;padding:20px 24px 16px;font-family:'Share Tech Mono',monospace;display:none;flex-direction:column;}
   #shopPanel.open{display:flex;}
   #shopPanel h2{font-family:'Noto Serif TC',serif;color:var(--amber);text-align:center;font-size:22px;margin-bottom:3px;letter-spacing:4px;flex-shrink:0;}
   #shopPanel .shop-sub{color:#5a4020;font-size:12px;text-align:center;margin-bottom:8px;letter-spacing:2px;flex-shrink:0;}
   #shopPanel .blood-display{text-align:center;font-size:17px;color:#cc4466;margin-bottom:10px;flex-shrink:0;}
-  .shop-scroll{overflow-y:auto;flex:1;min-height:0;padding-right:4px;}
+  .shop-scroll{overflow-y:auto;flex:1;min-height:0;padding-right:4px;-webkit-overflow-scrolling:touch;}
   .shop-scroll::-webkit-scrollbar{width:6px;}
   .shop-scroll::-webkit-scrollbar-track{background:rgba(30,20,8,0.5);}
   .shop-scroll::-webkit-scrollbar-thumb{background:#5a3a0a;border-radius:3px;}
@@ -48,6 +48,7 @@
   .shop-section-title:first-child{margin-top:0;}
   .shop-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #2a1a08;border-radius:4px;margin-bottom:7px;cursor:pointer;transition:background 0.15s;}
   .shop-item:hover{background:rgba(232,160,32,0.08);border-color:var(--amber);}
+  .shop-item:active{background:rgba(200,164,86,0.15);}
   .shop-item .icon{font-size:28px;flex-shrink:0;}
   .shop-item .info{flex:1;}
   .shop-item .name{font-family:'Noto Serif TC',serif;color:#d4a84a;font-size:15px;font-weight:700;}
@@ -57,8 +58,10 @@
   .shop-item .level{font-size:12px;color:#5a8a5a;margin-top:3px;}
   .shop-item.maxed{opacity:0.45;cursor:default;}
   .shop-key-legend{text-align:center;font-size:11px;color:#4a3a18;margin:8px 0 6px;letter-spacing:1px;flex-shrink:0;border-top:1px solid #2a1a08;padding-top:8px;}
-  #shopClose{display:block;width:100%;margin-top:0;padding:10px;background:rgba(232,160,32,0.12);border:1px solid var(--amber);color:var(--amber);font-family:'Noto Serif TC',serif;font-size:16px;cursor:pointer;border-radius:3px;letter-spacing:4px;flex-shrink:0;}
+  #shopClose{display:block;width:100%;margin-top:0;padding:14px 24px;min-height:44px;background:rgba(232,160,32,0.12);border:1px solid var(--amber);color:var(--amber);font-family:'Noto Serif TC',serif;font-size:16px;cursor:pointer;border-radius:3px;letter-spacing:4px;flex-shrink:0;}
   #shopClose:hover{background:rgba(232,160,32,0.25);}
+  button, .shop-item{touch-action:manipulation;}
+  #canvas{touch-action:none;}
   #shopBtn{position:fixed;bottom:12px;right:12px;z-index:150;background:rgba(20,14,6,0.92);border:1px solid var(--amber);color:var(--amber);font-family:'Noto Serif TC',serif;font-size:15px;padding:9px 16px;border-radius:4px;cursor:pointer;letter-spacing:2px;}
 </style>
 </head>
@@ -1005,7 +1008,7 @@ function thawFreeze(){
 }
 function showMsg(txt){
   const el=document.createElement('div');
-  el.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(20,14,6,0.95);border:1px solid #e8a020;color:#e8a020;font-family:Noto Serif TC,serif;font-size:16px;padding:12px 28px;border-radius:4px;pointer-events:none;letter-spacing:2px;';
+  el.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(20,14,6,0.95);border:1px solid #e8a020;color:#e8a020;font-family:Noto Serif TC,serif;font-size:16px;padding:12px 28px;border-radius:4px;pointer-events:none;letter-spacing:2px;max-width:min(300px, calc(100vw - 32px));';
   el.textContent=txt; document.body.appendChild(el);
   setTimeout(()=>el.remove(),1800);
 }
@@ -1247,6 +1250,21 @@ canvas.addEventListener('click',e=>{
     state.combo=Math.max(0,state.combo-1);
   }
 });
+
+canvas.addEventListener('touchstart',function(e){
+  e.preventDefault();
+  const touch=e.touches[0];
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=W/rect.width,scaleY=H/rect.height;
+  const mx=(touch.clientX-rect.left)*scaleX,my=(touch.clientY-rect.top)*scaleY;
+  canvas.dispatchEvent(new MouseEvent('click',{clientX:touch.clientX,clientY:touch.clientY}));
+},{passive:false});
+
+canvas.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  const touch=e.touches[0];
+  canvas.dispatchEvent(new MouseEvent('mousemove',{clientX:touch.clientX,clientY:touch.clientY}));
+},{passive:false});
 
 document.addEventListener('keydown',e=>{
   // S：鍊化商店
@@ -1777,14 +1795,14 @@ const Audio=(()=>{
 (function(){
   const muteBtn=document.createElement('button');
   muteBtn.textContent='🔊';
-  muteBtn.style.cssText='position:fixed;top:10px;right:12px;z-index:999;background:rgba(20,14,6,0.88);border:1px solid #8a5c0a;color:#e8a020;font-size:15px;width:34px;height:34px;border-radius:4px;cursor:pointer;';
+  muteBtn.style.cssText='position:fixed;top:10px;right:12px;z-index:999;background:rgba(20,14,6,0.88);border:1px solid #8a5c0a;color:#e8a020;font-size:15px;width:44px;height:44px;border-radius:4px;cursor:pointer;';
   muteBtn.addEventListener('click',e=>{e.stopPropagation();Audio.init();Audio.resume();muteBtn.textContent=Audio.toggleMute()?'🔇':'🔊';});
   document.body.appendChild(muteBtn);
 
   const langBtn=document.createElement('button');
   langBtn.id='langBtn';
   langBtn.textContent=T('lang_toggle');
-  langBtn.style.cssText='position:fixed;top:10px;right:54px;z-index:999;background:rgba(20,14,6,0.88);border:1px solid #8a5c0a;color:#e8a020;font-family:Share Tech Mono,monospace;font-size:12px;width:38px;height:34px;border-radius:4px;cursor:pointer;letter-spacing:1px;';
+  langBtn.style.cssText='position:fixed;top:10px;right:64px;z-index:999;background:rgba(20,14,6,0.88);border:1px solid #8a5c0a;color:#e8a020;font-family:Share Tech Mono,monospace;font-size:12px;width:44px;height:44px;border-radius:4px;cursor:pointer;letter-spacing:1px;';
   langBtn.addEventListener('click',e=>{
     e.stopPropagation();
     lang=lang==='zh'?'en':'zh';
