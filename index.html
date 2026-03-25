@@ -994,6 +994,7 @@
     <div class="dm-adm-ft">
       <button class="dm-adm-btn danger" onclick="dmAdminClearAll()">🗑 清除全部彈幕</button>
       <button class="dm-adm-btn neu"    onclick="dmAdminPauseToggle()" id="dm-pause-btn">⏸ 暫停顯示</button>
+      <button class="dm-adm-btn warn"   onclick="dmAdminShowAll()" style="flex:1 1 100%">▶▶ 全部顯示到畫面</button>
     </div>
   </div>
 
@@ -1198,6 +1199,23 @@
     const dbCount = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row').length;
     dmUpdateCounts(dbCount);
     showPtsPopup(dmPaused ? '彈幕已暫停' : '彈幕已恢復');
+  }
+
+  function dmAdminShowAll() {
+    const rows = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row');
+    if (!rows.length) { showPtsPopup('目前沒有彈幕'); return; }
+    // temporarily unpause so dmShow can run
+    const wasPaused = dmPaused;
+    dmPaused = false;
+    rows.forEach((row, i) => {
+      const txt   = row.querySelector('.dm-adm-txt');
+      const dot   = row.querySelector('.dm-adm-dot');
+      const text  = txt ? txt.textContent : '';
+      const color = dot ? dot.style.background : '#fff';
+      setTimeout(() => dmShow(text, color), i * 600);
+    });
+    dmPaused = wasPaused;
+    showPtsPopup(`播放全部 ${rows.length} 則彈幕`);
   }
 
   async function doSendDanmaku() {
