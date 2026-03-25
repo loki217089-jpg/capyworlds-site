@@ -1,4 +1,24 @@
-# CapyWorlds — Claude 開發指引（2026/3/24 更新）
+# CapyWorlds — Claude 開發指引（2026/3/25 更新）
+
+## 新 Session 自動合併規則（最優先執行）
+
+**每次開新 session 時**，Claude 必須主動執行以下流程：
+
+1. **檢查是否有未合併的 `claude/` 分支**：
+   ```bash
+   git branch -r --no-merged origin/main | grep "origin/claude/"
+   ```
+2. **若有未合併分支**：
+   - 先 `git fetch origin main` 取得最新 main
+   - 切換到該分支，嘗試 `git merge origin/main`
+   - 若有 conflict → 自動解決（保留雙方有意義的改動）
+   - 合併後 push 到該分支
+   - 用 GitHub MCP 工具合併 PR 到 main（若 PR 存在）
+   - 若無 PR，直接 `git checkout main && git merge <branch> && git push origin main`
+3. **合併完成後告知使用者**：「已把 `claude/xxx` 合併進 main ✅」
+4. **不需要問**：直接執行，事後報告即可
+
+---
 
 ## Context 壓縮保護規則（最優先執行）
 
