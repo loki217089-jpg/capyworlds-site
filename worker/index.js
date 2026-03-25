@@ -317,8 +317,8 @@ export default {
       const now=Date.now();
       // clean up stale rooms
       await env.DB.prepare("DELETE FROM chat_rooms WHERE created_at<?").bind(now-3600000).run();
-      // check if already in a room
-      const ex=await env.DB.prepare("SELECT id,p1_id,p2_id,state FROM chat_rooms WHERE (p1_id=? OR p2_id=?) AND state!='done' LIMIT 1").bind(pid,pid).first();
+      // check if already in an active room
+      const ex=await env.DB.prepare("SELECT id,p1_id,p2_id,state FROM chat_rooms WHERE (p1_id=? OR p2_id=?) AND state NOT IN ('done','cancelled') LIMIT 1").bind(pid,pid).first();
       if (ex) return Response.json({room_id:ex.id,role:ex.p1_id===pid?'p1':'p2',state:ex.state},{headers:cors});
       // find opposite gender waiting room
       const opp=gender==='male'?'female':'male';
@@ -356,6 +356,21 @@ export default {
         time_left:state==='chatting'?Math.max(0,timer_end-now):0,
         messages:(msgs.results||[]),
       },{headers:cors});
+    }
+
+    // POST /chat/:id/leave  { pid }
+    const chatLeave=url.pathname.match(/^\/chat\/([A-Z0-9]{6})\/leave$/);
+    if (chatLeave && request.method==='POST') {
+      const room_id=chatLeave[1];
+      let b; try{b=await request.json();}catch{b={};}
+      const pid=(b.pid||'').slice(0,40);
+      const room=await env.DB.prepare("SELECT p1_id,p2_id,state FROM chat_rooms WHERE id=?").bind(room_id).first();
+      if (!room) return Response.json({ok:true},{headers:cors});
+      // only mark done if still waiting (don't kill an active chat by accident)
+      if (room.state==='waiting' && room.p1_id===pid) {
+        await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=?").bind(room_id).run();
+      }
+      return Response.json({ok:true},{headers:cors});
     }
 
     // POST /chat/:id/msg  { pid, type, content }
