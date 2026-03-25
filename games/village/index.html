@@ -620,6 +620,7 @@ function newState(playerName, villageName) {
     diary: [],
     log: [],
     flags: {},
+    achievements: {},
     actDone: {},       // key: `${vlgrId}_${actType}` → lastDay
     quests: {day: -1, list: []},
     gatherCd: {food:0, wood:0}, // real-time ms cooldown
@@ -694,6 +695,36 @@ function checkVlgrStory(id) {
 function vd(id) { return VLGR_DATA.find(v=>v.id===id); }
 function vs(id) { return G.villagers.find(v=>v.id===id); }
 function totalBond() { return G.villagers.reduce((a,v)=>a+v.friendship,0); }
+
+// ══ 成就系統 ══════════════════════════════════
+const ACHIEVEMENTS = [
+  { id:'first_friend',  icon:'🤝', name:'初次相識',   desc:'與任意村民成為朋友',         reward:{happiness:5},          check:()=>G.villagers.some(v=>v.friendship>=20) },
+  { id:'home_cozy',     icon:'🏠', name:'溫暖小屋',   desc:'放置5件家具',                reward:{wood:10},               check:()=>G.home.items.length>=5 },
+  { id:'week_one',      icon:'📅', name:'紮根第一週', desc:'在村子住滿7天',               reward:{food:15,happiness:10},  check:()=>G.day>=7 },
+  { id:'all_friends',   icon:'👥', name:'全村好友',   desc:'與所有村民達到「朋友」',       reward:{happiness:15},          check:()=>G.villagers.every(v=>v.friendship>=20) },
+  { id:'all_bestfriend',icon:'💛', name:'全村摯友',   desc:'與所有村民達到「好友」',       reward:{happiness:20,food:20},  check:()=>G.villagers.every(v=>v.friendship>=45) },
+  { id:'bond_350',      icon:'🌳', name:'村落靈魂',   desc:'總親密度達到350',             reward:{happiness:25,wood:20},  check:()=>totalBond()>=350 },
+  { id:'all_family',    icon:'❤️', name:'全村家人',   desc:'與所有村民成為「家人」',       reward:{food:30,wood:30,happiness:30}, check:()=>G.villagers.every(v=>v.friendship>=100) },
+  { id:'day_30',        icon:'🌟', name:'老村民',     desc:'在村子住滿30天',              reward:{happiness:30,food:20},  check:()=>G.day>=30 },
+];
+function checkAchievements() {
+  if (!G.achievements) G.achievements = {};
+  let any = false;
+  ACHIEVEMENTS.forEach(a => {
+    if (G.achievements[a.id]) return;
+    if (!a.check()) return;
+    G.achievements[a.id] = true;
+    any = true;
+    const r = a.reward;
+    if (r.food)      G.food      = Math.min(999, G.food      + r.food);
+    if (r.wood)      G.wood      = Math.min(999, G.wood      + r.wood);
+    if (r.happiness) G.happiness = Math.min(100, G.happiness + r.happiness);
+    addDiary(`🏆 成就解鎖：${a.icon}${a.name}！${a.desc}`, true);
+    setTimeout(() => showFest(a.icon, `成就解鎖！${a.name}`,
+      `${a.desc}\n\n獎勵：${[r.food?`🍎+${r.food}`:'',r.wood?`🪵+${r.wood}`:'',r.happiness?`💛+${r.happiness}`:''].filter(Boolean).join('　')}`), 200);
+  });
+  if (any) { save(); renderResources(); }
+}
 
 function relInfo(f) {
   if (f>=100) return {label:'家人',   color:'#ff8040', tier:'family'};
@@ -864,6 +895,7 @@ function newDay() {
     `小藍說魚塘今天的水格外清澈。`,
   ];
   addLog(flavors[Math.floor(Math.random()*flavors.length)], 'event');
+  checkAchievements();
 }
 
 function newSeason() {
@@ -1205,6 +1237,16 @@ function buildVillageTab() {
   });
   s += `</div>`;
 
+  const achUnlocked = ACHIEVEMENTS.filter(a=>G.achievements&&G.achievements[a.id]);
+  s += `<div class="card"><div class="card-title">🏆 成就 ${achUnlocked.length}/${ACHIEVEMENTS.length}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px">`;
+  ACHIEVEMENTS.forEach(a => {
+    const done = G.achievements && G.achievements[a.id];
+    s += `<div title="${a.desc}" style="display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:8px;font-size:.68rem;${done?'background:rgba(240,192,64,.15);border:1px solid rgba(240,192,64,.35);color:var(--gold)':'background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);color:var(--text3)'}">
+      <span>${a.icon}</span><span>${done?a.name:'???'}</span></div>`;
+  });
+  s += `</div></div>`;
+
   s += `<div class="card" style="border-color:rgba(255,60,60,.18)">
     <div class="card-title" style="color:var(--text3)">⚙️ 資料管理</div>
     <div style="font-size:.72rem;color:var(--text3);margin-bottom:10px;line-height:1.8">清除所有存檔，以新居民身份重新開始。<br>此動作無法復原。</div>
@@ -1259,6 +1301,7 @@ function buyFurniture(id) {
   addLog(`🏠 小屋添置了 ${f.ic}${f.name}，舒適度提升了！`, 'event');
   addDiary(`為小屋添置了${f.name}。這裡越來越有家的感覺了。`);
   notify(`✨ 添置了 ${f.ic}${f.name}！舒適+${f.comfort}`);
+  checkAchievements();
   renderResources();
   renderTab();
   save();
@@ -1443,6 +1486,7 @@ function onRelUp(id, rel) {
     setTimeout(() => showFest('❤️', `你和${d.name}成為了家人！`,
       `${d.name}說：\n\n"${line}"\n\n在${G.villageName}，\n你不再是外來者了。`), 400);
   }
+  setTimeout(checkAchievements, 600);
 }
 
 // ══════════════════════════════════════════════
