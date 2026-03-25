@@ -483,6 +483,7 @@ body {
         <div id="pres-prog-txt"></div>
         <button id="pres-btn" onclick="prestige()">🧬 觸發進化重置</button>
         <div id="pres-streak"></div>
+        <div id="pres-milestones"></div>
         <div id="pres-info">
           ⚠️ 進化重置清除所有腦髓與殭屍。<br>
           🧬 換取 DNA 積分，購買永久強化。<br>
@@ -664,10 +665,19 @@ let G = {
   upg: {},  // id -> true
   du:  {},  // dna upgrade id -> true
   ach: {},  // achievement id -> true
+  pm:  {},  // prestige milestone id -> true
   em:  1,   // event multiplier
   ee:  0,   // event end timestamp
   bm:  1,   // buy mode
 };
+
+// ══ 進化里程碑 ══════════════════════════════════
+const PRES_MILES = [
+  { id:'pm1', tp:3,  ic:'🧬', nm:'突變核心',  ds:'所有進化 ≥3 次',  tp_label:'×2 點擊力', bps:1,   cp:2   },
+  { id:'pm2', tp:5,  ic:'☣️', nm:'感染菌株',  ds:'所有進化 ≥5 次',  tp_label:'×1.5 生產', bps:1.5, cp:1   },
+  { id:'pm3', tp:10, ic:'💀', nm:'殭屍覺醒',  ds:'所有進化 ≥10 次', tp_label:'×2 生產',   bps:2,   cp:1   },
+  { id:'pm4', tp:20, ic:'🌑', nm:'末日神啟',  ds:'所有進化 ≥20 次', tp_label:'×5 生產',   bps:5,   cp:1   },
+];
 
 // ══════════════════════════════════════════════
 //  HELPERS
@@ -727,7 +737,9 @@ function bps() {
   let s = 0;
   for (const z of ZD) { if (G.z[z.id].n > 0) s += G.z[z.id].n * z.bp * zMult(z.id); }
   const tpBonus = 1 + G.tp * 0.08; // +8% per prestige (permanent)
-  return s * (Date.now() < G.ee ? G.em : 1) * tpBonus;
+  let pmBps = 1;
+  for (const m of PRES_MILES) { if (G.pm && G.pm[m.id]) pmBps *= m.bps; }
+  return s * (Date.now() < G.ee ? G.em : 1) * tpBonus * pmBps;
 }
 
 function clickPow() {
@@ -737,6 +749,7 @@ function clickPow() {
   const b = bps();
   if (b > 0) cp += b * 0.01; // BPS bonus
   cp *= (1 + G.tp * 0.05); // +5% per prestige
+  for (const m of PRES_MILES) { if (G.pm && G.pm[m.id]) cp *= m.cp; }
   return Math.max(1, cp);
 }
 
@@ -826,6 +839,13 @@ function prestige() {
   G.b = 0; G.tb = 0;
   G.z = ZD.map(z => ({ id: z.id, n: 0 }));
   G.upg = {}; G.em = 1; G.ee = 0;
+  if (!G.pm) G.pm = {};
+  for (const m of PRES_MILES) {
+    if (!G.pm[m.id] && G.tp >= m.tp) {
+      G.pm[m.id] = true;
+      setTimeout(() => toast(`${m.ic} 里程碑解鎖！`, `${m.nm}：${m.tp_label} (永久)`, '#f59e0b'), 800);
+    }
+  }
   toast('🧬 進化成功！', `獲得 ${gain} DNA 積分 ／ 生產加成 +${G.tp*8}%`, '#a78bfa');
   save();
   render();
@@ -978,6 +998,16 @@ function renderPres() {
   const bonusPct = (G.tp * 8);
   document.getElementById('pres-streak').textContent =
     G.tp > 0 ? `已進化 ${G.tp} 次 ⟶ 生產 +${bonusPct}% ／ 點擊 +${G.tp*5}%` : '';
+
+  // Milestone display
+  let msHtml = '<div style="margin-top:10px;font-size:11px;color:#a78bfa;margin-bottom:4px">🎯 進化里程碑</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+  for (const m of PRES_MILES) {
+    const done = G.pm && G.pm[m.id];
+    msHtml += `<div title="${m.ds}\n效果：${m.tp_label}" style="padding:4px 8px;border-radius:4px;font-size:11px;${done?'background:#1a0a2e;border:1px solid #6d28d9;color:#a78bfa':'background:#0a0a0f;border:1px solid #1a1a2e;color:#333'}">${m.ic} ${done?m.nm:'??? (需 '+m.tp+' 次進化)'}</div>`;
+  }
+  msHtml += '</div>';
+  const msEl = document.getElementById('pres-milestones');
+  if (msEl) msEl.innerHTML = msHtml;
 
   const list = document.getElementById('dna-upg-list');
   list.innerHTML = '';
