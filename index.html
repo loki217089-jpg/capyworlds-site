@@ -1048,11 +1048,16 @@
   const dmInput  = document.getElementById('dm-input');
   const dmSend   = document.getElementById('dm-send');
 
-  dmToggle.addEventListener('click', () => {
-    dmOn = !dmOn;
+  function applyDmState(on) {
+    dmOn = on;
     dmToggle.classList.toggle('on', dmOn);
     dmToggle.textContent = dmOn ? '💬 彈幕 ON' : '💬 彈幕';
     dmBar.classList.toggle('open', dmOn);
+    localStorage.setItem('capyDmOn', dmOn ? '1' : '0');
+  }
+
+  dmToggle.addEventListener('click', () => {
+    applyDmState(!dmOn);
     if (dmOn) {
       fetchDanmaku(true);
       dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
@@ -1244,12 +1249,13 @@
   dmSend.addEventListener('click', doSendDanmaku);
   dmInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSendDanmaku(); });
 
-  // 預設開啟彈幕
-  dmToggle.classList.add('on');
-  dmToggle.textContent = '💬 彈幕 ON';
-  dmBar.classList.add('open');
-  fetchDanmaku(true);
-  dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
+  // 依使用者偏好初始化（沒設定過預設開）
+  const _savedDmOn = localStorage.getItem('capyDmOn');
+  applyDmState(_savedDmOn === null ? true : _savedDmOn === '1');
+  if (dmOn) {
+    fetchDanmaku(true);
+    dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
+  }
 
   // 冷笑話彈幕（本地，不送出伺服器）
   setTimeout(() => dmShow('一山還有一山高，雞蛋還有雞蛋糕 🥚', '#ffd700'), 3000);
