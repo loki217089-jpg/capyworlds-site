@@ -810,6 +810,66 @@ Step 9｜迭代 & 長尾運營
 
 ---
 
+## CrazyGames 上架前檢查清單（2026/3/25 制定）
+
+> **強制規則**：每款遊戲在提交 CrazyGames 前，Claude 必須逐項跑完此清單並回報結果。
+> 源自進化蚊子被拒經驗，避免重複犯錯。
+
+### 🔴 瀏覽器相容性（必過，否則直接被拒）
+
+| 檢查項 | 說明 | 修正方式 |
+|--------|------|---------|
+| `roundRect()` | Firefox/Safari 不支援 | 加 polyfill（arcTo 替代） |
+| `replaceAll()` | 舊瀏覽器不支援 | 用 `split().join()` 或 `replace(/x/g, y)` |
+| `structuredClone()` | Safari 15.3 以下不支援 | 用 `JSON.parse(JSON.stringify())` |
+| `?.` optional chaining | IE 不支援（CG 不管 IE，但注意） | — |
+| WebAudio API | 需 `webkitAudioContext` fallback | `new (window.AudioContext\|\|window.webkitAudioContext)()` |
+| Canvas API 新方法 | `reset()`, `roundRect()` 等 | 一律加 polyfill 或用替代寫法 |
+
+**檢查指令**：在檔案中搜尋 `roundRect`、`replaceAll`、`structuredClone`、`at(` 等新 API。
+
+### 🔴 功能完整性（缺一項就被拒）
+
+- [ ] **靜音按鈕** — 必須可見且隨時可用（z-index 高於所有面板）
+- [ ] **暫停功能** — 遊戲中可暫停（按鈕或 [P]/[Esc]）
+- [ ] **語言切換** — 至少支援英文（CG 主要用戶為歐美）
+- [ ] **所有按鍵綁定都有對應 handler** — 說明書說 [F] 可引爆，就必須真的綁了 [F]
+- [ ] **所有宣告的功能都有實作** — 商店列了磁鐵，就必須有 `activateMagnet()` 函式
+- [ ] **遊戲不會因任何操作崩潰** — 空指標、未定義函式、除以零
+
+### 📱 手機 / 響應式（CG 有手機玩家，必須支援）
+
+- [ ] **Canvas touch 事件** — `touchstart` + `touchmove`，座標要乘以縮放比例
+- [ ] **`touch-action: none`** — 只加在 canvas，不加在 body
+- [ ] **UI 面板響應式** — `width: min(Xpx, calc(100vw - 24px))`，不用固定 px
+- [ ] **按鈕可點擊** — 手機上按鈕尺寸 ≥ 44px，且不被其他元素遮擋
+- [ ] **文字不溢出** — 英文比中文長 1.5~2 倍，需 `word-wrap: break-word`
+- [ ] **遊戲結束按鈕** — 用相對尺寸，不用固定 px 座標
+
+### 🎓 新手體驗（影響留存率，間接影響審核）
+
+- [ ] **新手教學** — 首次進入顯示操作說明覆蓋層（localStorage 記住已看過）
+- [ ] **前 60 秒體驗** — 不能太難也不能太無聊
+- [ ] **核心機制解釋** — 特殊機制（如吸血警告）要讓玩家看得懂
+
+### ⚡ 效能 & 品質
+
+- [ ] **resize debounce** — `setTimeout` 100ms，避免頻繁重排
+- [ ] **粒子/特效數量上限** — 長時間遊玩不能 FPS 下降
+- [ ] **移除 AdSense** — CrazyGames 用自有 SDK，不能載入第三方廣告腳本
+- [ ] **無 console.error** — 開 DevTools 確認無紅色錯誤
+
+### 📦 提交前最終確認
+
+- [ ] 在 **Chrome** 測試通過
+- [ ] 在 **Firefox** 測試通過（重點：Canvas API 相容性）
+- [ ] 在 **手機瀏覽器** 測試通過（觸控 + 響應式）
+- [ ] 英文模式下所有 UI 文字不溢出
+- [ ] 遊戲可正常結束並重新開始
+- [ ] 所有快捷鍵都能正常運作
+
+---
+
 ## 週開發節奏（$100 MAX 方案）
 
 ### 標準週排程
