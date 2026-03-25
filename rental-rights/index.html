@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>租屋糾紛自救包 — CapyWorlds</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #1a1d27;
+  --bg3: #232736;
+  --accent: #60a5fa;
+  --accent2: #34d399;
+  --warn: #f87171;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --border: #2d3348;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  min-height: 100vh;
+  line-height: 1.7;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Header */
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky; top: 0; z-index: 10;
+}
+.back-link {
+  color: var(--text2); font-size: 14px;
+  display: flex; align-items: center; gap: 4px;
+}
+.back-link:hover { color: var(--text); text-decoration: none; }
+header h1 {
+  font-size: clamp(16px, 4vw, 22px);
+  color: var(--accent);
+  flex: 1;
+}
+.lang-btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); font-size: 12px; padding: 4px 10px;
+  border-radius: 20px; cursor: pointer;
+}
+.lang-btn:hover { color: var(--text); border-color: var(--accent); }
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #1e2a4a 0%, #0f1117 100%);
+  padding: 32px 20px 24px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero p { color: var(--text2); font-size: 14px; max-width: 480px; margin: 8px auto 0; }
+
+/* Layout */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+.layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 640px) { .layout { grid-template-columns: 1fr; } }
+
+/* Situation Menu */
+.situation-menu {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: sticky; top: 62px;
+}
+.menu-title {
+  padding: 12px 16px;
+  font-size: 12px; font-weight: bold;
+  color: var(--text2); letter-spacing: 0.06em;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.menu-item {
+  padding: 13px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.menu-item:last-child { border-bottom: none; }
+.menu-item:hover { background: var(--bg3); }
+.menu-item.active { background: rgba(96,165,250,0.12); color: var(--accent); border-left: 3px solid var(--accent); }
+.menu-item .item-emoji { font-size: 18px; }
+
+/* Content Panel */
+.content-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.panel-header {
+  padding: 20px 24px 16px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.panel-header h2 { font-size: 20px; color: var(--text); }
+.panel-header p  { font-size: 14px; color: var(--text2); margin-top: 4px; }
+.panel-body { padding: 20px 24px; }
+
+/* Sections */
+.section { margin-bottom: 24px; }
+.section-title {
+  font-size: 13px; font-weight: bold; letter-spacing: 0.06em;
+  color: var(--accent); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Law cards */
+.law-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.law-card .law-num { color: var(--accent2); font-weight: bold; font-size: 13px; }
+.law-card .law-text { color: var(--text2); margin-top: 4px; line-height: 1.6; }
+
+/* Action checklist */
+.checklist { list-style: none; }
+.checklist li {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.checklist li:last-child { border-bottom: none; }
+.check-num {
+  min-width: 24px; height: 24px;
+  background: var(--accent);
+  color: #000; font-size: 12px; font-weight: bold;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+
+/* Letter box */
+.letter-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-all;
+  position: relative;
+}
+.copy-btn {
+  position: absolute; top: 10px; right: 10px;
+  background: var(--accent); color: #000;
+  border: none; border-radius: 6px;
+  padding: 5px 14px; font-size: 12px; font-weight: bold;
+  cursor: pointer; transition: opacity 0.2s;
+}
+.copy-btn:hover { opacity: 0.85; }
+
+/* Report links */
+.report-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.report-link {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+  transition: border-color 0.15s;
+}
+.report-link:hover { border-color: var(--accent); text-decoration: none; }
+.report-link span { color: var(--text2); font-size: 12px; }
+
+/* Disclaimer */
+.disclaimer {
+  background: rgba(248,113,113,0.08);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 24px;
+}
+.disclaimer strong { color: var(--warn); }
+
+/* Welcome screen */
+#welcome {
+  padding: 40px 24px;
+  text-align: center;
+}
+#welcome .welcome-emoji { font-size: 64px; margin-bottom: 16px; }
+#welcome h2 { color: var(--text2); font-size: 18px; font-weight: normal; }
+#welcome p  { color: var(--text2); font-size: 14px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back-link" href="../">← 回首頁</a>
+  <h1 id="site-title">📋 租屋糾紛自救包</h1>
+  <button class="lang-btn" onclick="toggleLang()">EN</button>
+</header>
+
+<div class="hero">
+  <p id="hero-desc">遇到惡房東不知道怎麼辦？選擇你的情況，立即獲得法條依據、存證信函草稿和行動清單。</p>
+</div>
+
+<div class="container">
+  <div class="layout">
+    <!-- Situation Menu -->
+    <div class="situation-menu">
+      <div class="menu-title" id="menu-label">選擇情況</div>
+      <div class="menu-item" onclick="showSituation(0)"><span class="item-emoji">💰</span><span id="m0">押金不還</span></div>
+      <div class="menu-item" onclick="showSituation(1)"><span class="item-emoji">💡</span><span id="m1">水電費亂算</span></div>
+      <div class="menu-item" onclick="showSituation(2)"><span class="item-emoji">🚪</span><span id="m2">強制進屋</span></div>
+      <div class="menu-item" onclick="showSituation(3)"><span class="item-emoji">📨</span><span id="m3">提前驅逐</span></div>
+      <div class="menu-item" onclick="showSituation(4)"><span class="item-emoji">🔧</span><span id="m4">房東拒絕修繕</span></div>
+      <div class="menu-item" onclick="showSituation(5)"><span class="item-emoji">💸</span><span id="m5">租金漲價未通知</span></div>
+    </div>
+
+    <!-- Content Panel -->
+    <div class="content-panel">
+      <div id="welcome">
+        <div class="welcome-emoji">📋</div>
+        <h2 id="welcome-title">請從左側選擇你的情況</h2>
+        <p id="welcome-sub">本工具提供台灣租屋相關法律資訊，<br>不構成正式法律建議。</p>
+      </div>
+      <div id="content-area" style="display:none">
+        <div class="panel-header">
+          <h2 id="sit-title"></h2>
+          <p  id="sit-sub"></p>
+        </div>
+        <div class="panel-body">
+          <div class="section">
+            <div class="section-title">⚖️ 法條依據</div>
+            <div id="sit-laws"></div>
+          </div>
+          <div class="section">
+            <div class="section-title">✅ 行動清單</div>
+            <ul class="checklist" id="sit-steps"></ul>
+          </div>
+          <div class="section">
+            <div class="section-title">✉️ 存證信函草稿</div>
+            <div class="letter-box" id="sit-letter">
+              <button class="copy-btn" onclick="copyLetter()" id="copy-btn">複製</button>
+              <span id="letter-text"></span>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-title">📞 檢舉 / 求助管道</div>
+            <div class="report-links">
+              <a class="report-link" href="https://www.laf.org.tw" target="_blank" rel="noopener">
+                🏛️ 法律扶助基金會<span>免費法律諮詢</span>
+              </a>
+              <a class="report-link" href="https://1999.gov.taipei" target="_blank" rel="noopener">
+                📞 台北市民熱線 1999<span>租屋糾紛申訴</span>
+              </a>
+              <a class="report-link" href="https://www.hlhg.gov.tw/rent" target="_blank" rel="noopener">
+                🏠 內政部租屋平台<span>租屋法規查詢</span>
+              </a>
+              <a class="report-link" href="tel:412-8518">
+                📱 消費者服務中心<span>02-412-8518</span>
+              </a>
+            </div>
+          </div>
+          <div class="disclaimer">
+            <strong>⚠️ 免責聲明：</strong>本工具提供一般性法律資訊，不構成正式法律意見。
+            實際情況複雜時，請諮詢律師或法律扶助基金會。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// ── Data ───────────────────────────────────────────────────
+const LANG = { current: 'zh' };
+const DATA = {
+  zh: {
+    situations: [
+      {
+        emoji: '💰',
+        title: '押金不還',
+        sub: '房東扣留押金，沒有給合理說明或收據',
+        laws: [
+          { num: '民法第 421 條', text: '押金不得超過兩個月租金。租約終止後，扣除合理損耗費用後應全額返還。' },
+          { num: '租賃住宅市場發展及管理條例 第 14 條', text: '出租人於租賃契約消滅後，應返還押租金。若有損害，應提出具體明細，不得任意扣留。' },
+        ],
+        steps: [
+          '拍照記錄退租當天的房屋狀況（每個角落都要拍）',
+          '寄發存證信函，要求房東於 14 天內返還押金',
+          '若逾期未返，向房東所在地的地方法院聲請支付命令（費用約 1,000 元）',
+          '可至法律扶助基金會申請免費法律諮詢',
+          '保存所有對話紀錄（LINE、簡訊）作為證據',
+        ],
+        letter: `存　證　信　函
+
+受文者：房東 ___________（以下稱甲方）
+發文者：承租人 ___________（以下稱乙方）
+地　址：甲方：___________
+　　　　乙方：___________
+
+主旨：催告返還押租金
+
+乙方與甲方就坐落於 ___________ 之租賃物，
+租約自 ___ 年 ___ 月 ___ 日起至 ___ 年 ___ 月 ___ 日止，
+現已依約終止並完成交屋。
+
+依民法第 421 條及租賃住宅市場發展及管理條例第 14 條，
+甲方應於租約終止後返還押租金共計新台幣 ___________ 元整。
+
+如甲方有損害賠償主張，請於本函到達後 14 日內提出具體明細，
+逾期未返還或未提出明細，乙方將依法聲請支付命令並追究損害。
+
+此致
+
+中華民國 ___ 年 ___ 月 ___ 日`,
+      },
+      {
+        emoji: '💡',
+        title: '水電費亂算',
+        sub: '房東索取超出實際用量的水電費，或未提供收據',
+        laws: [
+          { num: '民法第 432 條', text: '承租人應依租賃契約約定方式使用，出租人不得收取超過台電/自來水公司實際計費之費用。' },
+          { num: '公寓大廈管理條例 第 11 條', text: '水電費應依實際用電量計算，房東不得灌水收費或收取管理費名義的額外費用。' },
+        ],
+        steps: [
+          '要求房東提供台電／自來水公司的原始帳單（有權要求查閱）',
+          '記錄每月抄表的度數並拍照存證',
+          '對比帳單金額，計算差額',
+          '以書面（LINE 或信函）向房東說明異常，要求退還差額',
+          '若拒不退還，向消費者保護官申訴或提起小額訴訟',
+        ],
+        letter: `存　證　信　函
+
+受文者：房東 ___________
+發文者：承租人 ___________
+
+主旨：請求提供水電費帳單明細並返還溢收費用
+
+本人承租位於 ___________ 之房屋，
+發現房東收取之水電費用與台電/自來水公司計費明顯不符。
+
+依民法第 432 條及相關規定，
+出租人不得收取超過實際費用之水電費。
+
+請甲方於本函到達後 7 日內提供原始帳單及計算明細，
+並返還自 ___ 年 ___ 月起多收之費用，
+合計約新台幣 ___________ 元整。
+
+逾期未處理，本人將向主管機關申訴。
+
+中華民國 ___ 年 ___ 月 ___ 日`,
+      },
+      {
+        emoji: '🚪',
+        title: '強制進屋',
+        sub: '房東未事先通知或未經同意擅自進入租屋處',
+        laws: [
+          { num: '民法第 425 條', text: '承租人對租賃物有占有使用的權利。出租人未經承租人同意，不得任意進入。' },
+          { num: '刑法第 306 條（侵入住居罪）', text: '無故侵入他人住居，處 1 年以下有期徒刑或罰金。租客有向警察局報案的權利。' },
+        ],
+        steps: [
+          '事發後立即拍照/錄影留存證據',
+          '以書面（LINE 訊息）向房東提出抗議，明確要求「進入前須提前 24 小時通知」',
+          '若再次發生，可直接撥打 110 報警處理',
+          '同時向房東寄發存證信函，表明若再發生將依刑法第 306 條提出告訴',
+          '保存所有對話紀錄',
+        ],
+        letter: `存　證　信　函
+
+受文者：房東 ___________
+發文者：承租人 ___________
+
+主旨：警告禁止擅自進入租賃住所
+
+本人承租位於 ___________ 之房屋，
+甲方於 ___ 年 ___ 月 ___ 日 ___:___ ，
+未事先通知亦未經本人同意，擅自進入上述住所。
+
+依民法第 425 條，本人對租賃物有占有使用之權利；
+依刑法第 306 條，無故侵入他人住居為犯罪行為。
+
+本人鄭重要求：往後甲方如需進入，
+必須提前至少 24 小時以書面方式通知並徵得本人同意。
+
+若再次發生未告知擅自進入之情事，
+本人將即時報警並依法提出刑事告訴。
+
+中華民國 ___ 年 ___ 月 ___ 日`,
+      },
+      {
+        emoji: '📨',
+        title: '提前驅逐',
+        sub: '租約未到期，房東要求你搬離或強制換鎖',
+        laws: [
+          { num: '民法第 440 條', text: '租賃期間，出租人非有法定事由（欠租、毀損等）不得提前終止租約。' },
+          { num: '租賃住宅市場發展及管理條例 第 10 條', text: '出租人違法要求提前終止租約，應賠償承租人所受損害，包含搬遷費用及差額租金。' },
+        ],
+        steps: [
+          '確認手頭的租約，查看「終止條款」的具體內容',
+          '以書面回覆房東：依約租期至 ___ 年 ___ 月 ___ 日，拒絕提前搬離',
+          '若房東更換門鎖，立即報警（妨礙自由罪）',
+          '至法院聲請假處分，要求維持現狀',
+          '保存所有催促搬離的訊息作為證據，將來主張損害賠償',
+        ],
+        letter: `存　證　信　函
+
+受文者：房東 ___________
+發文者：承租人 ___________
+
+主旨：拒絕非法提前終止租約
+
+本人與甲方簽訂之租賃契約，
+租期明定自 ___ 年 ___ 月 ___ 日起至 ___ 年 ___ 月 ___ 日止，
+本人並無任何違約情事。
+
+甲方於 ___ 年 ___ 月 ___ 日要求本人提前搬離，
+此行為違反民法第 440 條及租賃住宅市場發展及管理條例第 10 條。
+
+本人正式拒絕上述要求，並將持續依約居住至租期屆滿。
+
+若甲方有任何強制行為（換鎖、斷水電等），
+本人將立即報警並依法請求賠償一切損失。
+
+中華民國 ___ 年 ___ 月 ___ 日`,
+      },
+      {
+        emoji: '🔧',
+        title: '房東拒絕修繕',
+        sub: '屋況損壞（漏水、電路故障等）但房東不處理',
+        laws: [
+          { num: '民法第 429 條', text: '出租人應負責修繕租賃物，使其保持適於約定使用的狀態。' },
+          { num: '民法第 430 條', text: '若出租人不依前條規定修繕，承租人得自行修繕並向出租人請求償還費用，或抵扣租金。' },
+        ],
+        steps: [
+          '拍照/錄影記錄損壞狀況，並附上日期',
+          '以書面通知房東（LINE 訊息留存截圖）',
+          '給予合理修繕期限（一般為 7～14 天）',
+          '若逾期不修，可自行委請廠商修繕，保留發票，日後要求扣抵租金',
+          '嚴重影響居住安全（漏電、結構危險）可向地方政府建管單位申訴',
+        ],
+        letter: `存　證　信　函
+
+受文者：房東 ___________
+發文者：承租人 ___________
+
+主旨：催告履行修繕義務
+
+本人承租位於 ___________ 之房屋，
+於 ___ 年 ___ 月 ___ 日發現以下損壞情形：
+
+_________________________________________
+（詳細說明損壞狀況）
+
+依民法第 429 條，出租人有義務修繕租賃物，
+使其保持適於居住使用之狀態。
+
+請甲方於本函到達後 14 日內完成修繕。
+若甲方仍未處理，本人將依民法第 430 條，
+自行委請廠商修繕，並從租金中扣除相關費用。
+
+中華民國 ___ 年 ___ 月 ___ 日`,
+      },
+      {
+        emoji: '💸',
+        title: '租金漲價未通知',
+        sub: '房東突然調漲租金，或未依租約提前通知',
+        laws: [
+          { num: '民法第 442 條', text: '租金應依租賃契約約定，租期內房東不得片面調漲。' },
+          { num: '租賃住宅市場發展及管理條例 第 13 條', text: '出租人如欲調整租金，應於租約到期前至少 30 天以書面通知承租人，承租人有優先續租權。' },
+        ],
+        steps: [
+          '確認租約上「租金」及「調漲條款」的具體約定',
+          '若租約無調漲條款或未達通知期限，以書面拒絕並要求依原租金繼續履約',
+          '保存調漲通知訊息作為證據',
+          '若房東以此為由要求搬離，參考「提前驅逐」情境的處理方式',
+          '若續簽租約，在合約中明訂租金固定期間及調漲上限',
+        ],
+        letter: `存　證　信　函
+
+受文者：房東 ___________
+發文者：承租人 ___________
+
+主旨：拒絕非法調漲租金
+
+本人與甲方之租賃契約，
+明訂月租金為新台幣 ___________ 元整，
+租期自 ___ 年 ___ 月 ___ 日至 ___ 年 ___ 月 ___ 日。
+
+甲方於 ___ 年 ___ 月 ___ 日要求調漲至 ___________ 元，
+不符合租賃住宅市場發展及管理條例第 13 條規定。
+
+本人依約拒絕上述調漲，並將依原約定租金繳納至租期屆滿。
+
+若甲方有意調漲，請依法提前 30 天以書面告知，
+並尊重本人之優先續租權。
+
+中華民國 ___ 年 ___ 月 ___ 日`,
+      },
+    ],
+  },
+};
+
+// ── Logic ──────────────────────────────────────────────────
+let currentSit = null;
+
+function showSituation(idx) {
+  currentSit = idx;
+  const sit = DATA.zh.situations[idx];
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('content-area').style.display = 'block';
+  document.getElementById('sit-title').textContent = sit.emoji + ' ' + sit.title;
+  document.getElementById('sit-sub').textContent   = sit.sub;
+
+  // Laws
+  const lawsEl = document.getElementById('sit-laws');
+  lawsEl.innerHTML = sit.laws.map(l => `
+    <div class="law-card">
+      <div class="law-num">${l.num}</div>
+      <div class="law-text">${l.text}</div>
+    </div>`).join('');
+
+  // Steps
+  const stepsEl = document.getElementById('sit-steps');
+  stepsEl.innerHTML = sit.steps.map((s, i) => `
+    <li><span class="check-num">${i+1}</span><span>${s}</span></li>`).join('');
+
+  // Letter
+  document.getElementById('letter-text').textContent = sit.letter;
+
+  // Active menu
+  document.querySelectorAll('.menu-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // Scroll to top on mobile
+  document.querySelector('.content-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyLetter() {
+  const text = document.getElementById('letter-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => { btn.textContent = '複製'; }, 2000);
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => { btn.textContent = '複製'; }, 2000);
+  });
+}
+
+function toggleLang() {
+  // 未來可擴充英文版，目前只提示
+  alert('英文版即將推出！\nEnglish version coming soon!');
+}
+</script>
+</body>
+</html>
