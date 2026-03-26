@@ -280,6 +280,15 @@
 - **不可**省略 top-bar/action-bar 的 `z-index`（Canvas touch 會攔截按鈕）
 - **不可**省略 game-area 的 `min-height:0`（flex 子元素不會正確收縮）
 
+### Canvas 定位規則（踩坑教訓）
+
+> **Claude 無法開瀏覽器測試**，所以手機觸控問題必須第一次就寫對，不能靠來回修正。
+
+- Canvas **必須**用 `position:absolute; top:50%; left:50%; transform:translate(-50%,-50%)` 定位在 game-area 內
+- **不可**讓 Canvas 作為 flex 子元素參與佈局（會撐大 game-area，擠壓 action-bar 的觸控區域）
+- **不可**在 body 加 `user-select:none`（某些 Android Chrome 會阻擋 button 觸控）
+- 按鈕事件用 JS `addEventListener` 綁定，不用 inline `ontouchend`（某些手機瀏覽器不可靠）
+
 ### 字體規則
 
 - **不可**使用 VT323 作為主字體（英文像素字體，中文會 fallback 到系統字體，兩種風格混搭不協調）
