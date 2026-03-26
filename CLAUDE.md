@@ -218,6 +218,59 @@
 
 ---
 
+## 手機遊戲 UI 佈局規則（最優先執行）
+
+> **問題根因**：固定定位的按鈕（返回/靜音/語言/暫停）各自 `position:fixed`，在不同手機尺寸下會重疊、遮住 HUD。
+
+### 強制規則：使用 Flexbox 三段式佈局
+
+所有手機 Canvas 遊戲 **必須** 使用以下佈局結構：
+
+```html
+<body style="display:flex;flex-direction:column;height:100vh">
+  <!-- 1. 頂部工具列 -->
+  <div class="top-bar">
+    <a href="../">← 返回</a>
+    <div class="btn-group">
+      <button>繁中/EN</button>
+      <button id="pause-btn">⏸</button>
+      <button id="mute-btn">🔊</button>
+    </div>
+  </div>
+  <!-- 2. 遊戲區域 -->
+  <div class="game-area" style="flex:1;overflow:hidden">
+    <canvas id="game"></canvas>
+  </div>
+  <!-- 3. 底部操作列 -->
+  <div class="action-bar">...</div>
+</body>
+```
+
+### 禁止事項
+
+- **不可**對返回/靜音/語言/暫停按鈕使用 `position:fixed`（會重疊）
+- **不可**對 Canvas 使用 `position:absolute; top:0`（會被工具列遮住）
+- Canvas 的 resize 應基於 `.game-area` 的 `clientWidth/clientHeight`，不是 `window.innerHeight`
+
+### 字體規則
+
+- **不可**使用 VT323 作為主字體（英文像素字體，中文會 fallback 到系統字體，兩種風格混搭不協調）
+- 正確字體：`'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif`
+- Canvas 內的 `ctx.font` 也用 `sans-serif`（不是 `VT323`）
+- 中文字體最小 12px，英文最小 11px，低於此尺寸在手機上難以閱讀
+
+### Canvas HUD 字體大小參考
+
+| 用途 | 大小 | 粗細 |
+|------|------|------|
+| 遊戲標題 | 24-28px | bold |
+| HUD 數值（分數、天數） | 14-16px | bold |
+| 資源列（木材、石頭等） | 13-14px | normal |
+| 小提示 / 說明文字 | 12-13px | normal |
+| 通知訊息 | 14-16px | normal |
+
+---
+
 ## 手機遊戲開發要點
 
 **Canvas 縮放模板：**
