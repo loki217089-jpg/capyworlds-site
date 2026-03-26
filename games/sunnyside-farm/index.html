@@ -10,13 +10,13 @@ html{height:100%}
 body{background:#1a1408;overflow:hidden;font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;user-select:none;display:flex;flex-direction:column;height:100vh;height:100dvh}
 canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block;margin:0 auto}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(0,0,0,0.85);border-bottom:1px solid rgba(200,164,86,0.3);z-index:200;flex-shrink:0;min-height:44px;position:relative}
-.top-bar a,.top-bar button{background:rgba(30,24,18,0.8);border:1.5px solid #c8a456;color:#c8a456;font-family:inherit;font-size:14px;padding:5px 10px;border-radius:6px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.top-bar a,.top-bar button{background:rgba(30,24,18,0.8);border:1.5px solid #c8a456;color:#c8a456;font-family:inherit;font-size:14px;padding:5px 10px;border-radius:6px;cursor:pointer;text-decoration:none;white-space:nowrap;pointer-events:auto;-webkit-tap-highlight-color:rgba(200,164,86,0.3)}
 .top-bar button{display:flex;align-items:center;justify-content:center}
 .top-bar .btn-group{display:flex;gap:6px;align-items:center}
 .top-bar .mute-btn{font-size:18px;width:36px;height:36px;padding:0;color:#fff}
 .game-area{flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0}
 .action-bar{display:flex;justify-content:center;gap:6px;padding:8px 8px calc(env(safe-area-inset-bottom,6px) + 6px);background:rgba(0,0,0,0.85);border-top:1px solid rgba(200,164,86,0.3);flex-shrink:0;position:relative;z-index:200}
-.action-btn{background:rgba(30,24,18,0.9);border:2px solid #c8a456;color:#e8ddd0;font-family:inherit;font-size:13px;padding:8px 6px;border-radius:10px;cursor:pointer;flex:1;max-width:72px;text-align:center;transition:all .15s}
+.action-btn{background:rgba(30,24,18,0.9);border:2px solid #c8a456;color:#e8ddd0;font-family:inherit;font-size:13px;padding:8px 6px;border-radius:10px;cursor:pointer;flex:1;max-width:72px;text-align:center;transition:all .15s;pointer-events:auto;-webkit-tap-highlight-color:rgba(200,164,86,0.3)}
 .action-btn:active{transform:scale(0.93);background:rgba(200,164,86,0.3)}
 .action-btn .btn-icon{font-size:20px;display:block;margin-bottom:1px}
 .action-btn.selected{border-color:#ffd700;background:rgba(200,164,86,0.25);box-shadow:0 0 10px rgba(200,164,86,0.3)}
@@ -35,11 +35,11 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
   <canvas id="game"></canvas>
 </div>
 <div class="action-bar" id="action-bar">
-  <button class="action-btn" ontouchend="selectAction('farm',event)" onclick="selectAction('farm')"><span class="btn-icon">🌱</span><span class="btn-text">種田</span></button>
-  <button class="action-btn" ontouchend="selectAction('dig',event)" onclick="selectAction('dig')"><span class="btn-icon">⛏️</span><span class="btn-text">挖掘</span></button>
-  <button class="action-btn" ontouchend="selectAction('fish',event)" onclick="selectAction('fish')"><span class="btn-icon">🎣</span><span class="btn-text">釣魚</span></button>
-  <button class="action-btn" ontouchend="selectAction('gather',event)" onclick="selectAction('gather')"><span class="btn-icon">🧺</span><span class="btn-text">採集</span></button>
-  <button class="action-btn" ontouchend="selectAction('idle',event)" onclick="selectAction('idle')"><span class="btn-icon">💤</span><span class="btn-text">掛機</span></button>
+  <button class="action-btn" data-action="farm"><span class="btn-icon">🌱</span><span class="btn-text">種田</span></button>
+  <button class="action-btn" data-action="dig"><span class="btn-icon">⛏️</span><span class="btn-text">挖掘</span></button>
+  <button class="action-btn" data-action="fish"><span class="btn-icon">🎣</span><span class="btn-text">釣魚</span></button>
+  <button class="action-btn" data-action="gather"><span class="btn-icon">🧺</span><span class="btn-text">採集</span></button>
+  <button class="action-btn" data-action="idle"><span class="btn-icon">💤</span><span class="btn-text">掛機</span></button>
 </div>
 <script>
 'use strict';
@@ -1323,6 +1323,13 @@ function init(){
   const startOnce=()=>{startBGM(BGM_URL);document.removeEventListener('click',startOnce);document.removeEventListener('touchend',startOnce)};
   document.addEventListener('click',startOnce);document.addEventListener('touchend',startOnce);
   updateUIText();
+  // Bind action bar buttons via JS (inline ontouchend is unreliable on some mobile browsers)
+  document.querySelectorAll('.action-btn').forEach(btn=>{
+    const action=btn.dataset.action;
+    if(!action)return;
+    btn.addEventListener('click',()=>selectAction(action));
+    btn.addEventListener('touchend',e=>{e.preventDefault();selectAction(action)});
+  });
   requestAnimationFrame(gameLoop);
 }
 init();
