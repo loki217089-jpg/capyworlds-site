@@ -651,17 +651,21 @@ function drawFishGame(){
   }
   // Fishing bar (right side)
   const barX=GW-50;
-  ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(barX,150,30,GH-330);
-  // Progress bar
-  ctx.fillStyle='rgba(0,255,100,0.3)';
-  const pH=(GH-330)*mgFish.progress/100;
-  ctx.fillRect(barX,150+(GH-330)-pH,30,pH);
-  // Hook zone (green area)
-  ctx.fillStyle='rgba(0,200,0,0.4)';
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(barX,150,30,GH-330);
+  // Hook zone (green area - the part you control)
+  ctx.fillStyle='rgba(0,200,0,0.5)';
   ctx.fillRect(barX,mgFish.hookY-mgFish.barH/2,30,mgFish.barH);
-  // Fish indicator
+  // Fish indicator (red line)
   ctx.fillStyle='#ff6644';
   ctx.fillRect(barX-5,mgFish.fishY-4,40,8);
+  // Progress bar (left side, separate from fishing bar)
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(16,150,14,GH-330);
+  ctx.fillStyle='#ffd700';
+  const pH=(GH-330)*mgFish.progress/100;
+  ctx.fillRect(16,150+(GH-330)-pH,14,pH);
+  // Progress label
+  ctx.fillStyle='#fff';ctx.font='11px sans-serif';ctx.textAlign='center';
+  ctx.fillText(Math.floor(mgFish.progress)+'%',23,145);
   // Fish in water (center)
   ctx.font='32px sans-serif';ctx.textAlign='center';
   ctx.fillText('🐟',GW/2+Math.sin(t0*2)*30,mgFish.fishY);
