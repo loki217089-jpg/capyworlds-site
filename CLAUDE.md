@@ -285,9 +285,13 @@
 > **Claude 無法開瀏覽器測試**，所以手機觸控問題必須第一次就寫對，不能靠來回修正。
 
 - Canvas **必須**用 `position:absolute; top:50%; left:50%; transform:translate(-50%,-50%)` 定位在 game-area 內
+- **必須**加 `max-width:100%; max-height:100%` — 防止 Canvas 溢出 game-area 攔截按鈕觸控
+- resize 函式也要 `Math.min(w, availW)` / `Math.min(h, availH)` 做 clamp
 - **不可**讓 Canvas 作為 flex 子元素參與佈局（會撐大 game-area，擠壓 action-bar 的觸控區域）
 - **不可**在 body 加 `user-select:none`（某些 Android Chrome 會阻擋 button 觸控）
 - 按鈕事件用 JS `addEventListener` 綁定，不用 inline `ontouchend`（某些手機瀏覽器不可靠）
+
+> ⚠️ **`overflow:hidden` 陷阱**：`overflow:hidden` 只隱藏視覺渲染，**不會阻擋觸控事件**。Canvas 即使被裁切看不到，溢出部分仍然會攔截 touch/click 事件，導致底部按鈕按不了。所以**必須**用 `max-width/max-height` 從 DOM 層面限制尺寸。
 
 ### 字體規則
 
