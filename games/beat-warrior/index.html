@@ -420,6 +420,28 @@ const gs = {
   special: 0,    // 0-100, triggers special attack at 100
 };
 
+// ── SAVE / LOAD ──
+function saveBW() {
+  try {
+    localStorage.setItem('beatWarriorSave', JSON.stringify({
+      bestScore: gs._bestScore || 0,
+      bestStage: gs._bestStage || 0,
+      bestCombo: gs._bestCombo || 0,
+    }));
+  } catch(e) {}
+}
+function loadBW() {
+  try {
+    const raw = localStorage.getItem('beatWarriorSave');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    gs._bestScore = d.bestScore || 0;
+    gs._bestStage = d.bestStage || 0;
+    gs._bestCombo = d.bestCombo || 0;
+  } catch(e) {}
+}
+loadBW();
+
 let player, enemy;
 let activeNotes = [];  // {lane, time(actx), y, hit, miss}
 let chartQueue  = [];  // remaining {lane, time} from chart
@@ -550,6 +572,8 @@ function addPopup(text, x, y, col, dur) {
 function stageClear() {
   stopBgm();
   gs.combo=0;
+  if (gs.stage > (gs._bestStage||0)) gs._bestStage = gs.stage;
+  saveBW();
   if (gs.stage >= ENEMIES.length-1) { endGame(true); return; }
   gs.phase='stageclear';
   sfxWin();
@@ -565,6 +589,11 @@ function endGame(win) {
   stopBgm();
   gs.phase = win ? 'victory' : 'gameover';
   win ? sfxWin() : sfxLose();
+  // Update best records
+  if (gs.score > (gs._bestScore||0)) gs._bestScore = gs.score;
+  if (gs.stage > (gs._bestStage||0)) gs._bestStage = gs.stage;
+  if (gs.maxCombo > (gs._bestCombo||0)) gs._bestCombo = gs.maxCombo;
+  saveBW();
   if (win) showOverlay('🎉 全員擊退！', `最終分數：${gs.score}　最高連擊：${gs.maxCombo}`, '再玩', resetAll);
   else    showOverlay('💀 陣亡！', `最終分數：${gs.score}`, '重試', resetAll);
 }

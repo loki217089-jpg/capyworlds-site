@@ -161,6 +161,35 @@ const gs={
   gameTime: 0,
 };
 
+// ── SAVE / LOAD (Earth Civilization own state) ──
+function saveEC(){
+  try{
+    localStorage.setItem('earthCivSave',JSON.stringify({
+      era:gs.era, res:gs.res, caps:gs.caps,
+      tiles:gs.tiles, builtTypes:[...gs.builtTypes],
+      tech:[...gs.tech], pop:gs.pop, popCap:gs.popCap,
+      won:gs.won, gameTime:gs.gameTime, alienTech:gs.alienTech,
+    }));
+  }catch(e){}
+}
+function loadEC(){
+  try{
+    const raw=localStorage.getItem('earthCivSave');
+    if(!raw) return false;
+    const d=JSON.parse(raw);
+    gs.era=d.era||0;
+    gs.res=Object.assign(gs.res,d.res||{});
+    gs.caps=Object.assign(gs.caps,d.caps||{});
+    gs.tiles=d.tiles||gs.tiles;
+    gs.builtTypes=new Set(d.builtTypes||[]);
+    gs.tech=new Set(d.tech||[]);
+    gs.pop=d.pop||0; gs.popCap=d.popCap||5;
+    gs.won=d.won||false; gs.gameTime=d.gameTime||0;
+    gs.alienTech=d.alienTech||0;
+    return true;
+  }catch(e){ return false; }
+}
+
 // ── LOAD SPACE GAME DATA ──
 function loadSpaceData() {
   try {
@@ -637,6 +666,7 @@ function placeBuilding(bldgId,tileX){
   sfx('build');
   updateBuildPanel();
   updateRightPanel(bldgId);
+  saveEC();
   return true;
 }
 
@@ -686,6 +716,7 @@ function buyTech(id){
   setStatus(`🔬 研究完成：${t.name}`,true);
   sfx('era');
   updateBuildPanel();
+  saveEC();
 }
 
 function updateResources(dt){
@@ -727,6 +758,7 @@ function checkEraAdvance(){
       setStatus(`★ 文明進入：${ERAS[e].name}`,true);
       sfx('era');
       updateBuildPanel();
+      saveEC();
       break;
     }
   }
@@ -958,7 +990,7 @@ canvas.addEventListener('touchend',e=>{
 },{passive:false});
 
 // ── MAIN UPDATE ──
-let lastTime2=0,uiTimer=0,eraTimer=0,_lastPopMile=0;
+let lastTime2=0,uiTimer=0,eraTimer=0,_lastPopMile=0,_saveTimer=0;
 function update(dt){
   if(gs.paused||document.getElementById('sto').style.display!=='none') return;
   gs.gameTime+=dt;
@@ -968,6 +1000,7 @@ function update(dt){
   if(uiTimer>0.35){uiTimer=0;updateResourceBar();updateBuildPanel();}
   eraTimer+=dt;
   if(eraTimer>1){eraTimer=0;checkEraAdvance();document.getElementById('sera').textContent=ERAS[gs.era].name;}
+  _saveTimer+=dt;if(_saveTimer>30){_saveTimer=0;saveEC();}
   _statusTimer-=dt;
   if(_statusTimer<=0&&_statusTimer>-1){
     _statusTimer=-999;
@@ -985,7 +1018,8 @@ function loop(timestamp){
 }
 
 // ── BOOT ──
-loadSpaceData();
+const _hadSave = loadEC();
+if(!_hadSave) loadSpaceData();
 showStory();
 if(window.innerWidth<768){toggleLP();toggleRP();}
 requestAnimationFrame(loop);

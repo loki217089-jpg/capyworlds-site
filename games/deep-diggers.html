@@ -253,6 +253,36 @@ let ST={
   luckyMult:1,runs:0,maxD:0,bestDepth:0,lastEarned:0,eventFired:false,
 };
 
+// ── SAVE / LOAD ──
+function saveDD(){
+  try{
+    localStorage.setItem('deepDiggersSave',JSON.stringify({
+      money:ST.money, bestDepth:ST.bestDepth, runs:ST.runs,
+      upgLv:ST.upgLv, mods:ST.mods,
+      fuelMax:ST.fuelMax, fuelEff:ST.fuelEff, durMax:ST.durMax,
+      invMax:ST.invMax, drillPow:ST.drillPow, scanR:ST.scanR,
+      magnet:ST.magnet, bombs:ST.bombs, shielded:ST.shielded,
+      dashCD:ST.dashCD, dashDur:ST.dashDur, scanFuel:ST.scanFuel, refine:ST.refine,
+    }));
+  }catch(e){}
+}
+function loadDD(){
+  try{
+    const raw=localStorage.getItem('deepDiggersSave');
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    ST.money=d.money||0; ST.bestDepth=d.bestDepth||0; ST.runs=d.runs||0;
+    if(d.upgLv) ST.upgLv=Object.assign(ST.upgLv,d.upgLv);
+    if(d.mods) ST.mods=d.mods;
+    ST.fuelMax=d.fuelMax||100; ST.fuelEff=d.fuelEff||1; ST.durMax=d.durMax||100;
+    ST.invMax=d.invMax||10; ST.drillPow=d.drillPow||1; ST.scanR=d.scanR||0;
+    ST.magnet=d.magnet||false; ST.bombs=d.bombs||0; ST.shielded=d.shielded||false;
+    ST.dashCD=d.dashCD||1.8; ST.dashDur=d.dashDur||.22;
+    ST.scanFuel=d.scanFuel||false; ST.refine=d.refine||0;
+  }catch(e){}
+}
+loadDD();
+
 // WORLD
 const TILE=32,COLS=15,ROWS=500,VIS=22;
 let world=[];
@@ -634,7 +664,7 @@ function drawRadar(){
 
 // SURFACE
 function showSurface(){
-  const earned=ST.inv.reduce((s,i)=>s+calcVal(i),0);ST.money+=earned;ST.lastEarned=earned;
+  const earned=ST.inv.reduce((s,i)=>s+calcVal(i),0);ST.money+=earned;ST.lastEarned=earned;saveDD();
   document.getElementById('lbScore').textContent='$'+ST.money;
   document.getElementById('lbSubBtn').style.display='';
   document.getElementById('lbSubBtn').disabled=false;
@@ -708,8 +738,8 @@ function renderModTab(){
     if(ok)div.querySelector('button').onclick=()=>buyMod(mod);con.appendChild(div);
   });
 }
-function buyUpg(upg){const lv=ST.upgLv[upg.id];const cost=Math.round(upg.cost*Math.pow(upg.mult,lv));if(ST.money<cost)return;ST.money-=cost;ST.upgLv[upg.id]++;upg.apply(ST);SFX.upgrade();log('🔩 '+upg.name+' Lv'+ST.upgLv[upg.id]);updateUI();renderUpgTab();}
-function buyMod(mod){if(ST.money<mod.cost)return;ST.money-=mod.cost;ST.mods.push(mod.id);mod.apply(ST);SFX.mod();log('🧩 '+mod.name);updateUI();renderModTab();}
+function buyUpg(upg){const lv=ST.upgLv[upg.id];const cost=Math.round(upg.cost*Math.pow(upg.mult,lv));if(ST.money<cost)return;ST.money-=cost;ST.upgLv[upg.id]++;upg.apply(ST);SFX.upgrade();log('🔩 '+upg.name+' Lv'+ST.upgLv[upg.id]);updateUI();renderUpgTab();saveDD();}
+function buyMod(mod){if(ST.money<mod.cost)return;ST.money-=mod.cost;ST.mods.push(mod.id);mod.apply(ST);SFX.mod();log('🧩 '+mod.name);updateUI();renderModTab();saveDD();}
 document.getElementById('digBtn').onclick=()=>{document.getElementById('sur').style.display='none';SFX.sell();startRun();};
 
 // CLEAN

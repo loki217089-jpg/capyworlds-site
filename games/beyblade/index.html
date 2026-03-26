@@ -346,6 +346,23 @@ const CPU_BUILDS = [
   { name:'永恆神話', blade:2, core:2, driver:1, style:'超強耐久，等你旋轉耗盡為止' },
 ];
 
+// ==================== SAVE / LOAD ====================
+let bbStats = { wins:0, losses:0, bestDamage:0, bestMaxRpm:0, bestBurstCount:0 };
+function saveBB(){
+  try{ localStorage.setItem('beybladeSave',JSON.stringify(bbStats)); }catch(e){}
+}
+function loadBB(){
+  try{
+    const raw=localStorage.getItem('beybladeSave');
+    if(!raw) return;
+    const d=JSON.parse(raw);
+    bbStats.wins=d.wins||0; bbStats.losses=d.losses||0;
+    bbStats.bestDamage=d.bestDamage||0; bbStats.bestMaxRpm=d.bestMaxRpm||0;
+    bbStats.bestBurstCount=d.bestBurstCount||0;
+  }catch(e){}
+}
+loadBB();
+
 // ==================== GAME STATE ====================
 let gameState = 'title';
 let selBlade=0, selCore=0, selDriver=0;
@@ -1280,6 +1297,12 @@ function goToSelect(){
 
 function showResult(){
   const won = playerScore > cpuScore;
+  // Update persistent stats
+  if(won) bbStats.wins++; else bbStats.losses++;
+  if(playerDamageDealt > bbStats.bestDamage) bbStats.bestDamage = Math.floor(playerDamageDealt);
+  if(playerMaxRpm > bbStats.bestMaxRpm) bbStats.bestMaxRpm = Math.floor(playerMaxRpm);
+  if(playerBurstCount > bbStats.bestBurstCount) bbStats.bestBurstCount = playerBurstCount;
+  saveBB();
   const banner = document.getElementById('resultBanner');
   banner.textContent = won ? 'VICTORY' : 'DEFEAT';
   banner.className = won ? 'victory' : 'defeat';
