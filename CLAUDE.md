@@ -231,6 +231,29 @@
 - 手機遊戲：Canvas 必須用 JS 縮放填滿螢幕
 - `touch-action: none` 只加在 canvas 元素，不加在 body
 - 遊戲存檔用 localStorage，跨遊戲連動也用 localStorage
+- **⚠️ 新遊戲必須有 localStorage 存檔**：任何有進度/升級/分數的遊戲，必須在建立時就加入 `localStorage.setItem` 存檔 + `localStorage.getItem` 讀取，不可事後補。CrazyGames 上架需要選擇存檔方式。
+
+### 各遊戲存檔狀態（2026/3/26 掃描）
+
+| 遊戲 | 存檔 | 備註 |
+|------|------|------|
+| mosquito | ✅ 14 refs | Prestige + 升級 + 血量 + 成就 |
+| hero | ✅ 6 refs | 角色/裝備/技能 |
+| space-roguelike | ✅ 5 refs | Meta 升級 |
+| sunnyside-farm | ✅ 7 refs | 農場 + 生態 + 升級 |
+| village | ✅ 3 refs | 村民 + 裝飾 |
+| virus | ✅ 4 refs | 進度 |
+| sea-route | ✅ 4 refs | 航線 + 升級 |
+| zombie-idle | ✅ 2 refs | DNA + 分數 |
+| capy-runner | ✅ 4 refs | 高分 |
+| daily-quiz-rpg | ✅ 2 refs | 角色 |
+| farm-match | ✅ 2 refs | 卡片 |
+| beat-warrior | ❌ 缺 | **需補**：關卡進度 |
+| beyblade | ❌ 缺 | **需補**：零件收集 |
+| deep-diggers | ❌ 缺 | **需補**：升級樹 |
+| earth-civilization | ⚠️ 只有 get | **需補**：缺 setItem |
+| bug-crisis | ❌ 缺 | 每局獨立，可選 |
+| fps | ❌ 缺 | 每局獨立，可選 |
 
 ---
 
