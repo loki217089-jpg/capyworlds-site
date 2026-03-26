@@ -1,4 +1,73 @@
-# CapyWorlds — Claude 開發指引（2026/3/24 更新）
+# CapyWorlds — Claude 開發指引（2026/3/25 更新）
+
+## 分支策略規則（最優先執行）
+
+**判斷要不要開分支：**
+
+| 情境 | 做法 |
+|------|------|
+| 小修改（修 bug、調 UI、更新 CLAUDE.md、加遊戲卡片）預估 < 50 行 | 直接在 main 改，`git push origin main` |
+| 新遊戲 / 新功能 / 預估 > 50 行 | 開 `claude/` 分支，**同一 session 結束前合回 main** |
+| 跨 session 的大型工作 | 每次開 session 先 `git rebase origin/main`，結束前 push |
+
+**黃金規則**：任何 `claude/` 分支不得跨 session 存活超過 24 小時。Session 結束前必須合回 main。
+
+---
+
+## Push 後自動衝突檢查規則（最優先執行）
+
+**每次 `git push` 到 `claude/` 分支後**，Claude 必須立即執行以下流程：
+
+1. **檢查 PR 是否有衝突**：
+   ```bash
+   git fetch origin main
+   git merge-base --is-ancestor origin/main HEAD
+   # 若回傳非 0 → 表示 main 有新 commit，需要 rebase
+   ```
+2. **若有衝突**：
+   - `git rebase origin/main`
+   - 逐一解決 conflict（保留雙方有意義的改動）
+   - `git push --force-with-lease origin <branch>`
+3. **不需要問**：直接執行，事後報告「已解決衝突並重新推送 ✅」
+4. **若 rebase 過程失敗**：報告具體衝突檔案，請使用者確認解法
+
+---
+
+## Push 到 main 後殘留 PR 清理規則（最優先執行）
+
+**每次 `git push origin main` 成功後**，Claude 必須立即執行以下流程：
+
+1. **列出所有 Open 狀態的 PR**：
+   - 用 GitHub MCP 工具 `list_pull_requests` 查詢 state=open
+2. **對每個 Open PR 判斷**：
+   - 若 PR 的 `head` 分支變更**已全部包含在 main** → 直接**關閉** PR
+   - 若 PR 的 `head` 分支有 main 沒有的新 commit → **更新分支**（rebase onto main），解決衝突後 push
+3. **不需要問**：直接執行，事後報告：
+   - 「已關閉過時 PR #XX ✅」
+   - 「已更新 PR #XX 分支（rebase + 解決衝突）✅」
+4. **這確保**：不會有殘留的衝突 PR 卡在 GitHub 上
+
+---
+
+## 新 Session 自動合併規則（最優先執行）
+
+**每次開新 session 時**，Claude 必須主動執行以下流程：
+
+1. **檢查是否有未合併的 `claude/` 分支**：
+   ```bash
+   git branch -r --no-merged origin/main | grep "origin/claude/"
+   ```
+2. **若有未合併分支**：
+   - 先 `git fetch origin main` 取得最新 main
+   - 切換到該分支，嘗試 `git merge origin/main`
+   - 若有 conflict → 自動解決（保留雙方有意義的改動）
+   - 合併後 push 到該分支
+   - 用 GitHub MCP 工具合併 PR 到 main（若 PR 存在）
+   - 若無 PR，直接 `git checkout main && git merge <branch> && git push origin main`
+3. **合併完成後告知使用者**：「已把 `claude/xxx` 合併進 main ✅」
+4. **不需要問**：直接執行，事後報告即可
+
+---
 
 ## Context 壓縮保護規則（最優先執行）
 
@@ -82,6 +151,11 @@
 ## 遊戲新增流程
 
 1. 在 `games/<game-name>/` 建立目錄 + `index.html`
+   - **必須加隱私權連結**（`</body>` 前）：
+     ```html
+     <div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+     ```
+   - **必須有 localStorage 存檔**（如果遊戲有進度/升級/分數）
 2. 在 `games/index.html` 加入遊戲卡片（參考現有格式）
 3. 若為觸控友善遊戲，同步加入 `games/mobile.html`
 4. commit -> push 到指定 `claude/` 分支
@@ -162,6 +236,107 @@
 - 手機遊戲：Canvas 必須用 JS 縮放填滿螢幕
 - `touch-action: none` 只加在 canvas 元素，不加在 body
 - 遊戲存檔用 localStorage，跨遊戲連動也用 localStorage
+- **⚠️ 新遊戲必須有 localStorage 存檔**：任何有進度/升級/分數的遊戲，必須在建立時就加入 `localStorage.setItem` 存檔 + `localStorage.getItem` 讀取，不可事後補。CrazyGames 上架需要選擇存檔方式。
+
+### 各遊戲存檔狀態（2026/3/26 掃描）
+
+| 遊戲 | 存檔 | 備註 |
+|------|------|------|
+| mosquito | ✅ 14 refs | Prestige + 升級 + 血量 + 成就 |
+| hero | ✅ 6 refs | 角色/裝備/技能 |
+| space-roguelike | ✅ 5 refs | Meta 升級 |
+| sunnyside-farm | ✅ 7 refs | 農場 + 生態 + 升級 |
+| village | ✅ 3 refs | 村民 + 裝飾 |
+| virus | ✅ 4 refs | 進度 |
+| sea-route | ✅ 4 refs | 航線 + 升級 |
+| zombie-idle | ✅ 2 refs | DNA + 分數 |
+| capy-runner | ✅ 4 refs | 高分 |
+| daily-quiz-rpg | ✅ 2 refs | 角色 |
+| farm-match | ✅ 2 refs | 卡片 |
+| beat-warrior | ❌ 缺 | **需補**：關卡進度 |
+| beyblade | ❌ 缺 | **需補**：零件收集 |
+| deep-diggers | ❌ 缺 | **需補**：升級樹 |
+| earth-civilization | ⚠️ 只有 get | **需補**：缺 setItem |
+| bug-crisis | ❌ 缺 | 每局獨立，可選 |
+| fps | ❌ 缺 | 每局獨立，可選 |
+
+---
+
+## 手機遊戲 UI 佈局規則（最優先執行）
+
+> **問題根因**：固定定位的按鈕（返回/靜音/語言/暫停）各自 `position:fixed`，在不同手機尺寸下會重疊、遮住 HUD。
+
+### 強制規則：使用 Flexbox 三段式佈局
+
+所有手機 Canvas 遊戲 **必須** 使用以下佈局結構：
+
+```html
+<body style="display:flex;flex-direction:column;height:100vh;height:100dvh">
+  <!-- 1. 頂部工具列 -->
+  <div class="top-bar" style="position:relative;z-index:200;flex-shrink:0">
+    <a href="../">← 返回</a>
+    <div class="btn-group">
+      <button>繁中/EN</button>
+      <button id="pause-btn">⏸</button>
+      <button id="mute-btn">🔊</button>
+    </div>
+  </div>
+  <!-- 2. 遊戲區域 -->
+  <div class="game-area" style="flex:1;overflow:hidden;min-height:0">
+    <canvas id="game"></canvas>
+  </div>
+  <!-- 3. 底部操作列 -->
+  <div class="action-bar" style="position:relative;z-index:200;flex-shrink:0">...</div>
+</body>
+```
+
+### 必做事項（缺一個就會出 bug）
+
+| 項目 | 做法 | 不做的後果 |
+|------|------|-----------|
+| **body 高度** | `height:100vh;height:100dvh`（兩行，dvh 覆蓋 vh） | 手機網址列佔空間，底部按鈕被切掉 |
+| **top-bar / action-bar** | `position:relative; z-index:200; flex-shrink:0` | Canvas 的 touch 事件攔截按鈕，按不了 |
+| **game-area** | `flex:1; min-height:0; overflow:hidden` | Canvas 溢出撐開頁面，底部被推出螢幕 |
+| **Canvas resize** | 基於 `.game-area` 的 `clientWidth/clientHeight` | 用 `window.innerHeight` 會包含被工具列佔的空間 |
+| **Canvas touch-action** | `touch-action:none` 只加在 `<canvas>` | 加在 body 會讓所有按鈕 tap 失效 |
+
+### 禁止事項
+
+- **不可**對返回/靜音/語言/暫停按鈕使用 `position:fixed`（會重疊）
+- **不可**對 Canvas 使用 `position:absolute; top:0`（會被工具列遮住）
+- **不可**用 `100vh` 不加 `100dvh`（手機瀏覽器網址列會導致溢出）
+- **不可**省略 top-bar/action-bar 的 `z-index`（Canvas touch 會攔截按鈕）
+- **不可**省略 game-area 的 `min-height:0`（flex 子元素不會正確收縮）
+
+### Canvas 定位規則（踩坑教訓）
+
+> **Claude 無法開瀏覽器測試**，所以手機觸控問題必須第一次就寫對，不能靠來回修正。
+
+- Canvas **必須**用 `position:absolute; top:50%; left:50%; transform:translate(-50%,-50%)` 定位在 game-area 內
+- **必須**加 `max-width:100%; max-height:100%` — 防止 Canvas 溢出 game-area 攔截按鈕觸控
+- resize 函式也要 `Math.min(w, availW)` / `Math.min(h, availH)` 做 clamp
+- **不可**讓 Canvas 作為 flex 子元素參與佈局（會撐大 game-area，擠壓 action-bar 的觸控區域）
+- **不可**在 body 加 `user-select:none`（某些 Android Chrome 會阻擋 button 觸控）
+- 按鈕事件用 JS `addEventListener` 綁定，不用 inline `ontouchend`（某些手機瀏覽器不可靠）
+
+> ⚠️ **`overflow:hidden` 陷阱**：`overflow:hidden` 只隱藏視覺渲染，**不會阻擋觸控事件**。Canvas 即使被裁切看不到，溢出部分仍然會攔截 touch/click 事件，導致底部按鈕按不了。所以**必須**用 `max-width/max-height` 從 DOM 層面限制尺寸。
+
+### 字體規則
+
+- **不可**使用 VT323 作為主字體（英文像素字體，中文會 fallback 到系統字體，兩種風格混搭不協調）
+- 正確字體：`'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif`
+- Canvas 內的 `ctx.font` 也用 `sans-serif`（不是 `VT323`）
+- 中文字體最小 12px，英文最小 11px，低於此尺寸在手機上難以閱讀
+
+### Canvas HUD 字體大小參考
+
+| 用途 | 大小 | 粗細 |
+|------|------|------|
+| 遊戲標題 | 24-28px | bold |
+| HUD 數值（分數、天數） | 14-16px | bold |
+| 資源列（木材、石頭等） | 13-14px | normal |
+| 小提示 / 說明文字 | 12-13px | normal |
+| 通知訊息 | 14-16px | normal |
 
 ---
 
@@ -424,15 +599,15 @@ function toggleMute(){
 
 ### 節拍戰士 `beat-warrior/`
 - 節奏判定清晰（Perfect/Good/Miss）、真實 sprite 動畫、螢幕震動回饋
-- 戰場畫面單調，音符 pattern 後期重複
+- 各關卡氛圍動畫（森林/烈焰/血雨）、擊中粒子爆發效果、54 種音符 pattern + anti-repeat 記憶最近 4 個
 
 ### 戰鬥陀螺 `beyblade/`
 - 模組化陀螺組裝、物理碰撞流暢、隨機環境事件（磁力/冰面/風暴）
-- 玩家操作感弱、CPU 無狀態策略
+- 玩家操控力提升（moveF+40%）、移動方向箭頭指示、方向粒子噴射
+- CPU 新增 cautious（低血量躲避）/ pressure（玩家低轉速猛攻）狀態，偵測玩家防禦自動撤退
 
 ### 機甲蟲蟲危機 `bug-crisis/`
 - 3 線道設計清楚、5 種兵種各有定位
-- 部署後無法升級、後期平衡感不足
 
 ### 水豚跑酷 `capy-runner/`（2026/3/22）
 - 直式手機跑酷、Canvas 縮放填滿螢幕、滑動觸控控制
@@ -445,7 +620,6 @@ function toggleMute(){
 
 ### Deep Diggers `deep-diggers.html`
 - 500 行縱向地城、5 種生物群系、7 升級樹
-- 鑽探方向單一（只能往下）
 
 ### 地球再生 `earth-civilization/`
 - 5 時代進程、與太空 Roguelike 跨遊戲連動（研究院×3、發電廠數值已調整）
@@ -454,12 +628,9 @@ function toggleMute(){
 - Gacha 元素、N/R/SR/SSR 稀有度、連擊系統
 - 卡片技能豐富多樣（炸行/3×3炸/十字清/全場核彈），爆發感強
 - 里程碑分數獎勵步數，給玩家持續動力，不易中途放棄
-- 無存檔機制，一局結束金幣/卡片全清，難以累積長線成就感
-- 後期缺乏難度曲線，寶石種類固定、無關卡障礙物
 
 ### FPS 射擊 `fps/`
 - 完整光線追蹤引擎、爆頭機制、3 種武器
-- 敵人 AI 會卡牆、地圖固定
 
 ### 勇者傳說 `hero/`
 - 完整 RPG：職業/技能/裝備/天賦/地城/Boss
@@ -477,15 +648,13 @@ function toggleMute(){
 
 ### VIRUS.EXE `virus/`
 - 賽博朋克視覺風格、VT323 字型、多層防禦
-- ~2446 行，學習曲線陡
+- ~2446 行，學習曲線需引導
 
 ### 殭屍蔓延 Zombie Idle `zombie-idle/`
 - 點擊 + 放置雙核心、DNA Prestige 系統
-- 後期缺乏更多循環目標
 
 ### 末日求生 `zombie-spread/`
 - PostApocalypse 素材包、3 種殭屍 sprite、波次系統
-- 地圖背景較簡單
 
 ---
 
@@ -810,6 +979,66 @@ Step 9｜迭代 & 長尾運營
 
 ---
 
+## CrazyGames 上架前檢查清單（2026/3/25 制定）
+
+> **強制規則**：每款遊戲在提交 CrazyGames 前，Claude 必須逐項跑完此清單並回報結果。
+> 源自進化蚊子被拒經驗，避免重複犯錯。
+
+### 🔴 瀏覽器相容性（必過，否則直接被拒）
+
+| 檢查項 | 說明 | 修正方式 |
+|--------|------|---------|
+| `roundRect()` | Firefox/Safari 不支援 | 加 polyfill（arcTo 替代） |
+| `replaceAll()` | 舊瀏覽器不支援 | 用 `split().join()` 或 `replace(/x/g, y)` |
+| `structuredClone()` | Safari 15.3 以下不支援 | 用 `JSON.parse(JSON.stringify())` |
+| `?.` optional chaining | IE 不支援（CG 不管 IE，但注意） | — |
+| WebAudio API | 需 `webkitAudioContext` fallback | `new (window.AudioContext\|\|window.webkitAudioContext)()` |
+| Canvas API 新方法 | `reset()`, `roundRect()` 等 | 一律加 polyfill 或用替代寫法 |
+
+**檢查指令**：在檔案中搜尋 `roundRect`、`replaceAll`、`structuredClone`、`at(` 等新 API。
+
+### 🔴 功能完整性（缺一項就被拒）
+
+- [ ] **靜音按鈕** — 必須可見且隨時可用（z-index 高於所有面板）
+- [ ] **暫停功能** — 遊戲中可暫停（按鈕或 [P]/[Esc]）
+- [ ] **語言切換** — 至少支援英文（CG 主要用戶為歐美）
+- [ ] **所有按鍵綁定都有對應 handler** — 說明書說 [F] 可引爆，就必須真的綁了 [F]
+- [ ] **所有宣告的功能都有實作** — 商店列了磁鐵，就必須有 `activateMagnet()` 函式
+- [ ] **遊戲不會因任何操作崩潰** — 空指標、未定義函式、除以零
+
+### 📱 手機 / 響應式（CG 有手機玩家，必須支援）
+
+- [ ] **Canvas touch 事件** — `touchstart` + `touchmove`，座標要乘以縮放比例
+- [ ] **`touch-action: none`** — 只加在 canvas，不加在 body
+- [ ] **UI 面板響應式** — `width: min(Xpx, calc(100vw - 24px))`，不用固定 px
+- [ ] **按鈕可點擊** — 手機上按鈕尺寸 ≥ 44px，且不被其他元素遮擋
+- [ ] **文字不溢出** — 英文比中文長 1.5~2 倍，需 `word-wrap: break-word`
+- [ ] **遊戲結束按鈕** — 用相對尺寸，不用固定 px 座標
+
+### 🎓 新手體驗（影響留存率，間接影響審核）
+
+- [ ] **新手教學** — 首次進入顯示操作說明覆蓋層（localStorage 記住已看過）
+- [ ] **前 60 秒體驗** — 不能太難也不能太無聊
+- [ ] **核心機制解釋** — 特殊機制（如吸血警告）要讓玩家看得懂
+
+### ⚡ 效能 & 品質
+
+- [ ] **resize debounce** — `setTimeout` 100ms，避免頻繁重排
+- [ ] **粒子/特效數量上限** — 長時間遊玩不能 FPS 下降
+- [ ] **移除 AdSense** — CrazyGames 用自有 SDK，不能載入第三方廣告腳本
+- [ ] **無 console.error** — 開 DevTools 確認無紅色錯誤
+
+### 📦 提交前最終確認
+
+- [ ] 在 **Chrome** 測試通過
+- [ ] 在 **Firefox** 測試通過（重點：Canvas API 相容性）
+- [ ] 在 **手機瀏覽器** 測試通過（觸控 + 響應式）
+- [ ] 英文模式下所有 UI 文字不溢出
+- [ ] 遊戲可正常結束並重新開始
+- [ ] 所有快捷鍵都能正常運作
+
+---
+
 ## 週開發節奏（$100 MAX 方案）
 
 ### 標準週排程
@@ -892,6 +1121,35 @@ Step 9｜迭代 & 長尾運營
 
 ---
 
+## 首頁卡片管理規則
+
+- 首頁 `index.html` 的 `nav-grid` 目前採用**扁平式**導航（無分類）
+- **當 nav-card 數量達到 15 張時**，Claude 必須提醒用戶：「首頁卡片已達 15 張，建議新增分類區塊（遊戲 / 工具 / 創作）做整理，是否現在處理？」
+- 目前卡片數：**15 張**（2026/3/25 更新）
+- ⚠️ **已達 15 張門檻，建議整理分類！** 下次新增卡片前，請先與用戶討論是否改為分類式導覽（遊戲 / 工具 / 創作）
+
+### 首頁卡片清單（按加入順序）
+
+| # | 卡片 | href | 說明 |
+|---|------|------|------|
+| 1 | 🎮 Games | `games/` | 遊戲收藏 |
+| 2 | 📱 手遊專區 | `games/mobile.html` | 觸控遊戲 |
+| 3 | ⚔️ 對戰遊戲 | `games/battle.html` | 1v1 連線 |
+| 4 | 💬 情境聊天室 | `games/chat-room/` | 配對聊天 |
+| 5 | 📝 Blog | `blog.html` | 文章 |
+| 6 | 🌟 每日運勢 | `fortune/` | 星座運勢 |
+| 7 | 🃏 塔羅抽牌 | `tarot/` | 三牌陣 |
+| 8 | 🌀 靈魂配對 | `soul-match/` | 契合度測試 |
+| 9 | 📚 Books | `books.html` | 推薦清單 |
+| 10 | 🛠 Tools | `tools.html` | 工具資源 |
+| 11 | 🦫 About | `about.html` | 關於我 |
+| 12 | 🕳️ 黑洞收割者 | `games/black-hole/` | 休閒動作遊戲 |
+| 13 | 📋 租屋糾紛自救包 | `rental-rights/` | 台灣社會工具 |
+| 14 | 🔍 詐騙辨識器 | `scam-detector/` | 台灣社會工具 |
+| 15 | 🗳️ 議員做了什麼？ | `legislator/` | 台灣公民工具 |
+
+---
+
 ## 歷史對話重點紀錄
 
 - **2026/3/22** 新增每日一題 RPG `daily-quiz-rpg/`（手機答題養成）
@@ -908,5 +1166,9 @@ Step 9｜迭代 & 長尾運營
   - 設計文件：`games/sea-route/DESIGN.md`（含 Boss 機制、4 升級樹、素材規劃）
   - v0.1：基礎航行、自動/手動蒐集、紙娃娃船、timing Boss、10 國地標
 - **2026/3/24** 新增 Context 壓縮保護規則 + 設計文件流程
-- **2026/3/23** 新增 SessionStart hook，每次開 session 自動顯示當日開發建議
 - **2026/3/19** 彈幕按鈕移到右上角，配色改用主題變數
+- **2026/3/25** 新增黑洞收割者 `games/black-hole/`（休閒動作，Canvas，鼠標/觸控拖曳）
+- **2026/3/25** 新增租屋糾紛自救包 `rental-rights/`（台灣社會工具，6 種情境，存證信函草稿）
+- **2026/3/25** 新增首頁卡片管理規則（15 張提醒分類，目前 15 張 ⚠️ 已達門檻）
+- **2026/3/25** 新增詐騙辨識器 `scam-detector/`（關鍵字比對，5 種示範範例，165/CIB 檢舉連結）
+- **2026/3/25** 新增我的議員做了什麼 `legislator/`（示範資料 + 立院官方查詢連結彙整）

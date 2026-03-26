@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>陽光農場 Sunnyside Farm</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1408;overflow:hidden;width:100vw;height:100vh;height:100dvh}
+canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;position:absolute}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+'use strict';
+// __JS_START__
+// ═══════════════════════════════════════════
+// 常數 & 設定
+// ═══════════════════════════════════════════
+let GW=384, GH=680, TILE=16, SCALE=2, DTILE=TILE*SCALE;
+// UI layout constants (in game coordinates)
+const TOP_H=40, BOT_H=56, GAME_Y=TOP_H, GAME_H=GH-TOP_H-BOT_H;
+const ACTION_BTNS=[
+  {id:'farm',icon:'🌱',zh:'種田',en:'Farm'},
+  {id:'dig',icon:'⛏️',zh:'挖掘',en:'Dig'},
+  {id:'fish',icon:'🎣',zh:'釣魚',en:'Fish'},
+  {id:'gather',icon:'🧺',zh:'採集',en:'Gather'},
+  {id:'idle',icon:'💤',zh:'掛機',en:'Idle'},
+];
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+canvas.width=GW; canvas.height=GH;
+
+const ASSET_ROOT='../../assets/images/Sunnyside World/Sunnyside_World_ASSET_PACK_V2.1/Sunnyside_World_ASSET_PACK_V2.1/Sunnyside_World_Assets/';
+const SFX_ROOT='../../assets/sfx/';
+
+let lang='zh';
+const i18n={
+  zh:{
+    title:'陽光農場',farm:'種田',dig:'挖掘',fish:'釣魚',gather:'採集',idle:'掛機',
+    perfect:'完美!',good:'不錯!',miss:'失誤',combo:'連擊',
+    quest:'委託任務',complete:'完成!',accept:'接受',
+    wood:'木材',stone:'石頭',food:'食物',gold:'金幣',seed:'種子',
+    day:'第 {n} 天',weather_sun:'☀ 晴天',weather_rain:'🌧 雨天',
+    weather_drought:'☀ 乾旱',weather_storm:'🌪 暴風',
+    tutorial_title:'歡迎來到陽光農場！',
+    tutorial_body:'① 點下方按鈕選活動\n\n🌱 種田：選作物 → 節奏點擊播種\n⛏️ 挖掘：點石頭/金礦收集資源\n🎣 釣魚：按住上移，對準魚\n🧺 採集：滑動碰果實收割\n💤 掛機：自動收集（效率低）\n\n② 成熟作物會閃金光，點它收穫\n③ 完成任務 → 農場升級！',
+    tutorial_ok:'我知道了！',tap_start:'點擊開始',
+    score:'分數',time:'時間',reeling:'收線中...',
+    catch_common:'普通魚',catch_rare:'稀有魚',catch_epic:'傳說魚',
+    newday:'新的一天開始了！',
+    eco_warn_bugs:'⚠ 蟲害爆發！作物受損',eco_warn_feed:'⚠ 飼料不足！動物生病',
+    eco_warn_weed:'⚠ 雜草叢生！',
+    chicken:'雞',cow:'牛',sheep:'羊',duck:'鴨',pig:'豬',
+    plant_beetroot:'甜菜',plant_cabbage:'高麗菜',plant_carrot:'胡蘿蔔',
+    plant_potato:'馬鈴薯',plant_pumpkin:'南瓜',plant_wheat:'小麥',
+    plant_sunflower:'向日葵',plant_radish:'蘿蔔',plant_parsnip:'歐防風',
+    plant_cauliflower:'花椰菜',plant_kale:'羽衣甘藍',
+    farmStage0:'荒蕪農場',farmStage1:'起步農場',farmStage2:'成長農場',
+    farmStage3:'繁榮農場',farmStage4:'夢幻農場',
+    questComplete:'任務完成！',resources:'資源',animals:'動物',
+    idleNotice:'掛機中... 資源緩慢累積',miniGameStart:'準備好了嗎？點擊開始！',
+    backToFarm:'返回農場',result:'結果',earned:'獲得',
+  },
+  en:{
+    title:'Sunnyside Farm',farm:'Farm',dig:'Dig',fish:'Fish',gather:'Gather',idle:'Idle',
+    perfect:'Perfect!',good:'Good!',miss:'Miss',combo:'Combo',
+    quest:'Quests',complete:'Done!',accept:'Accept',
+    wood:'Wood',stone:'Stone',food:'Food',gold:'Gold',seed:'Seeds',
+    day:'Day {n}',weather_sun:'☀ Sunny',weather_rain:'🌧 Rain',
+    weather_drought:'☀ Drought',weather_storm:'🌪 Storm',
+    tutorial_title:'Welcome to Sunnyside Farm!',
+    tutorial_body:'Tap buttons below to choose activity\n🌱 Farm ⛏️ Dig 🎣 Fish 🧺 Gather\nOr 💤 Idle for auto-collect (lower efficiency)\n\nComplete villager quests to make your farm thrive!',
+    tutorial_ok:'Start Farming!',tap_start:'Tap to Start',
+    score:'Score',time:'Time',reeling:'Reeling...',
+    catch_common:'Common Fish',catch_rare:'Rare Fish',catch_epic:'Epic Fish',
+    newday:'A new day begins!',
+    eco_warn_bugs:'⚠ Bug outbreak! Crops damaged',eco_warn_feed:'⚠ Not enough feed! Animals sick',
+    eco_warn_weed:'⚠ Weeds spreading!',
+    chicken:'Chicken',cow:'Cow',sheep:'Sheep',duck:'Duck',pig:'Pig',
+    plant_beetroot:'Beetroot',plant_cabbage:'Cabbage',plant_carrot:'Carrot',
+    plant_potato:'Potato',plant_pumpkin:'Pumpkin',plant_wheat:'Wheat',
+    plant_sunflower:'Sunflower',plant_radish:'Radish',plant_parsnip:'Parsnip',
+    plant_cauliflower:'Cauliflower',plant_kale:'Kale',
+    farmStage0:'Barren Farm',farmStage1:'Starting Farm',farmStage2:'Growing Farm',
+    farmStage3:'Thriving Farm',farmStage4:'Dream Farm',
+    questComplete:'Quest Complete!',resources:'Resources',animals:'Animals',
+    idleNotice:'Idling... Resources accumulating slowly',miniGameStart:'Ready? Tap to start!',
+    backToFarm:'Back to Farm',result:'Result',earned:'Earned',
+  }
+};
+function t(k,vars){let s=(i18n[lang]||i18n.zh)[k]||k;if(vars)Object.keys(vars).forEach(v=>{s=s.split('{'+v+'}').join(vars[v])});return s}
+function toggleLang(){lang=lang==='zh'?'en':'zh'}
+
+// ═══════════════════════════════════════════
+// 音效系統
+// ═══════════════════════════════════════════
+const AUDIO_CTX=new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS={};
+let audioMuted=(localStorage.getItem('sunnyfarmMuted')==='1');
+let bgmSource=null,bgmGain=null,bgmLoaded=false;
+function loadAudio(name,url){fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{AUDIO_BUFS[name]=buf}).catch(()=>{})}
+function playAudio(name,vol=0.7,rate=1,maxMs=0){
+  if(audioMuted)return;const buf=AUDIO_BUFS[name];if(!buf)return;
+  if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();
+  const src=AUDIO_CTX.createBufferSource();src.buffer=buf;src.playbackRate.value=rate;
+  const gain=AUDIO_CTX.createGain();gain.gain.value=vol;
+  src.connect(gain);gain.connect(AUDIO_CTX.destination);
+  src.start(0,0,maxMs>0?maxMs/1000:buf.duration);
+}
+function startBGM(url){
+  if(bgmLoaded||audioMuted)return;bgmLoaded=true;
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
+    if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();
+    bgmSource=AUDIO_CTX.createBufferSource();bgmSource.buffer=buf;bgmSource.loop=true;
+    bgmGain=AUDIO_CTX.createGain();bgmGain.gain.value=0.18;
+    bgmSource.connect(bgmGain);bgmGain.connect(AUDIO_CTX.destination);bgmSource.start();
+  }).catch(()=>{});
+}
+function toggleMute(){
+  audioMuted=!audioMuted;if(bgmGain)bgmGain.gain.value=audioMuted?0:0.18;
+  localStorage.setItem('sunnyfarmMuted',audioMuted?'1':'0');
+  if(!audioMuted&&!bgmLoaded)startBGM(BGM_URL);
+}
+const BGM_URL='../../assets/music/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Refreshing Dawn.ogg';
+
+// ═══════════════════════════════════════════
+// 素材載入
+// ═══════════════════════════════════════════
+const IMGS={};
+let loadCount=0,totalAssets=0;
+function loadImg(name,path){
+  totalAssets++;
+  const img=new Image();
+  img.onload=()=>{IMGS[name]=img;loadCount++};
+  img.onerror=()=>{loadCount++};
+  img.src=ASSET_ROOT+path;
+}
+function loadAllAssets(){
+  // Tileset
+  loadImg('tileset','Tileset/spr_tileset_sunnysideworld_16px.png');
+  // Character - human base
+  loadImg('char_idle','Characters/Human/IDLE/base_idle_strip9.png');
+  loadImg('char_walk','Characters/Human/WALKING/base_walking_strip8.png');
+  loadImg('char_water','Characters/Human/WATERING/base_watering_strip12.png');
+  loadImg('char_dig','Characters/Human/DIG/base_dig_strip13.png');
+  loadImg('char_mining','Characters/Human/MINING/base_mining_strip11.png');
+  loadImg('char_reeling','Characters/Human/REELING/base_reeling_strip16.png');
+  loadImg('char_carry','Characters/Human/CARRY/base_carry_strip8.png');
+  // Crops (6 stages each)
+  const crops=['beetroot','cabbage','carrot','cauliflower','kale','parsnip','potato','pumpkin','radish','sunflower','wheat'];
+  crops.forEach(c=>{for(let i=0;i<6;i++)loadImg(`crop_${c}_${i}`,`Elements/Crops/${c}_0${i}.png`)});
+  // Animals
+  loadImg('animal_chicken','Elements/Animals/spr_deco_chicken_01_strip4.png');
+  loadImg('animal_cow','Elements/Animals/spr_deco_cow_strip4.png');
+  loadImg('animal_duck','Elements/Animals/spr_deco_duck_01_strip4.png');
+  loadImg('animal_pig','Elements/Animals/spr_deco_pig_01_strip4.png');
+  loadImg('animal_sheep','Elements/Animals/spr_deco_sheep_01_strip4.png');
+  // Decorations
+  loadImg('tree1','Elements/Plants/spr_deco_tree_01_strip4.png');
+  loadImg('tree2','Elements/Plants/spr_deco_tree_02_strip4.png');
+  loadImg('mushroom','Elements/Plants/spr_deco_mushroom_red_01_strip4.png');
+  loadImg('windmill','Elements/Other/spr_deco_windmill_strip9.png');
+  loadImg('fire','Elements/VFX/Fire/spr_deco_fire_01_strip4.png');
+  // Extra elements
+  loadImg('soil0','Elements/Crops/soil_00.png');
+  loadImg('soil1','Elements/Crops/soil_01.png');
+  loadImg('soil2','Elements/Crops/soil_02.png');
+  loadImg('rock','Elements/Crops/rock.png');
+  loadImg('wood','Elements/Crops/wood.png');
+  loadImg('egg','Elements/Crops/egg.png');
+  loadImg('fish_item','Elements/Crops/fish.png');
+  loadImg('milk','Elements/Crops/milk.png');
+  loadImg('seeds','Elements/Crops/seeds_generic.png');
+  // UI
+  loadImg('ui_greenbar0','UI/greenbar_00.png');loadImg('ui_greenbar6','UI/greenbar_06.png');
+  loadImg('ui_redbar0','UI/redbar_00.png');loadImg('ui_redbar6','UI/redbar_06.png');
+  // SFX
+  loadAudio('pickup',SFX_ROOT+'400 Sounds Pack/Items/coin_collect.wav');
+  loadAudio('levelup',SFX_ROOT+'GameSFX3/PowerUp/Retro PowerUP 09.wav');
+  loadAudio('confirm',SFX_ROOT+'400 Sounds Pack/UI/synth_confirmation.wav');
+  loadAudio('error',SFX_ROOT+'400 Sounds Pack/Musical Effects/8_bit_negative.wav');
+  loadAudio('splash',SFX_ROOT+'GameSFX1/Bounce Jump/Retro Jump 01.wav');
+  loadAudio('hit',SFX_ROOT+'GameSFX2/Impact/Retro Impact Punch 07.wav');
+  loadAudio('complete',SFX_ROOT+'400 Sounds Pack/Musical Effects/brass_level_complete.wav');
+}
+
+// ═══════════════════════════════════════════
+// 遊戲狀態
+// ═══════════════════════════════════════════
+const CROP_TYPES=['beetroot','cabbage','carrot','potato','pumpkin','wheat','sunflower','radish','parsnip','cauliflower','kale'];
+const ANIMAL_TYPES=['chicken','cow','sheep','duck','pig'];
+const WEATHERS=['sun','rain','drought','storm'];
+const WEATHER_WEIGHTS=[50,25,15,10];
+
+let state={
+  screen:'title', // title, farm, minigame, result, quest
+  action:'farm', // farm,dig,fish,gather,idle
+  day:1, weather:'sun',
+  res:{wood:0,stone:0,food:10,gold:0,seed:5},
+  farmStage:0, questsDone:0,
+  // Farm grid 12x10 (each cell: null or {type,stage,planted,quality})
+  grid:Array.from({length:10},()=>Array(12).fill(null)),
+  // Animals owned
+  animals:{chicken:0,cow:0,sheep:0,duck:0,pig:0},
+  // Ecosystem
+  eco:{bugs:0,weeds:20,grassPct:30,fertility:50},
+  // Mini-game state
+  mg:{score:0,timer:0,combo:0,active:false,phase:'ready'},
+  // Quests
+  quests:[],activeQuest:null,
+  // Notifications
+  notifs:[],
+  // Idle timer
+  idleTimer:0,
+  // Tutorial shown
+  tutorialSeen:localStorage.getItem('sunnyfarmTutorial')==='1',
+  // Animation
+  charFrame:0,charAnim:'idle',charX:GW/2,charY:GH/2-40,
+  animTimer:0,
+  // Camera
+  camY:0,
+  // Sprite animation
+  sprFrame:0,sprTimer:0,
+  // Upgrade tree (mini-game improvements)
+  upgrades:{farmRounds:10,digTime:20,fishTime:25,gatherTime:20,farmSpeed:1.5,digSpawn:30,gatherSpawn:20},
+  // Day counter: advance day every N mini-games
+  mgCount:0,
+  // Pause
+  paused:false,
+};
+
+function saveGame(){
+  const s={day:state.day,res:state.res,farmStage:state.farmStage,questsDone:state.questsDone,
+    grid:state.grid,animals:state.animals,eco:state.eco,quests:state.quests,
+    questProgress:questProgress,upgrades:state.upgrades,mgCount:state.mgCount};
+  localStorage.setItem('sunnyfarmSave',JSON.stringify(s));
+}
+function loadGame(){
+  try{
+    const s=JSON.parse(localStorage.getItem('sunnyfarmSave'));
+    if(s){
+      Object.assign(state,s);state.screen='farm';
+      if(s.questProgress)questProgress=s.questProgress;
+      if(s.upgrades)state.upgrades=s.upgrades;
+    }
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════
+// 任務系統
+// ═══════════════════════════════════════════
+const QUEST_DEFS=[
+  {id:'fix_fence',need:{wood:3},reward:{farmStage:1},desc_zh:'修好柵欄',desc_en:'Fix the Fence',detail_zh:'收集 3 木材修復破損的柵欄',detail_en:'Collect 3 wood to repair broken fences'},
+  {id:'first_crop',need:{food:5},reward:{seed:10},desc_zh:'第一次豐收',desc_en:'First Harvest',detail_zh:'收穫 5 食物',detail_en:'Harvest 5 food'},
+  {id:'get_chicken',need:{gold:10},reward:{chicken:2},desc_zh:'迎接小雞',desc_en:'Welcome Chickens',detail_zh:'賺取 10 金幣買雞',detail_en:'Earn 10 gold to buy chickens'},
+  {id:'fix_windmill',need:{wood:5,stone:3},reward:{farmStage:2},desc_zh:'修好風車',desc_en:'Fix the Windmill',detail_zh:'收集 5 木材 + 3 石頭',detail_en:'Collect 5 wood + 3 stone'},
+  {id:'get_cow',need:{gold:20,food:10},reward:{cow:1},desc_zh:'迎接小牛',desc_en:'Welcome a Cow',detail_zh:'需要 20 金幣和 10 食物',detail_en:'Need 20 gold and 10 food'},
+  {id:'big_pumpkin',need:{pumpkinPerfect:3},reward:{gold:30},desc_zh:'種出巨型南瓜',desc_en:'Grow Giant Pumpkin',detail_zh:'完美種植南瓜 3 次',detail_en:'Plant pumpkin with Perfect 3 times'},
+  {id:'get_sheep',need:{gold:15},reward:{sheep:2},desc_zh:'羊毛大計',desc_en:'Wool Plan',detail_zh:'賺取 15 金幣買羊',detail_en:'Earn 15 gold to buy sheep'},
+  {id:'pest_control',need:{chicken:5},reward:{farmStage:3},desc_zh:'消滅蟲害',desc_en:'Pest Control',detail_zh:'養 5 隻雞消滅害蟲',detail_en:'Raise 5 chickens to eliminate pests'},
+  {id:'barn_repair',need:{wood:10,stone:5},reward:{farmStage:3},desc_zh:'修復穀倉',desc_en:'Repair the Barn',detail_zh:'收集 10 木材 + 5 石頭',detail_en:'Collect 10 wood + 5 stone'},
+  {id:'ecosystem',need:{chicken:3,cow:2,sheep:2},reward:{farmStage:4},desc_zh:'生態平衡',desc_en:'Ecosystem Balance',detail_zh:'養 3 雞 + 2 牛 + 2 羊',detail_en:'Raise 3 chickens + 2 cows + 2 sheep'},
+];
+let questProgress={pumpkinPerfect:0};
+
+function getAvailableQuests(){
+  const done=state.quests;
+  return QUEST_DEFS.filter(q=>!done.includes(q.id)).slice(0,3);
+}
+function checkQuestComplete(q){
+  for(const[k,v]of Object.entries(q.need)){
+    if(k==='pumpkinPerfect'){if((questProgress.pumpkinPerfect||0)<v)return false;continue}
+    if(ANIMAL_TYPES.includes(k)){if((state.animals[k]||0)<v)return false;continue}
+    if((state.res[k]||0)<v)return false;
+  }
+  return true;
+}
+function completeQuest(q){
+  // Deduct resources
+  for(const[k,v]of Object.entries(q.need)){
+    if(k==='pumpkinPerfect'||ANIMAL_TYPES.includes(k))continue;
+    state.res[k]=(state.res[k]||0)-v;
+  }
+  // Give rewards
+  for(const[k,v]of Object.entries(q.reward)){
+    if(k==='farmStage'){state.farmStage=Math.max(state.farmStage,v);continue}
+    if(ANIMAL_TYPES.includes(k)){state.animals[k]=(state.animals[k]||0)+v;continue}
+    state.res[k]=(state.res[k]||0)+v;
+  }
+  state.quests.push(q.id);state.questsDone++;
+  addNotif(t('questComplete')+' '+( lang==='zh'?q.desc_zh:q.desc_en),'#ffd700');
+  playAudio('complete',0.8,1);
+  saveGame();
+}
+
+// ═══════════════════════════════════════════
+// 生態系統 & 天氣
+// ═══════════════════════════════════════════
+function rollWeather(){
+  const r=Math.random()*100;let acc=0;
+  for(let i=0;i<WEATHERS.length;i++){acc+=WEATHER_WEIGHTS[i];if(r<acc)return WEATHERS[i]}
+  return 'sun';
+}
+function tickEcosystem(){
+  const e=state.eco,a=state.animals;
+  // Chickens eat bugs
+  e.bugs=Math.max(0,e.bugs - a.chicken*3);
+  // Cow manure -> fertility
+  e.fertility=Math.min(100,e.fertility + a.cow*5);
+  // Sheep eat weeds
+  e.weeds=Math.max(0,e.weeds - a.sheep*4);
+  // Duck eat snails (protect crops extra)
+  e.bugs=Math.max(0,e.bugs - a.duck*2);
+  // Pig dig -> random resources
+  if(a.pig>0 && Math.random()<0.3*a.pig){
+    const r=['wood','stone','seed'][Math.floor(Math.random()*3)];
+    state.res[r]++;
+  }
+  // Weather effects
+  if(state.weather==='rain'){e.fertility+=5;e.bugs+=8}
+  if(state.weather==='drought'){e.fertility-=10}
+  if(state.weather==='storm'){e.weeds+=10}
+  // Natural bug/weed growth
+  e.bugs+=3;e.weeds+=2;
+  // Feed check: each animal needs 1 food
+  const totalAnimals=Object.values(a).reduce((s,v)=>s+v,0);
+  if(totalAnimals>0){
+    const needed=Math.ceil(totalAnimals*0.5);
+    if(state.res.food>=needed){state.res.food-=needed}
+    else{addNotif(t('eco_warn_feed'),'#ff4444')}
+  }
+  // Bug damage to crops
+  if(e.bugs>20){
+    addNotif(t('eco_warn_bugs'),'#ff6644');
+    // Damage random crops
+    for(let y=0;y<10;y++)for(let x=0;x<12;x++){
+      if(state.grid[y][x]&&Math.random()<0.05*e.bugs/20){state.grid[y][x]=null}
+    }
+  }
+  if(e.weeds>40)addNotif(t('eco_warn_weed'),'#88aa44');
+  // Clamp
+  e.bugs=Math.max(0,Math.min(100,e.bugs));
+  e.weeds=Math.max(0,Math.min(100,e.weeds));
+  e.fertility=Math.max(0,Math.min(100,e.fertility));
+  e.grassPct=Math.max(0,Math.min(100,100-e.weeds));
+}
+function advanceDay(){
+  state.day++;
+  state.weather=rollWeather();
+  tickEcosystem();
+  // Grow crops
+  const growMult=state.weather==='rain'?1.3:state.weather==='drought'?0.5:1;
+  const fertBonus=1+state.eco.fertility/200;
+  for(let y=0;y<10;y++)for(let x=0;x<12;x++){
+    const c=state.grid[y][x];
+    if(c&&c.stage<5){
+      const speed=(c.quality||1)*growMult*fertBonus;
+      c.growAcc=(c.growAcc||0)+speed;
+      if(c.growAcc>=4){c.stage++;c.growAcc=0}// threshold 4 (was 2), needs ~2-3 days to mature
+    }
+  }
+  addNotif(t('newday')+' '+t('day',{n:state.day})+' '+t('weather_'+state.weather),'#c8a456');
+  saveGame();
+}
+
+// ═══════════════════════════════════════════
+// 通知系統
+// ═══════════════════════════════════════════
+function addNotif(text,color='#ffd700'){state.notifs.push({text,color,timer:180})}
+function updateNotifs(){state.notifs=state.notifs.filter(n=>{n.timer--;return n.timer>0})}
+function drawNotifs(){
+  state.notifs.forEach((n,i)=>{
+    const alpha=Math.min(1,n.timer/30);
+    const y=60+i*24-Math.max(0,(30-n.timer)*2);
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle='rgba(0,0,0,0.7)';
+    const w=ctx.measureText(n.text).width+16;
+    drawRoundRect(GW/2-w/2,y-10,w,22,6);ctx.fill();
+    ctx.fillStyle=n.color;ctx.font='16px sans-serif';ctx.textAlign='center';
+    ctx.fillText(n.text,GW/2,y+4);
+    ctx.globalAlpha=1;
+  });
+}
+
+// Particles
+let particles=[];
+function spawnParticles(x,y,color,count=6){
+  for(let i=0;i<count;i++){
+    particles.push({x,y,vx:(Math.random()-0.5)*4,vy:-Math.random()*3-1,life:30+Math.random()*20,color,size:3+Math.random()*3});
+  }
+}
+function updateParticles(){particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.life--;return p.life>0})}
+function drawParticles(){
+  particles.forEach(p=>{
+    ctx.globalAlpha=Math.min(1,p.life/10);
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);
+  });
+  ctx.globalAlpha=1;
+}
+
+// roundRect polyfill
+function drawRoundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+// ═══════════════════════════════════════════
+// 小遊戲：種田（節奏播種）
+// ═══════════════════════════════════════════
+let mgFarm={indicator:0,dir:1,speed:2,slots:[],round:0,maxRounds:6,selectedCrop:0};
+const PLANTABLE_CROPS=['beetroot','carrot','potato','pumpkin','wheat','sunflower'];
+function startFarmGame(){
+  snapshotRes();
+  state.mg={score:0,timer:600,combo:0,active:true,phase:'choose'};// start with crop selection
+  mgFarm={indicator:0,dir:1,speed:state.upgrades.farmSpeed+Math.min(state.day*0.05,2),slots:[],round:0,maxRounds:state.upgrades.farmRounds,selectedCrop:0};
+  state.screen='minigame';state.action='farm';
+}
+function chooseCrop(idx){
+  mgFarm.selectedCrop=idx;
+  state.mg.phase='play';
+}
+function updateFarmGame(){
+  if(state.mg.phase!=='play')return;
+  mgFarm.indicator+=mgFarm.dir*mgFarm.speed;
+  if(mgFarm.indicator>GW-40||mgFarm.indicator<40)mgFarm.dir*=-1;
+  state.mg.timer--;
+  if(state.mg.timer<=0||mgFarm.round>=mgFarm.maxRounds)endMiniGame();
+}
+function tapFarmGame(){
+  const center=GW/2,dist=Math.abs(mgFarm.indicator-center);
+  let quality=0,label='';
+  if(dist<15){quality=2;label=t('perfect');state.mg.combo++;playAudio('confirm',0.7,1.2,260);spawnParticles(GW/2,140,'#ffd700',10)}
+  else if(dist<40){quality=1.5;label=t('good');state.mg.combo++;playAudio('pickup',0.6,1,280);spawnParticles(GW/2,140,'#88ff88',5)}
+  else{quality=0;label=t('miss');state.mg.combo=0;playAudio('error',0.5,1,300)}
+  if(quality>0){
+    state.mg.score+=Math.floor(10*quality*(1+state.mg.combo*0.1));
+    // Plant selected crop
+    const crop=PLANTABLE_CROPS[mgFarm.selectedCrop];
+    for(let y=0;y<10;y++){for(let x=0;x<12;x++){
+      if(!state.grid[y][x]){state.grid[y][x]={type:crop,stage:0,quality,growAcc:0};y=99;break}
+    }}
+    if(quality===2&&crop==='pumpkin')questProgress.pumpkinPerfect=(questProgress.pumpkinPerfect||0)+1;
+  }
+  mgFarm.round++;
+  addNotif(label+(state.mg.combo>1?' x'+state.mg.combo:''),quality===2?'#ffd700':quality>0?'#88ff88':'#ff4444');
+  if(mgFarm.round>=mgFarm.maxRounds)endMiniGame();
+}
+function drawFarmGame(){
+  // Crop selection phase
+  if(state.mg.phase==='choose'){
+    ctx.fillStyle='#2a4420';ctx.fillRect(0,0,GW,GH);
+    ctx.fillStyle='#ffd700';ctx.font='24px sans-serif';ctx.textAlign='center';
+    ctx.fillText(lang==='zh'?'選擇要種的作物':'Choose a crop',GW/2,80);
+    PLANTABLE_CROPS.forEach((c,i)=>{
+      const cx=40+(i%3)*(GW-80)/3,cy=120+Math.floor(i/3)*110;
+      const selected=mgFarm.selectedCrop===i;
+      ctx.strokeStyle=selected?'#ffd700':'#666';ctx.lineWidth=selected?3:1;
+      drawRoundRect(cx,cy,90,90,8);ctx.stroke();
+      if(selected){ctx.fillStyle='rgba(255,215,0,0.15)';drawRoundRect(cx,cy,90,90,8);ctx.fill()}
+      const cImg=IMGS[`crop_${c}_5`];
+      if(cImg)ctx.drawImage(cImg,0,0,cImg.width,cImg.height,cx+25,cy+8,40,40);
+      ctx.fillStyle='#e8ddd0';ctx.font='14px sans-serif';ctx.textAlign='center';
+      ctx.fillText(t('plant_'+c),cx+45,cy+72);
+    });
+    // Start button
+    ctx.fillStyle='#ffd700';drawRoundRect(GW/2-60,GH-160,120,40,8);ctx.fill();
+    ctx.fillStyle='#1a1408';ctx.font='20px sans-serif';ctx.textAlign='center';
+    ctx.fillText(lang==='zh'?'開始播種！':'Start!',GW/2,GH-135);
+    return;
+  }
+  // Background
+  ctx.fillStyle='#2a4420';ctx.fillRect(0,0,GW,GH);
+  // Show selected crop name
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(GW/2-50,60,100,22);
+  ctx.fillStyle='#ffd700';ctx.font='14px sans-serif';ctx.textAlign='center';
+  ctx.fillText(t('plant_'+PLANTABLE_CROPS[mgFarm.selectedCrop]),GW/2,76);
+  // Soil rows
+  ctx.fillStyle='#5a3a1a';
+  for(let i=0;i<6;i++)ctx.fillRect(40,200+i*50,GW-80,30);
+  // Indicator bar
+  const barY=140;
+  ctx.fillStyle='#333';ctx.fillRect(40,barY,GW-80,20);
+  // Sweet spot
+  ctx.fillStyle='rgba(0,255,0,0.3)';ctx.fillRect(GW/2-40,barY,80,20);
+  ctx.fillStyle='rgba(255,215,0,0.5)';ctx.fillRect(GW/2-15,barY,30,20);
+  // Indicator
+  ctx.fillStyle='#ff4444';ctx.fillRect(mgFarm.indicator-3,barY-4,6,28);
+  // HUD
+  ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.textAlign='left';
+  ctx.fillText(t('score')+': '+state.mg.score,20,30);
+  ctx.fillText(t('combo')+': '+state.mg.combo,20,52);
+  ctx.textAlign='right';
+  ctx.fillText((mgFarm.maxRounds-mgFarm.round)+' '+t('seed'),GW-20,30);
+  // Tap hint
+  ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='16px sans-serif';
+  ctx.fillText(lang==='zh'?'點擊播種！':'Tap to plant!',GW/2,GH-80);
+}
+
+// ═══════════════════════════════════════════
+// 小遊戲：挖掘（打地鼠）
+// ═══════════════════════════════════════════
+let mgDig={holes:[],spawnTimer:0};
+function startDigGame(){
+  snapshotRes();
+  state.mg={score:0,timer:state.upgrades.digTime*60,combo:0,active:true,phase:'play'};
+  mgDig={holes:[],spawnTimer:0};
+  state.screen='minigame';state.action='dig';
+}
+function updateDigGame(){
+  if(state.mg.phase!=='play')return;
+  state.mg.timer--;
+  mgDig.spawnTimer--;
+  if(mgDig.spawnTimer<=0){
+    const isGold=Math.random()<0.15;
+    mgDig.holes.push({x:60+Math.random()*(GW-120),y:150+Math.random()*(GH-300),
+      life:80+Math.random()*40,type:isGold?'gold':'stone',r:20+Math.random()*10});
+    mgDig.spawnTimer=30+Math.random()*20;
+  }
+  mgDig.holes=mgDig.holes.filter(h=>{h.life--;return h.life>0});
+  if(state.mg.timer<=0)endMiniGame();
+}
+function tapDigGame(tx,ty){
+  for(let i=mgDig.holes.length-1;i>=0;i--){
+    const h=mgDig.holes[i];
+    if(Math.hypot(tx-h.x,ty-h.y)<h.r+10){
+      state.mg.combo++;
+      const pts=h.type==='gold'?20:10;
+      state.mg.score+=Math.floor(pts*(1+state.mg.combo*0.05));
+      if(h.type==='gold'){state.res.gold+=2;playAudio('pickup',0.8,1.3,280);spawnParticles(h.x,h.y,'#ffd700',8)}
+      else{state.res.stone++;playAudio('hit',0.6,1,200);spawnParticles(h.x,h.y,'#aaa',5)}
+      mgDig.holes.splice(i,1);return;
+    }
+  }
+  state.mg.combo=0;
+}
+function drawDigGame(){
+  ctx.fillStyle='#3a2a15';ctx.fillRect(0,0,GW,GH);
+  // Underground layers
+  for(let i=0;i<8;i++){ctx.fillStyle=`hsl(25,${30+i*3}%,${18-i}%)`;ctx.fillRect(0,i*80,GW,80)}
+  // Holes
+  mgDig.holes.forEach(h=>{
+    const pulse=1+Math.sin(h.life*0.15)*0.1;
+    if(h.life<20)ctx.globalAlpha=h.life/20;
+    const spr=h.type==='gold'?IMGS.seeds:IMGS.rock;
+    if(spr){
+      const sz=h.r*2.5*pulse;
+      ctx.drawImage(spr,0,0,spr.width,spr.height,h.x-sz/2,h.y-sz/2,sz,sz);
+      if(h.type==='gold'){// gold glow
+        ctx.globalAlpha=(ctx.globalAlpha||1)*0.3;
+        ctx.fillStyle='#ffd700';ctx.beginPath();ctx.arc(h.x,h.y,sz/2+4,0,Math.PI*2);ctx.fill();
+      }
+    }else{
+      ctx.fillStyle=h.type==='gold'?'#ffd700':'#888';
+      ctx.beginPath();ctx.arc(h.x,h.y,h.r*pulse,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  });
+  // HUD
+  ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.textAlign='left';
+  ctx.fillText(t('score')+': '+state.mg.score,20,30);
+  ctx.fillText(t('combo')+': '+state.mg.combo,20,52);
+  ctx.textAlign='right';
+  ctx.fillText(t('time')+': '+Math.ceil(state.mg.timer/60)+'s',GW-20,30);
+}
+
+// ═══════════════════════════════════════════
+// 小遊戲：釣魚（經典釣魚條）
+// ═══════════════════════════════════════════
+let mgFish={barY:0,barH:80,fishY:200,fishDir:1,fishSpeed:1.5,hookY:200,catching:false,progress:0};
+function startFishGame(){
+  snapshotRes();
+  state.mg={score:0,timer:state.upgrades.fishTime*60,combo:0,active:true,phase:'play'};
+  mgFish={barY:GH/2-100,barH:80,fishY:GH/2,fishDir:1,fishSpeed:1.5+state.day*0.05,
+    hookY:GH/2,catching:false,progress:0,holding:false};
+  state.screen='minigame';state.action='fish';
+}
+function updateFishGame(){
+  if(state.mg.phase!=='play')return;
+  state.mg.timer--;
+  // Fish moves erratically
+  mgFish.fishY+=mgFish.fishDir*mgFish.fishSpeed;
+  if(Math.random()<0.05)mgFish.fishDir*=-1;
+  if(mgFish.fishY<160)mgFish.fishDir=1;
+  if(mgFish.fishY>GH-180)mgFish.fishDir=-1;
+  // Hook follows tap (gravity when not held)
+  if(mgFish.holding){mgFish.hookY-=3}else{mgFish.hookY+=2}
+  mgFish.hookY=Math.max(160,Math.min(GH-180,mgFish.hookY));
+  // Check if fish is in bar range
+  const inZone=Math.abs(mgFish.hookY-mgFish.fishY)<mgFish.barH/2;
+  if(inZone){
+    mgFish.progress+=1.2;
+    if(mgFish.progress%30<2)playAudio('pickup',0.3,1+mgFish.progress/200,150);
+  }else{
+    mgFish.progress=Math.max(0,mgFish.progress-0.8);
+  }
+  // Caught!
+  if(mgFish.progress>=100){
+    const rarity=Math.random();
+    let pts=10,type='catch_common';
+    if(rarity<0.1){pts=50;type='catch_epic'}
+    else if(rarity<0.35){pts=25;type='catch_rare'}
+    state.mg.score+=pts;state.mg.combo++;
+    state.res.food+=Math.ceil(pts/10);
+    addNotif(t(type)+'! +'+Math.ceil(pts/10)+' '+t('food'),pts>25?'#ffd700':'#88ff88');
+    playAudio('confirm',0.7,1,260);
+    // Reset for next fish
+    mgFish.progress=0;mgFish.fishSpeed+=0.3;
+    mgFish.fishY=160+Math.random()*(GH-340);
+  }
+  if(state.mg.timer<=0)endMiniGame();
+}
+function drawFishGame(){
+  // Water background
+  const t0=Date.now()*0.001;
+  for(let y=0;y<GH;y+=4){
+    const wave=Math.sin(y*0.02+t0)*10;
+    ctx.fillStyle=`hsl(200,${50+Math.sin(y*0.01)*10}%,${20+y/GH*15}%)`;
+    ctx.fillRect(wave,y,GW,4);
+  }
+  // Fishing bar (right side)
+  const barX=GW-50;
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(barX,150,30,GH-330);
+  // Hook zone (green area - the part you control)
+  ctx.fillStyle='rgba(0,200,0,0.5)';
+  ctx.fillRect(barX,mgFish.hookY-mgFish.barH/2,30,mgFish.barH);
+  // Fish indicator (red line)
+  ctx.fillStyle='#ff6644';
+  ctx.fillRect(barX-5,mgFish.fishY-4,40,8);
+  // Progress bar (left side, separate from fishing bar)
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(16,150,14,GH-330);
+  ctx.fillStyle='#ffd700';
+  const pH=(GH-330)*mgFish.progress/100;
+  ctx.fillRect(16,150+(GH-330)-pH,14,pH);
+  // Progress label
+  ctx.fillStyle='#fff';ctx.font='11px sans-serif';ctx.textAlign='center';
+  ctx.fillText(Math.floor(mgFish.progress)+'%',23,145);
+  // Fish in water (center)
+  ctx.font='32px sans-serif';ctx.textAlign='center';
+  ctx.fillText('🐟',GW/2+Math.sin(t0*2)*30,mgFish.fishY);
+  // Hook
+  ctx.fillStyle='#ccc';ctx.fillRect(GW/2,80,2,mgFish.hookY-80);
+  ctx.fillText('🪝',GW/2,mgFish.hookY);
+  // Rod at top
+  ctx.fillStyle='#8B4513';ctx.fillRect(GW/2-40,60,80,8);
+  // HUD
+  ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.textAlign='left';
+  ctx.fillText(t('score')+': '+state.mg.score,20,30);
+  ctx.fillText(t('combo')+': '+state.mg.combo,20,52);
+  ctx.textAlign='right';
+  ctx.fillText(t('time')+': '+Math.ceil(state.mg.timer/60)+'s',GW-20,30);
+  // Instruction
+  ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='14px sans-serif';
+  ctx.fillText(lang==='zh'?'按住上移 放開下沉 對準魚影':'Hold=up Release=down Align with fish',GW/2,GH-70);
+}
+
+// ═══════════════════════════════════════════
+// 小遊戲：採集（滑動收割）
+// ═══════════════════════════════════════════
+let mgGather={items:[],spawnTimer:0,swipeTrail:[]};
+function startGatherGame(){
+  snapshotRes();
+  state.mg={score:0,timer:state.upgrades.gatherTime*60,combo:0,active:true,phase:'play'};
+  mgGather={items:[],spawnTimer:0,swipeTrail:[]};
+  state.screen='minigame';state.action='gather';
+}
+function updateGatherGame(){
+  if(state.mg.phase!=='play')return;
+  state.mg.timer--;
+  mgGather.spawnTimer--;
+  if(mgGather.spawnTimer<=0){
+    const types=['🌾','🍎','🌻','🍄','🥕','🫐'];
+    const vals=[2,3,2,4,2,5];
+    const idx=Math.floor(Math.random()*types.length);
+    mgGather.items.push({x:40+Math.random()*(GW-80),y:100+Math.random()*(GH-280),
+      emoji:types[idx],value:vals[idx],life:120,collected:false});
+    mgGather.spawnTimer=20+Math.random()*15;
+  }
+  mgGather.items=mgGather.items.filter(it=>{it.life--;return it.life>0&&!it.collected});
+  mgGather.swipeTrail=mgGather.swipeTrail.filter(p=>{p.life--;return p.life>0});
+  if(state.mg.timer<=0)endMiniGame();
+}
+function swipeGatherGame(tx,ty){
+  mgGather.swipeTrail.push({x:tx,y:ty,life:15});
+  for(let i=mgGather.items.length-1;i>=0;i--){
+    const it=mgGather.items[i];
+    if(!it.collected&&Math.hypot(tx-it.x,ty-it.y)<30){
+      it.collected=true;state.mg.combo++;
+      state.mg.score+=Math.floor(it.value*(1+state.mg.combo*0.05));
+      state.res.food+=it.value;
+      playAudio('pickup',0.5,1+state.mg.combo*0.02,280);
+      spawnParticles(it.x,it.y,'#88ff44',4);
+    }
+  }
+}
+// Pre-generate static positions for backgrounds
+const gatherBgRects=Array.from({length:20},(_,i)=>({
+  x:(i*97+13)%GW,y:(i*73+29)%GH,w:60+(i*17)%40,h:60+(i*23)%40,g:60+(i*11)%40
+}));
+const weedPositions=Array.from({length:20},(_,i)=>({
+  x:(i*137+41)%GW,y:(i*89+53)%(GH*2/3-60)
+}));
+function drawGatherGame(){
+  // Forest bg (fixed positions, no flicker)
+  ctx.fillStyle='#1a3a12';ctx.fillRect(0,0,GW,GH);
+  gatherBgRects.forEach(r=>{
+    ctx.fillStyle=`rgba(0,${r.g},0,0.3)`;
+    ctx.fillRect(r.x,r.y,r.w,r.h);
+  });
+  // Items
+  mgGather.items.forEach(it=>{
+    if(it.collected)return;
+    const pulse=1+Math.sin(it.life*0.1)*0.1;
+    ctx.font=`${Math.floor(28*pulse)}px sans-serif`;ctx.textAlign='center';
+    ctx.globalAlpha=Math.min(1,it.life/20);
+    ctx.fillText(it.emoji,it.x,it.y);
+    ctx.globalAlpha=1;
+  });
+  // Swipe trail
+  ctx.strokeStyle='rgba(255,215,0,0.6)';ctx.lineWidth=3;
+  if(mgGather.swipeTrail.length>1){
+    ctx.beginPath();ctx.moveTo(mgGather.swipeTrail[0].x,mgGather.swipeTrail[0].y);
+    mgGather.swipeTrail.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();
+  }
+  // HUD
+  ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.textAlign='left';
+  ctx.fillText(t('score')+': '+state.mg.score,20,30);
+  ctx.fillText(t('combo')+': '+state.mg.combo,20,52);
+  ctx.textAlign='right';
+  ctx.fillText(t('time')+': '+Math.ceil(state.mg.timer/60)+'s',GW-20,30);
+}
+
+// ═══════════════════════════════════════════
+// 小遊戲結算 & 共用
+// ═══════════════════════════════════════════
+let resBefore={};
+function snapshotRes(){resBefore={wood:state.res.wood,stone:state.res.stone,food:state.res.food,gold:state.res.gold,seed:state.res.seed}}
+function endMiniGame(){
+  state.mg.phase='result';
+  const score=state.mg.score;
+  if(state.action==='farm'){state.res.seed+=Math.floor(score/20)}
+  if(state.action==='dig'){state.res.stone+=Math.floor(score/30);state.res.wood+=Math.floor(score/40)}
+  state.res.gold+=Math.floor(score/50);
+  // Advance day every 3 mini-games, not every time
+  state.mgCount=(state.mgCount||0)+1;
+  if(state.mgCount>=3){state.mgCount=0;advanceDay()}
+  else{saveGame()}
+  // Upgrade mini-game stats based on score
+  if(score>=50){
+    if(state.action==='farm'&&state.upgrades.farmRounds<12)state.upgrades.farmRounds++;
+    if(state.action==='dig'&&state.upgrades.digTime<15)state.upgrades.digTime++;
+    if(state.action==='fish'&&state.upgrades.fishTime<20)state.upgrades.fishTime++;
+    if(state.action==='gather'&&state.upgrades.gatherTime<15)state.upgrades.gatherTime++;
+  }
+}
+function exitMiniGameEarly(){
+  // farm/dig: resources not yet awarded — give partial based on current score
+  const score=state.mg.score;
+  if(state.action==='farm'){state.res.seed+=Math.floor(score/20)}
+  if(state.action==='dig'){state.res.stone+=Math.floor(score/30);state.res.wood+=Math.floor(score/40)}
+  state.res.gold+=Math.floor(score/50);
+  // fish/gather: resources already added during play — no extra needed
+  state.mg.phase='result';
+  state.mgCount=(state.mgCount||0)+1;
+  if(state.mgCount>=3){state.mgCount=0;advanceDay()}
+  else{saveGame()}
+}
+function drawResultScreen(){
+  ctx.fillStyle='rgba(0,0,0,0.8)';ctx.fillRect(0,0,GW,GH);
+  ctx.fillStyle='#ffd700';ctx.font='28px sans-serif';ctx.textAlign='center';
+  ctx.fillText(t('result'),GW/2,GH/2-80);
+  ctx.fillStyle='#fff';ctx.font='22px sans-serif';
+  ctx.fillText(t('score')+': '+state.mg.score,GW/2,GH/2-40);
+  ctx.fillText(t('earned')+':',GW/2,GH/2-10);
+  // Show resource deltas
+  const dw=state.res.wood-(resBefore.wood||0),ds=state.res.stone-(resBefore.stone||0);
+  const df=state.res.food-(resBefore.food||0),dg=state.res.gold-(resBefore.gold||0);
+  const dse=state.res.seed-(resBefore.seed||0);
+  ctx.font='18px sans-serif';ctx.fillStyle='#88ff88';
+  ctx.fillText('🪵+'+(dw>0?dw:0)+'  🪨+'+(ds>0?ds:0)+'  🌾+'+(df>0?df:0)+'  💰+'+(dg>0?dg:0)+'  🌱+'+(dse>0?dse:0),GW/2,GH/2+20);
+  // Upgrade info
+  if(state.mg.score>=50){
+    ctx.fillStyle='#ffaa00';ctx.font='16px sans-serif';
+    ctx.fillText(lang==='zh'?'⬆ 小遊戲已升級！時間/輪數 +1':'⬆ Mini-game upgraded! Duration +1',GW/2,GH/2+50);
+  }
+  // Day info
+  const dayAdv=((state.mgCount||0)===0);
+  ctx.fillStyle='#c8a456';ctx.font='18px sans-serif';
+  if(dayAdv)ctx.fillText(t('day',{n:state.day})+' '+t('weather_'+state.weather),GW/2,GH/2+75);
+  else ctx.fillText(lang==='zh'?'再玩 '+(3-(state.mgCount||0))+' 次就過一天':'Play '+(3-(state.mgCount||0))+' more for next day',GW/2,GH/2+75);
+  // Back button (large, easy to tap)
+  ctx.fillStyle='#ffd700';
+  drawRoundRect(GW/2-100,GH/2+90,200,50,10);ctx.fill();
+  ctx.fillStyle='#1a1408';ctx.font='bold 22px sans-serif';
+  ctx.fillText(t('backToFarm'),GW/2,GH/2+120);
+  // Hint
+  ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font='13px sans-serif';
+  ctx.fillText(lang==='zh'?'或點擊任意處返回':'or tap anywhere',GW/2,GH/2+160);
+}
+
+// ═══════════════════════════════════════════
+// 農場視圖渲染
+// ═══════════════════════════════════════════
+function drawFarmView(){
+  // Sky gradient based on weather
+  const skyColors={sun:['#87CEEB','#4a8c3f'],rain:['#556677','#3a5530'],drought:['#cc9944','#6a5a2a'],storm:['#334455','#2a3a20']};
+  const[sky,ground]=skyColors[state.weather]||skyColors.sun;
+  ctx.fillStyle=sky;ctx.fillRect(0,0,GW,GH/3);
+  ctx.fillStyle=ground;ctx.fillRect(0,GH/3,GW,GH*2/3);
+
+  // Draw tileset ground pattern with variety
+  const ts=IMGS.tileset;
+  if(ts){
+    // Use different tile positions for variety: grass variants at row 0
+    const tileVariants=[[0,0],[16,0],[32,0],[48,0]];
+    for(let y=0;y<10;y++)for(let x=0;x<12;x++){
+      const vi=(x*7+y*13)%tileVariants.length;
+      const[tx,ty]=tileVariants[vi];
+      ctx.drawImage(ts,tx,ty,16,16,x*DTILE,GH/3+y*DTILE,DTILE,DTILE);
+    }
+  }else{
+    for(let y=0;y<10;y++)for(let x=0;x<12;x++){
+      ctx.fillStyle=(x+y)%2===0?'#4a7a30':'#3d6a28';
+      ctx.fillRect(x*DTILE,GH/3+y*DTILE,DTILE,DTILE);
+    }
+  }
+
+  // Draw soil & crops
+  for(let y=0;y<10;y++)for(let x=0;x<12;x++){
+    const cell=state.grid[y][x];
+    const dx=x*DTILE,dy=GH/3+y*DTILE;
+    if(cell){
+      // Soil
+      const soilImg=IMGS['soil'+(Math.min(2,cell.stage>0?2:0))];
+      if(soilImg)ctx.drawImage(soilImg,0,0,soilImg.width,soilImg.height,dx,dy,DTILE,DTILE);
+      else{ctx.fillStyle='#5a3a1a';ctx.fillRect(dx+2,dy+2,DTILE-4,DTILE-4)}
+      // Crop sprite
+      const cropImg=IMGS[`crop_${cell.type}_${cell.stage}`];
+      if(cropImg)ctx.drawImage(cropImg,0,0,cropImg.width,cropImg.height,dx,dy-8,DTILE,DTILE+8);
+      // Harvest-ready glow
+      if(cell.stage>=5){
+        ctx.globalAlpha=0.3+Math.sin(Date.now()*0.005)*0.15;
+        ctx.fillStyle='#ffd700';ctx.fillRect(dx,dy,DTILE,DTILE);
+        ctx.globalAlpha=1;
+      }
+    }
+  }
+
+  // Draw animals using sprite sheets
+  const animalKeys={chicken:'animal_chicken',cow:'animal_cow',sheep:'animal_sheep',duck:'animal_duck',pig:'animal_pig'};
+  const animalFallback={chicken:'🐔',cow:'🐄',sheep:'🐑',duck:'🦆',pig:'🐷'};
+  let ax=20,ay=GH/3+10*DTILE+10;
+  const aFrame=Math.floor(Date.now()/250)%4;
+  for(const[type,count]of Object.entries(state.animals)){
+    const spr=IMGS[animalKeys[type]];
+    for(let i=0;i<count;i++){
+      if(spr){
+        const fw=spr.width/4;
+        ctx.drawImage(spr,aFrame*fw,0,fw,spr.height,ax-8,ay-20,fw*SCALE,spr.height*SCALE);
+      }else{
+        ctx.font='20px sans-serif';ctx.fillText(animalFallback[type],ax,ay);
+      }
+      ax+=36;if(ax>GW-40){ax=20;ay+=36}
+    }
+  }
+
+  // Draw player character sprite
+  const charAnims={idle:'char_idle',farm:'char_water',dig:'char_dig',fish:'char_reeling',gather:'char_carry'};
+  const charFrameCounts={idle:9,farm:12,dig:13,fish:16,gather:8};
+  const curAnim=state.action==='idle'?'idle':state.action;
+  const charSpr=IMGS[charAnims[curAnim]||'char_idle'];
+  if(charSpr){
+    const fc=charFrameCounts[curAnim]||9;
+    const cf=Math.floor(Date.now()/120)%fc;
+    const cfw=charSpr.width/fc;
+    const cx=GW/2-cfw*SCALE/2, cy=GH/3+3*DTILE;
+    ctx.drawImage(charSpr,cf*cfw,0,cfw,charSpr.height,cx,cy,cfw*SCALE,charSpr.height*SCALE);
+  }
+
+  // Draw trees & decorations
+  const decoFrame=Math.floor(Date.now()/200)%4;
+  const tree1=IMGS.tree1,tree2=IMGS.tree2,mush=IMGS.mushroom;
+  if(tree1){const fw=tree1.width/4;ctx.drawImage(tree1,decoFrame*fw,0,fw,tree1.height,8,GH/3-40,fw*SCALE,tree1.height*SCALE)}
+  if(tree2){const fw=tree2.width/4;ctx.drawImage(tree2,decoFrame*fw,0,fw,tree2.height,GW-60,GH/3-40,fw*SCALE,tree2.height*SCALE)}
+  if(mush&&state.farmStage>=1){const fw=mush.width/4;ctx.drawImage(mush,decoFrame*fw,0,fw,mush.height,60,GH/3+8*DTILE,fw*SCALE,mush.height*SCALE)}
+  if(mush&&state.farmStage>=2){const fw=mush.width/4;ctx.drawImage(mush,decoFrame*fw,0,fw,mush.height,GW-100,GH/3+6*DTILE,fw*SCALE,mush.height*SCALE)}
+
+  // Draw windmill if stage >= 2
+  if(state.farmStage>=2){
+    const wm=IMGS.windmill;
+    if(wm){
+      const frame=Math.floor(Date.now()/150)%9;
+      const fw=wm.width/9;
+      ctx.drawImage(wm,frame*fw,0,fw,wm.height,GW-80,GH/3-60,64,64);
+    }
+  }
+
+  // Farm stage decorations
+  if(state.farmStage>=3){
+    // Chimney smoke
+    ctx.globalAlpha=0.4;ctx.fillStyle='#aaa';
+    for(let i=0;i<3;i++){
+      const sy=GH/3-30-i*15-Math.sin(Date.now()*0.003+i)*5;
+      ctx.beginPath();ctx.arc(100+i*3,sy,6+i*2,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  if(state.farmStage>=4){
+    // Golden glow
+    ctx.globalAlpha=0.08;ctx.fillStyle='#ffd700';ctx.fillRect(0,0,GW,GH);ctx.globalAlpha=1;
+  }
+
+  // Weeds overlay (fixed positions, no flicker)
+  if(state.eco.weeds>20){
+    ctx.globalAlpha=Math.min(0.3,state.eco.weeds/200);
+    ctx.fillStyle='#4a6a20';
+    const weedCount=Math.min(20,Math.floor(state.eco.weeds/5));
+    for(let i=0;i<weedCount;i++){
+      ctx.fillRect(weedPositions[i].x,GH/3+weedPositions[i].y,8,12);
+    }
+    ctx.globalAlpha=1;
+  }
+
+  // Weather effects (animated rain using time-based offset, not random)
+  if(state.weather==='rain'||state.weather==='storm'){
+    ctx.strokeStyle=state.weather==='storm'?'rgba(180,200,255,0.5)':'rgba(150,180,255,0.3)';
+    ctx.lineWidth=1;
+    const rt=Date.now()*0.05;
+    for(let i=0;i<40;i++){
+      const rx=(i*47+rt)%GW, ry=(i*31+rt*1.5)%GH;
+      ctx.beginPath();ctx.moveTo(rx,ry);ctx.lineTo(rx-3,ry+14);ctx.stroke();
+    }
+  }
+  if(state.weather==='storm'&&Math.floor(Date.now()/500)%7===0){
+    ctx.globalAlpha=0.15;ctx.fillStyle='#fff';ctx.fillRect(0,0,GW,GH);ctx.globalAlpha=1;
+  }
+}
+
+// ═══════════════════════════════════════════
+// HUD & UI
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// Canvas-drawn UI (no HTML buttons)
+// ═══════════════════════════════════════════
+function drawTopBar(){
+  ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,GW,TOP_H);
+  // Back button — shows "結算" during active mini-game, "返回" otherwise
+  ctx.fillStyle='#c8a456';ctx.font='bold 14px sans-serif';ctx.textAlign='left';
+  const _inMg=state.screen==='minigame'&&state.mg.phase!=='result';
+  ctx.fillText(_inMg?(lang==='zh'?'⚡ 結算':'⚡ Exit'):'← '+(lang==='zh'?'返回':'Back'),10,26);
+  // Right buttons
+  ctx.textAlign='right';
+  ctx.fillText(lang==='zh'?'繁中/EN':'EN/繁中',GW-10,16);
+  ctx.fillText(state.paused?'▶':'⏸',GW-90,16);
+  ctx.fillText(audioMuted?'🔇':'🔊',GW-120,16);
+  // Day & resources (second line)
+  ctx.textAlign='left';ctx.font='12px sans-serif';ctx.fillStyle='#e8ddd0';
+  ctx.fillText(t('day',{n:state.day})+' '+t('weather_'+state.weather)+' | '+t('farmStage'+state.farmStage),10,38);
+}
+function drawHUD(){
+  // Resources bar below top bar
+  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,TOP_H,GW,20);
+  ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillStyle='#e8ddd0';
+  ctx.fillText('🪵'+state.res.wood+' 🪨'+state.res.stone+' 🌾'+state.res.food+' 💰'+state.res.gold+' 🌱'+state.res.seed,8,TOP_H+14);
+  ctx.textAlign='right';
+  ctx.fillStyle=state.eco.bugs>20?'#ff6644':'#88aa44';
+  ctx.fillText('🐛'+Math.floor(state.eco.bugs)+' 🌿'+Math.floor(state.eco.fertility)+' 🌾'+Math.floor(100-state.eco.weeds)+'%',GW-8,TOP_H+14);
+}
+function drawActionBar(){
+  const y=GH-BOT_H;
+  ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,y,GW,BOT_H);
+  const btnW=GW/ACTION_BTNS.length;
+  ACTION_BTNS.forEach((b,i)=>{
+    const bx=i*btnW,by=y+4;
+    const sel=state.action===b.id;
+    // Button bg
+    ctx.fillStyle=sel?'rgba(200,164,86,0.3)':'rgba(30,24,18,0.8)';
+    drawRoundRect(bx+4,by,btnW-8,BOT_H-8,8);ctx.fill();
+    ctx.strokeStyle=sel?'#ffd700':'#c8a456';ctx.lineWidth=sel?2:1;
+    drawRoundRect(bx+4,by,btnW-8,BOT_H-8,8);ctx.stroke();
+    // Icon
+    ctx.font='20px sans-serif';ctx.textAlign='center';
+    ctx.fillStyle='#fff';
+    ctx.fillText(b.icon,bx+btnW/2,by+24);
+    // Label
+    ctx.font='12px sans-serif';ctx.fillStyle=sel?'#ffd700':'#e8ddd0';
+    ctx.fillText(lang==='zh'?b.zh:b.en,bx+btnW/2,by+40);
+  });
+}
+
+function drawQuestPanel(){
+  const quests=getAvailableQuests();
+  if(quests.length===0)return;
+  const qH=40+quests.length*34;
+  const panelY=GH-qH-10;
+  ctx.fillStyle='rgba(0,0,0,0.8)';
+  drawRoundRect(10,panelY,GW-20,qH,8);ctx.fill();
+  ctx.strokeStyle='#c8a456';ctx.lineWidth=1;
+  drawRoundRect(10,panelY,GW-20,qH,8);ctx.stroke();
+  ctx.fillStyle='#ffd700';ctx.font='16px sans-serif';ctx.textAlign='left';
+  ctx.fillText('📋 '+t('quest'),20,panelY+18);
+  quests.forEach((q,i)=>{
+    const y=panelY+36+i*34;
+    const desc=lang==='zh'?q.desc_zh:q.desc_en;
+    const detail=lang==='zh'?q.detail_zh:q.detail_en;
+    const canComplete=checkQuestComplete(q);
+    ctx.fillStyle=canComplete?'#88ff88':'#ddd';ctx.font='14px sans-serif';
+    ctx.fillText((canComplete?'✅ ':'○ ')+desc,20,y);
+    ctx.fillStyle='#888';ctx.font='11px sans-serif';
+    ctx.fillText('  '+detail,24,y+14);
+    if(canComplete){
+      ctx.fillStyle='#ffd700';ctx.font='14px sans-serif';
+      ctx.fillText('['+t('complete')+']',GW-80,y);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+// 標題畫面
+// ═══════════════════════════════════════════
+function drawTitleScreen(){
+  // Background
+  ctx.fillStyle='#1a3a12';ctx.fillRect(0,0,GW,GH);
+  // Animated grass
+  const time=Date.now()*0.001;
+  for(let i=0;i<40;i++){
+    const gx=i*(GW/40),gy=GH*0.6+Math.sin(time+i*0.5)*8;
+    ctx.fillStyle=`hsl(${100+Math.sin(i)*10},60%,${30+Math.sin(time+i)*5}%)`;
+    ctx.fillRect(gx,gy,GW/40+1,GH-gy);
+  }
+  // Sun
+  ctx.fillStyle='#ffd700';ctx.beginPath();ctx.arc(GW*0.75,GH*0.2,40,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=0.15;ctx.beginPath();ctx.arc(GW*0.75,GH*0.2,60,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+  // Title
+  ctx.fillStyle='#fff';ctx.font='36px sans-serif';ctx.textAlign='center';
+  ctx.fillText(t('title'),GW/2,GH*0.35);
+  // Subtitle
+  ctx.fillStyle='#c8a456';ctx.font='18px sans-serif';
+  ctx.fillText('🌱 🐔 🌻 🐄 🎣',GW/2,GH*0.42);
+  // Tap to start
+  ctx.globalAlpha=0.5+Math.sin(time*3)*0.5;
+  ctx.fillStyle='#ffd700';ctx.font='22px sans-serif';
+  ctx.fillText(t('tap_start'),GW/2,GH*0.55);
+  ctx.globalAlpha=1;
+  // Load progress
+  if(loadCount<totalAssets){
+    ctx.fillStyle='#555';ctx.fillRect(GW/4,GH*0.7,GW/2,12);
+    ctx.fillStyle='#c8a456';ctx.fillRect(GW/4,GH*0.7,(GW/2)*(loadCount/totalAssets),12);
+    ctx.fillStyle='#aaa';ctx.font='14px sans-serif';
+    ctx.fillText(loadCount+'/'+totalAssets,GW/2,GH*0.7+28);
+  }
+}
+
+// ═══════════════════════════════════════════
+// 教學覆蓋
+// ═══════════════════════════════════════════
+function drawTutorial(){
+  ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,GW,GH);
+  ctx.fillStyle='#ffd700';ctx.font='26px sans-serif';ctx.textAlign='center';
+  ctx.fillText(t('tutorial_title'),GW/2,GH/2-100);
+  ctx.fillStyle='#e8ddd0';ctx.font='16px sans-serif';
+  const lines=t('tutorial_body').split('\n');
+  lines.forEach((line,i)=>ctx.fillText(line,GW/2,GH/2-50+i*24));
+  // OK button
+  ctx.fillStyle='#ffd700';
+  drawRoundRect(GW/2-80,GH/2+80,160,40,8);ctx.fill();
+  ctx.fillStyle='#1a1408';ctx.font='20px sans-serif';
+  ctx.fillText(t('tutorial_ok'),GW/2,GH/2+105);
+}
+
+// ═══════════════════════════════════════════
+// 掛機模式
+// ═══════════════════════════════════════════
+function updateIdle(dt){
+  state.idleTimer+=dt;
+  if(state.idleTimer>=360){// every 6 seconds at 60fps (was 3)
+    state.idleTimer=0;
+    state.res.wood+=Math.random()<0.15?1:0;
+    state.res.stone+=Math.random()<0.1?1:0;
+    state.res.food+=Math.random()<0.5?1:0;
+    state.res.gold+=Math.random()<0.05?1:0;
+    // Auto-plant if seeds
+    if(state.res.seed>0){
+      for(let y=0;y<10;y++){for(let x=0;x<12;x++){
+        if(!state.grid[y][x]&&state.res.seed>0){
+          state.grid[y][x]={type:CROP_TYPES[Math.floor(Math.random()*6)],stage:0,quality:1,growAcc:0};
+          state.res.seed--;break;
+        }
+      };if(state.res.seed<=0)break}
+    }
+  }
+  // Auto harvest mature crops
+  for(let y=0;y<10;y++)for(let x=0;x<12;x++){
+    const c=state.grid[y][x];
+    if(c&&c.stage>=5){
+      state.res.food+=1;// idle harvest gives less than manual (manual=2~3)
+      state.grid[y][x]=null;
+    }
+  }
+  // advanceDay is handled in gameLoop idleAccum, not here
+}
+
+// ═══════════════════════════════════════════
+// 輸入處理
+// ═══════════════════════════════════════════
+let touching=false,touchX=0,touchY=0;
+function getCanvasPos(e){
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=GW/rect.width,scaleY=GH/rect.height;
+  if(e.touches){
+    return{x:(e.touches[0].clientX-rect.left)*scaleX,y:(e.touches[0].clientY-rect.top)*scaleY};
+  }
+  return{x:(e.clientX-rect.left)*scaleX,y:(e.clientY-rect.top)*scaleY};
+}
+
+function handleTap(px,py){
+  // Top bar taps (always active)
+  if(py<TOP_H){
+    if(px<80){
+      if(state.screen==='minigame'&&state.mg.phase!=='result'){exitMiniGameEarly();return}
+      window.location.href='../';return;
+    }// Back
+    if(px>GW-140&&px<GW-100){togglePause();return}// Pause
+    if(px>GW-170&&px<GW-130){toggleMute();return}// Mute
+    if(px>GW-80){toggleLang();return}// Lang
+    return;
+  }
+  // Action bar taps (farm screen or result screen)
+  if(py>GH-BOT_H&&(state.screen==='farm'||(state.screen==='minigame'&&state.mg.phase==='result'))){
+    const btnW=GW/ACTION_BTNS.length;
+    const idx=Math.floor(px/btnW);
+    if(idx>=0&&idx<ACTION_BTNS.length){
+      selectAction(ACTION_BTNS[idx].id);
+    }
+    return;
+  }
+  if(state.screen==='title'){
+    if(loadCount>=totalAssets){
+      loadGame();
+      if(!state.tutorialSeen){state.screen='tutorial'}
+      else{state.screen='farm'}
+    }
+    return;
+  }
+  if(state.screen==='tutorial'){
+    // Check OK button
+    if(px>GW/2-80&&px<GW/2+80&&py>GH/2+80&&py<GH/2+120){
+      state.tutorialSeen=true;localStorage.setItem('sunnyfarmTutorial','1');
+      state.screen='farm';
+    }
+    return;
+  }
+  if(state.screen==='minigame'){
+    if(state.mg.phase==='result'){
+      state.screen='farm';state.mg.phase='ready';// tap anywhere to return
+      return;
+    }
+    if(state.action==='farm'){
+      if(state.mg.phase==='choose'){
+        // Crop selection grid tap
+        PLANTABLE_CROPS.forEach((c,i)=>{
+          const cx=40+(i%3)*(GW-80)/3,cy=120+Math.floor(i/3)*110;
+          if(px>cx&&px<cx+90&&py>cy&&py<cy+90)mgFarm.selectedCrop=i;
+        });
+        // Start button
+        if(px>GW/2-60&&px<GW/2+60&&py>GH-160&&py<GH-120)chooseCrop(mgFarm.selectedCrop);
+        return;
+      }
+      tapFarmGame();
+    }
+    if(state.action==='dig')tapDigGame(px,py);
+    if(state.action==='gather')swipeGatherGame(px,py);
+    return;
+  }
+  if(state.screen==='farm'){
+    // Check quest completion taps
+    const quests=getAvailableQuests();
+    quests.forEach((q,i)=>{
+      if(checkQuestComplete(q)){
+        const availQ=getAvailableQuests();
+        const qH=40+availQ.length*34;
+        const qy=(GH-qH-10)+36+i*34;
+        if(py>qy-12&&py<qy+8)completeQuest(q);
+      }
+    });
+    // Tap to harvest mature crops
+    const gx=Math.floor(px/DTILE),gy=Math.floor((py-GH/3)/DTILE);
+    if(gy>=0&&gy<10&&gx>=0&&gx<12){
+      const cell=state.grid[gy][gx];
+      if(cell&&cell.stage>=5){
+        const bonus=cell.quality>=2?3:2;
+        state.res.food+=bonus;state.res.gold+=1;
+        state.grid[gy][gx]=null;
+        addNotif('+'+bonus+' '+t('food')+' +1 '+t('gold'),'#88ff88');
+        playAudio('pickup',0.7,1.1,280);
+        spawnParticles(px,py,'#88ff44',6);
+        saveGame();
+      }
+    }
+  }
+}
+
+canvas.addEventListener('mousedown',e=>{
+  const p=getCanvasPos(e);touching=true;touchX=p.x;touchY=p.y;
+  handleTap(p.x,p.y);
+  if(state.screen==='minigame'&&state.action==='fish')mgFish.holding=true;
+});
+canvas.addEventListener('mouseup',()=>{touching=false;if(state.screen==='minigame'&&state.action==='fish')mgFish.holding=false});
+canvas.addEventListener('mousemove',e=>{
+  if(!touching)return;const p=getCanvasPos(e);touchX=p.x;touchY=p.y;
+  if(state.screen==='minigame'&&state.action==='gather')swipeGatherGame(p.x,p.y);
+});
+
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();const p=getCanvasPos(e);touching=true;touchX=p.x;touchY=p.y;
+  handleTap(p.x,p.y);
+  if(state.screen==='minigame'&&state.action==='fish')mgFish.holding=true;
+},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  e.preventDefault();touching=false;
+  if(state.screen==='minigame'&&state.action==='fish')mgFish.holding=false;
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();if(!e.touches[0])return;
+  const rect=canvas.getBoundingClientRect();
+  const sx=GW/rect.width,sy=GH/rect.height;
+  touchX=(e.touches[0].clientX-rect.left)*sx;touchY=(e.touches[0].clientY-rect.top)*sy;
+  if(state.screen==='minigame'&&state.action==='gather')swipeGatherGame(touchX,touchY);
+},{passive:false});
+
+// ═══════════════════════════════════════════
+// Action bar
+// ═══════════════════════════════════════════
+function selectAction(action){
+  if(action==='idle'){
+    state.action='idle';state.screen='farm';
+    addNotif(t('idleNotice'),'#aaaaff');
+    return;
+  }
+  state.action=action;
+  if(action==='farm')startFarmGame();
+  if(action==='dig')startDigGame();
+  if(action==='fish')startFishGame();
+  if(action==='gather')startGatherGame();
+}
+
+// ═══════════════════════════════════════════
+// 暫停
+// ═══════════════════════════════════════════
+function togglePause(){
+  state.paused=!state.paused;
+}
+function drawPauseOverlay(){
+  ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,GW,GH);
+  ctx.fillStyle='#ffd700';ctx.font='32px sans-serif';ctx.textAlign='center';
+  ctx.fillText(lang==='zh'?'⏸ 暫停中':'⏸ Paused',GW/2,GH/2-20);
+  ctx.fillStyle='#e8ddd0';ctx.font='18px sans-serif';
+  ctx.fillText(lang==='zh'?'按 ▶ 或 P 繼續':'Press ▶ or P to resume',GW/2,GH/2+20);
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='p'||e.key==='P'||e.key==='Escape')togglePause();
+});
+
+// ═══════════════════════════════════════════
+// Canvas 縮放（手機響應式）
+// ═══════════════════════════════════════════
+function resizeAll(){
+  const W=window.innerWidth, H=window.innerHeight;
+  const sc=Math.min(W/GW,H/GH);
+  canvas.style.width=Math.floor(GW*sc)+'px';
+  canvas.style.height=Math.floor(GH*sc)+'px';
+  canvas.style.left=Math.floor((W-GW*sc)/2)+'px';
+  canvas.style.top=Math.floor((H-GH*sc)/2)+'px';
+}
+let resizeTimer;
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(resizeAll,100)});
+
+// ═══════════════════════════════════════════
+// 主迴圈
+// ═══════════════════════════════════════════
+let lastTime=0,idleAccum=0;
+function gameLoop(ts){
+  const dt=Math.min(50,ts-lastTime);lastTime=ts;
+
+  // Pause check
+  if(state.paused){
+    ctx.clearRect(0,0,GW,GH);
+    if(state.screen==='farm')drawFarmView();
+    drawPauseOverlay();
+    requestAnimationFrame(gameLoop);return;
+  }
+
+  // Update
+  if(state.screen==='minigame'&&state.mg.phase==='play'){
+    if(state.action==='farm')updateFarmGame();
+    if(state.action==='dig')updateDigGame();
+    if(state.action==='fish')updateFishGame();
+    if(state.action==='gather')updateGatherGame();
+  }
+  if(state.screen==='farm'&&state.action==='idle'){
+    updateIdle(1);
+    idleAccum++;
+    if(idleAccum>=3600){idleAccum=0;advanceDay()}// advance day every ~60s (was 30)
+  }
+  updateNotifs();
+  updateParticles();
+
+  // Render
+  ctx.clearRect(0,0,GW,GH);
+  if(state.screen==='title'){drawTitleScreen()}
+  else if(state.screen==='tutorial'){drawFarmView();drawTutorial()}
+  else if(state.screen==='farm'){
+    drawFarmView();drawQuestPanel();
+    if(state.action==='idle'){
+      ctx.fillStyle='rgba(100,100,200,0.06)';ctx.fillRect(0,0,GW,GH);
+      // Idle status panel
+      ctx.fillStyle='rgba(0,0,0,0.6)';drawRoundRect(GW/2-120,GH/2-50,240,100,8);ctx.fill();
+      ctx.fillStyle='rgba(200,200,255,0.8)';ctx.font='18px sans-serif';ctx.textAlign='center';
+      ctx.fillText('💤 '+t('idleNotice'),GW/2,GH/2-25);
+      // Show crop count growing
+      let cropCount=0,matureCount=0;
+      for(let y=0;y<10;y++)for(let x=0;x<12;x++){
+        if(state.grid[y][x]){cropCount++;if(state.grid[y][x].stage>=5)matureCount++}
+      }
+      ctx.fillStyle='#88cc88';ctx.font='14px sans-serif';
+      ctx.fillText((lang==='zh'?'作物 ':'Crops ')+cropCount+(lang==='zh'?' | 成熟 ':' | Mature ')+matureCount,GW/2,GH/2);
+      const totalA=Object.values(state.animals).reduce((s,v)=>s+v,0);
+      ctx.fillText((lang==='zh'?'動物 ':'Animals ')+totalA+(lang==='zh'?' | 下一天 ':' | Next day ')+Math.ceil((3600-idleAccum)/60)+'s',GW/2,GH/2+20);
+    }
+  }
+  else if(state.screen==='minigame'){
+    if(state.mg.phase==='result'){drawResultScreen()}
+    else{
+      if(state.action==='farm')drawFarmGame();
+      if(state.action==='dig')drawDigGame();
+      if(state.action==='fish')drawFishGame();
+      if(state.action==='gather')drawGatherGame();
+    }
+  }
+  // Always draw Canvas UI bars on top (every screen except title)
+  if(state.screen!=='title'){drawTopBar();drawHUD();drawActionBar()}
+  drawParticles();
+  drawNotifs();
+  // Version watermark (helps debug caching)
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='10px sans-serif';ctx.textAlign='right';
+  ctx.fillText('v3',GW-4,GH-2);
+  requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════
+// 初始化
+// ═══════════════════════════════════════════
+function init(){
+  loadAllAssets();
+  resizeAll();
+  // audioMuted state already loaded from localStorage
+  const startOnce=()=>{startBGM(BGM_URL);document.removeEventListener('click',startOnce);document.removeEventListener('touchend',startOnce)};
+  document.addEventListener('click',startOnce);document.addEventListener('touchend',startOnce);
+  requestAnimationFrame(gameLoop);
+}
+init();
+
+</script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+</body>
+</html>
