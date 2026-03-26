@@ -357,6 +357,7 @@ const i18n={
     msg_bloodflow_auto:'，每 ',msg_bloodflow_auto_unit:' 秒自動生成 1 血珠',
     msg_hp_full:'血量已滿！',msg_no_heal:'沒有驅蚊液！',
     msg_no_bomb:'沒有炸彈！',msg_no_zap:'尚未購買電蚊拍！',
+    msg_maxed:'已滿級！',msg_no_blood:'蚊子血不足！需要 ',msg_autoswat_up:'自動蚊拍機升級',
     msg_zap_charging:'電蚊拍充能中… ',msg_zap_charging_unit:'s',
     tut_title:'📖 新手指南',
     tut_1:'🖱 點擊蚊子消滅牠們，獲得分數',
@@ -446,6 +447,7 @@ const i18n={
     msg_bloodflow_auto:', auto ',msg_bloodflow_auto_unit:'s/drop',
     msg_hp_full:'HP full!',msg_no_heal:'No repellent!',
     msg_no_bomb:'No bombs!',msg_no_zap:'Bug Zapper not purchased!',
+    msg_maxed:'Already maxed!',msg_no_blood:'Not enough blood! Need ',msg_autoswat_up:'Auto-Swatter upgraded',
     msg_zap_charging:'Zapper charging… ',msg_zap_charging_unit:'s',
     tut_title:'📖 How to Play',
     tut_1:'🖱 Click mosquitoes to kill them and earn points',
@@ -522,6 +524,34 @@ const DIFFICULTY={
   hard:  {diffKey:'hard', color:'#f0d060',spawnInterval:1400,maxMosq:15,evolveTime:7000,bossInterval:45,speedMult:1.35,mutantProb:0.08,invisProb:0.13,fastProb:0.18},
   hell:  {diffKey:'hell', color:'#e03050',spawnInterval:900,maxMosq:18,evolveTime:4000,bossInterval:30,speedMult:1.75,mutantProb:0.12,invisProb:0.16,fastProb:0.22},
 };
+// ── 螢幕震動 ──────────────────────────────────
+let shakeX=0,shakeY=0,shakeMag=0,shakeTimer=0;
+function triggerShake(magnitude,duration){shakeMag=magnitude;shakeTimer=duration}
+function updateShake(dt){
+  if(shakeTimer>0){shakeTimer-=dt;shakeX=(Math.random()-0.5)*shakeMag*2;shakeY=(Math.random()-0.5)*shakeMag*2;shakeMag*=0.92}
+  else{shakeX=0;shakeY=0}
+}
+// ── 遊戲內難度遞增 ──────────────────────────────
+function getDynamicDifficulty(){
+  const t=state.time/1000;// seconds played
+  const scaleFactor=1+t/120;// +100% harder every 2 minutes
+  return {
+    speedBoost: Math.min(scaleFactor,3),// cap at 3x
+    spawnMult: Math.max(0.4, 1/scaleFactor),// spawn faster
+    maxMosqBoost: Math.floor(t/30),// +1 max every 30s
+  };
+}
+// ── Personal Best ──────────────────────────────
+let personalBest=JSON.parse(localStorage.getItem('mosquitoPB')||'{}');
+function updatePB(){
+  const d=currentDiff.diffKey;
+  if(!personalBest[d]||state.score>personalBest[d].score){
+    personalBest[d]={score:state.score,combo:state.maxCombo,time:Math.floor(state.time/1000),bosses:state.bossKills};
+    localStorage.setItem('mosquitoPB',JSON.stringify(personalBest));
+  }
+}
+// ── 難度倍率計分 ──────────────────────────────────
+const DIFF_SCORE_MULT={normal:1,hard:1.5,hell:2.5};
 let currentDiff=DIFFICULTY.normal;
 
 // ── 色彩 ──────────────────────────────────────
@@ -781,12 +811,16 @@ class Mosquito{
     // Boss
     if(this.type==='boss'){
       this.sprintCooldown-=dt; this.spawnTimer+=dt;
+      // Boss rage mode when HP < 40%
+      const rage=this.hp<this.maxHp*0.4;
+      const rageMult=rage?2:1;
       if(this.sprintCooldown<=0){
-        const a=Math.atan2(H/2-this.y,W/2-this.x)+(Math.random()-.5)*1.5;
-        this.vx=Math.cos(a)*this.speed*3; this.vy=Math.sin(a)*this.speed*3;
-        this.sprintCooldown=3000+Math.random()*2000;
+        const a=Math.atan2(H/2-this.y,W/2-this.x)+(Math.random()-.5)*(rage?0.5:1.5);
+        this.vx=Math.cos(a)*this.speed*3*rageMult; this.vy=Math.sin(a)*this.speed*3*rageMult;
+        this.sprintCooldown=rage?1500+Math.random()*1000:3000+Math.random()*2000;
+        if(rage)triggerShake(4,150);// small shake on rage sprint
       }
-      if(this.spawnTimer>8000){this.spawnTimer=0; summonMinions(this.x,this.y);}
+      if(this.spawnTimer>(rage?5000:8000)){this.spawnTimer=0; summonMinions(this.x,this.y);}
     }
     // 移動
     this.vx+=Math.sin(this.wobble)*0.05; this.vy+=Math.cos(this.wobble*0.7)*0.05;
@@ -870,10 +904,11 @@ function stingPlayer(mq,isBleedAttack){
   if(upgrades.shield.active) return; // 護盾保護
   state.hp--;state.combo=0;
   Audio.SFX.sting();
-  spawnParticles(mq.x,mq.y,C.blood,8);
+  triggerShake(8,300);// screen shake on damage!
+  spawnParticles(mq.x,mq.y,C.blood,14);
   const msg=isBleedAttack?T('ft_blood_hit'):T('ft_stung');
   state.floatingTexts.push(new FloatingText(W/2,H/2,msg,C.blood,24));
-  if(state.hp<=0){Audio.SFX.gameOver();Audio.stopBGM();state.phase='gameover';requestAnimationFrame(gameoverLoop);}
+  if(state.hp<=0){updatePB();Audio.SFX.gameOver();Audio.stopBGM();state.phase='gameover';requestAnimationFrame(gameoverLoop);}
 }
 
 // ── 扣血機制主邏輯 ────────────────────────────
@@ -1037,12 +1072,12 @@ function buyUpgrade(type){
   } else if(type==='autoswat'){
     const costs=[60,100,150];
     const intervals=[3000,2000,1000];
-    if(upgrades.autoswat.level>=upgrades.autoswat.maxLevel){showMsg('自動蚊拍機已滿級');return;}
+    if(upgrades.autoswat.level>=upgrades.autoswat.maxLevel){showMsg(T('msg_maxed'));return;}
     const cost=costs[upgrades.autoswat.level];
-    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    if(totalBlood<cost){showMsg(T('msg_no_blood')+cost);return;}
     totalBlood-=cost; upgrades.autoswat.level++;
     Audio.SFX.upgradeBuy();
-    showMsg(`🤖 自動蚊拍機升到 Lv${upgrades.autoswat.level}！每 ${intervals[upgrades.autoswat.level-1]/1000} 秒自動拍打`);
+    showMsg(`🤖 ${T('msg_autoswat_up')} Lv${upgrades.autoswat.level}`);
   }
   updateShopUI();
 }
@@ -1723,8 +1758,16 @@ function drawGameOver(){
   ctx.fillText(`${T('go_survive')}${Math.floor(state.time)}${T('go_survive_unit')}`,W/2,py+268);
   ctx.fillStyle=C.blood+'aa';ctx.fillText(`${T('go_blood')}${totalBlood}${T('go_blood_unit')}`,W/2,py+300);
   ctx.strokeStyle=C.amber+'33';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+70,py+318);ctx.lineTo(px+pw-70,py+318);ctx.stroke();
+  // Difficulty score multiplier
+  const diffMult=DIFF_SCORE_MULT[currentDiff.diffKey]||1;
+  const finalScore=Math.floor(state.score*diffMult);
+  if(diffMult>1){ctx.fillStyle='#f0d060aa';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(`× ${diffMult} ${lang==='zh'?'難度加成':'Difficulty Bonus'} = ${finalScore}`,W/2,py+186)}
+  // Personal Best
+  const d=currentDiff.diffKey;
+  const pb=personalBest[d];
+  if(pb){ctx.fillStyle='#6a8a6a';ctx.font=`13px 'Share Tech Mono'`;ctx.fillText(`${lang==='zh'?'個人最佳':'Personal Best'}: ${pb.score} (${pb.time}s)`,W/2,py+310)}
   let rank='F';
-  if(state.score>=2000)rank='S';else if(state.score>=1000)rank='A';else if(state.score>=500)rank='B';else if(state.score>=200)rank='C';else if(state.score>=50)rank='D';
+  if(finalScore>=3000)rank='S';else if(finalScore>=1500)rank='A';else if(finalScore>=800)rank='B';else if(finalScore>=300)rank='C';else if(finalScore>=80)rank='D';
   const rc={S:'#f0d060',A:'#7ecf6e',B:'#8090e8',C:'#c0b090',D:'#e07840',F:'#4a3a2a'}[rank];
   ctx.fillStyle='#4a3a1a';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(T('go_rank'),W/2,py+348);
   ctx.font=`900 68px 'Noto Serif TC',serif`;ctx.fillStyle=rc;ctx.shadowColor=rc;ctx.shadowBlur=26;ctx.fillText(rank,W/2,py+424);ctx.shadowBlur=0;
@@ -1769,6 +1812,9 @@ function loop(ts){
   if(state.phase!=='playing') return;
   const dt=Math.min(ts-state.lastTime,50);state.lastTime=ts;
   state.time+=dt/1000;state.nextBoss-=dt/1000;state.spawnTimer+=dt;
+  updateShake(dt);
+  // Dynamic difficulty scaling
+  const dd=getDynamicDifficulty();
 
   // 升級冷卻
   if(upgrades.zap.cooldown>0) upgrades.zap.cooldown=Math.max(0,upgrades.zap.cooldown-dt);
@@ -1795,11 +1841,15 @@ function loop(ts){
   }
 
   if(state.combo>0){state.comboTimer-=dt;if(state.comboTimer<=0)state.combo=0;}
-  if(state.spawnTimer>=currentDiff.spawnInterval){state.spawnTimer=0;spawnMosquito();}
+  if(state.spawnTimer>=currentDiff.spawnInterval*dd.spawnMult){
+    state.spawnTimer=0;
+    if(state.mosquitoes.filter(m=>m.alive).length<currentDiff.maxMosq+dd.maxMosqBoost)spawnMosquito();
+  }
   if(state.nextBoss<=0){
     state.nextBoss=currentDiff.bossInterval;
     state.mosquitoes.push(new Mosquito('boss',W/2,80));
     Audio.SFX.bossAlert();
+    triggerShake(12,500);// big shake for boss!
     state.floatingTexts.push(new FloatingText(W/2,H/2-20,T('ft_boss_alert'),C.boss.body,26));
   }
 
@@ -1870,6 +1920,9 @@ function loop(ts){
   state.bleedAttackEffects.forEach(b=>b.update(dt));
   if(state.swatEffect){state.swatEffect.life-=dt;if(state.swatEffect.life<=0)state.swatEffect=null;}
 
+  // Apply screen shake
+  ctx.save();
+  if(shakeTimer>0)ctx.translate(shakeX,shakeY);
   ctx.drawImage(state.bg,0,0);
   state.particles.forEach(p=>p.draw());
   state.bloodDrops.forEach(b=>b.draw());
@@ -1886,7 +1939,9 @@ function loop(ts){
     ctx.restore();
   }
   state.floatingTexts.forEach(t=>t.draw());
-  drawZapPreview();drawSwatEffect();drawHUD();
+  drawZapPreview();drawSwatEffect();
+  ctx.restore();// end shake transform
+  drawHUD();
 
   document.getElementById('statCount').textContent=state.mosquitoes.filter(m=>m.alive).length;
   document.getElementById('statCombo').textContent=state.maxCombo;
@@ -1904,18 +1959,41 @@ function gameoverLoop(){if(state.phase!=='gameover')return;ctx.drawImage(state.b
 // ══════════════════════════════════════════════
 const Audio=(()=>{
   let actx=null,bgmGain=null,sfxGain=null,bgmPlaying=false,muted=false,bgmTimer=null;
-  function init(){if(actx)return;actx=new(window.AudioContext||window.webkitAudioContext)();bgmGain=actx.createGain();bgmGain.gain.value=0.22;bgmGain.connect(actx.destination);sfxGain=actx.createGain();sfxGain.gain.value=0.55;sfxGain.connect(actx.destination);}
+  function init(){if(actx)return;actx=new(window.AudioContext||window.webkitAudioContext)();bgmGain=actx.createGain();bgmGain.gain.value=0.22;bgmGain.connect(actx.destination);sfxGain=actx.createGain();sfxGain.gain.value=0.55;sfxGain.connect(actx.destination);loadAllRealSFX();}
   function resume(){if(actx&&actx.state==='suspended')actx.resume();}
   function tone(freq,type,gainVal,startT,dur){const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.setValueAtTime(freq,startT);g.gain.setValueAtTime(gainVal,startT);g.gain.exponentialRampToValueAtTime(0.0001,startT+dur);o.connect(g);g.connect(sfxGain);o.start(startT);o.stop(startT+dur+0.01);}
   function noiseSound(gainVal,startT,dur,lpFreq){const buf=actx.createBuffer(1,actx.sampleRate*dur,actx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const src=actx.createBufferSource();src.buffer=buf;const lp=actx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=lpFreq||1200;const g=actx.createGain();g.gain.setValueAtTime(gainVal,startT);g.gain.exponentialRampToValueAtTime(0.0001,startT+dur);src.connect(lp);lp.connect(g);g.connect(sfxGain);src.start(startT);src.stop(startT+dur+0.01);}
+  // Real audio file loader for juicier sounds
+  const realBufs={};
+  function loadRealSFX(name,url){
+    if(!actx)return;
+    fetch(url).then(r=>r.arrayBuffer()).then(ab=>actx.decodeAudioData(ab)).then(buf=>{realBufs[name]=buf}).catch(()=>{});
+  }
+  function playReal(name,vol=0.5,rate=1,maxMs=0){
+    if(!actx||muted)return;const buf=realBufs[name];if(!buf)return;
+    if(actx.state==='suspended')actx.resume();
+    const src=actx.createBufferSource();src.buffer=buf;src.playbackRate.value=rate;
+    const g=actx.createGain();g.gain.value=vol;
+    src.connect(g);g.connect(sfxGain);
+    src.start(0,0,maxMs>0?maxMs/1000:buf.duration);
+  }
+  const SFX_ROOT='../../assets/sfx/';
+  function loadAllRealSFX(){
+    loadRealSFX('hit',SFX_ROOT+'GameSFX2/Impact/Retro Impact Punch 07.wav');
+    loadRealSFX('pickup',SFX_ROOT+'400 Sounds Pack/Items/coin_collect.wav');
+    loadRealSFX('powerup',SFX_ROOT+'GameSFX3/PowerUp/Retro PowerUP 09.wav');
+    loadRealSFX('error',SFX_ROOT+'400 Sounds Pack/Musical Effects/8_bit_negative.wav');
+    loadRealSFX('complete',SFX_ROOT+'400 Sounds Pack/Musical Effects/brass_level_complete.wav');
+    loadRealSFX('confirm',SFX_ROOT+'400 Sounds Pack/UI/synth_confirmation.wav');
+  }
   const SFX={
-    swat(){if(!actx)return;const t=actx.currentTime;noiseSound(0.4,t,0.06,2500);tone(180,'sine',0.3,t,0.08);},
+    swat(){if(!actx)return;if(realBufs.hit){playReal('hit',0.4,1.2,200);return}const t=actx.currentTime;noiseSound(0.4,t,0.06,2500);tone(180,'sine',0.3,t,0.08);},
     miss(){if(!actx)return;const t=actx.currentTime;noiseSound(0.18,t,0.05,400);tone(90,'sine',0.12,t,0.1);},
-    killNormal(){if(!actx)return;const t=actx.currentTime;tone(440,'sine',0.25,t,0.04);tone(660,'sine',0.22,t+.04,0.04);tone(880,'sine',0.18,t+.08,0.06);},
+    killNormal(){if(!actx)return;if(realBufs.pickup){playReal('pickup',0.5,1.1,280);return}const t=actx.currentTime;tone(440,'sine',0.25,t,0.04);tone(660,'sine',0.22,t+.04,0.04);tone(880,'sine',0.18,t+.08,0.06);},
     killFast(){if(!actx)return;const t=actx.currentTime;tone(550,'sine',0.25,t,0.03);tone(770,'sine',0.22,t+.03,0.03);tone(1100,'sine',0.18,t+.06,0.05);},
     killInvisible(){if(!actx)return;const t=actx.currentTime;tone(300,'sine',0.2,t,0.05);tone(600,'triangle',0.18,t+.05,0.05);tone(900,'sine',0.15,t+.1,0.08);noiseSound(0.1,t,0.15,600);},
     killMutant(){if(!actx)return;const t=actx.currentTime;noiseSound(0.3,t,0.1,1000);tone(220,'sawtooth',0.25,t,0.06);tone(330,'sawtooth',0.2,t+.06,0.06);tone(550,'sine',0.15,t+.12,0.08);},
-    killBoss(){if(!actx)return;const t=actx.currentTime;noiseSound(0.6,t,0.18,800);noiseSound(0.4,t+.05,0.22,300);tone(110,'sawtooth',0.4,t,0.15);tone(220,'sawtooth',0.3,t+.05,0.15);tone(440,'sine',0.25,t+.1,0.15);tone(880,'sine',0.2,t+.15,0.12);[523,659,784,1047].forEach((f,i)=>tone(f,'sine',0.18,t+0.35+i*0.07,0.1));},
+    killBoss(){if(!actx)return;if(realBufs.complete){playReal('complete',0.7);triggerShake(15,600);return}const t=actx.currentTime;noiseSound(0.6,t,0.18,800);noiseSound(0.4,t+.05,0.22,300);tone(110,'sawtooth',0.4,t,0.15);tone(220,'sawtooth',0.3,t+.05,0.15);tone(440,'sine',0.25,t+.1,0.15);tone(880,'sine',0.2,t+.15,0.12);[523,659,784,1047].forEach((f,i)=>tone(f,'sine',0.18,t+0.35+i*0.07,0.1));},
     sting(){if(!actx)return;const t=actx.currentTime;tone(1200,'sawtooth',0.3,t,0.03);tone(800,'sawtooth',0.25,t+.03,0.05);noiseSound(0.2,t,0.08,3000);},
     evolve(){if(!actx)return;const t=actx.currentTime;[262,330,392,523].forEach((f,i)=>tone(f,'triangle',0.2,t+i*0.06,0.1));},
     bossAlert(){if(!actx)return;const t=actx.currentTime;for(let i=0;i<3;i++){tone(880,'square',0.15,t+i*0.22,0.18);tone(440,'square',0.12,t+i*0.22+0.09,0.09);}},
@@ -1926,7 +2004,7 @@ const Audio=(()=>{
     bleedAttack(){if(!actx)return;const t=actx.currentTime;tone(200,'sawtooth',0.3,t,0.04);tone(150,'sine',0.25,t+0.04,0.1);noiseSound(0.15,t,0.12,500);},
     bloodCollect(){if(!actx)return;const t=actx.currentTime;tone(880,'sine',0.15,t,0.03);tone(1100,'sine',0.12,t+0.03,0.04);},
     zapFire(){if(!actx)return;const t=actx.currentTime;noiseSound(0.5,t,0.25,4000);tone(200,'sawtooth',0.3,t,0.05);for(let i=0;i<5;i++)tone(800+i*200,'square',0.12,t+i*0.04,0.08);noiseSound(0.3,t+0.1,0.3,8000);},
-    upgradeBuy(){if(!actx)return;const t=actx.currentTime;[523,659,784].forEach((f,i)=>tone(f,'sine',0.2,t+i*0.06,0.1));},
+    upgradeBuy(){if(!actx)return;if(realBufs.powerup){playReal('powerup',0.5,1,280);return}const t=actx.currentTime;[523,659,784].forEach((f,i)=>tone(f,'sine',0.2,t+i*0.06,0.1));},
   };
   function startBGM(){
     if(bgmPlaying||!actx)return;bgmPlaying=true;
