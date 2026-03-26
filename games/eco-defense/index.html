@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>水豚生態塔防 Capy Ecosystem Defense</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#1a2a1a;font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;color:#e8ddd0;overflow:hidden}
+.top-bar{position:relative;z-index:200;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:4px 10px;background:rgba(20,40,20,0.95);border-bottom:1px solid rgba(100,180,80,0.3)}
+.top-bar a{color:#88cc66;text-decoration:none;font-size:14px}
+.top-bar .btn-group{display:flex;gap:6px}
+.top-bar button{background:rgba(100,180,80,0.15);border:1px solid rgba(100,180,80,0.3);color:#88cc66;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit}
+.game-area{flex:1;overflow:hidden;min-height:0;display:flex;justify-content:center;align-items:center;background:#0d1a0d}
+canvas{touch-action:none;max-width:100%;max-height:100%}
+.action-bar{position:relative;z-index:200;flex-shrink:0;background:rgba(20,40,20,0.95);border-top:1px solid rgba(100,180,80,0.3);padding:6px 8px;display:flex;gap:6px;overflow-x:auto;align-items:center;min-height:64px}
+.unit-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:58px;padding:4px 6px;background:rgba(100,180,80,0.1);border:2px solid rgba(100,180,80,0.3);border-radius:8px;cursor:pointer;color:#cde8c0;font-size:10px;gap:2px;flex-shrink:0;transition:border-color .2s}
+.unit-btn.selected{border-color:#66ff44;background:rgba(100,255,68,0.15);box-shadow:0 0 8px rgba(100,255,68,0.3)}
+.unit-btn.locked{opacity:0.35;cursor:not-allowed}
+.unit-btn .emoji{font-size:22px;line-height:1}
+.unit-btn .cost{font-size:9px;opacity:0.7}
+.res-bar{display:flex;gap:12px;font-size:13px;font-weight:bold}
+.res-bar span{display:flex;align-items:center;gap:3px}
+.wave-info{font-size:12px;text-align:center;color:#88cc66}
+#start-wave-btn{background:rgba(100,255,68,0.2);border:2px solid #66ff44;color:#66ff44;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold;font-family:inherit}
+#start-wave-btn:disabled{opacity:0.4;cursor:not-allowed}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#e8ddd0}
+.overlay h2{color:#66ff44;font-size:22px}
+.overlay p{max-width:min(360px,calc(100vw - 32px));text-align:center;font-size:14px;line-height:1.5}
+.overlay button{background:rgba(100,255,68,0.2);border:2px solid #66ff44;color:#66ff44;padding:10px 28px;border-radius:8px;font-size:16px;cursor:pointer;font-family:inherit}
+.card-pick{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:0 12px}
+.card{background:rgba(40,70,40,0.9);border:2px solid rgba(100,180,80,0.5);border-radius:10px;padding:12px;width:110px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s}
+.card:hover{transform:scale(1.05);border-color:#66ff44}
+.card .card-emoji{font-size:28px}
+.card .card-title{font-size:12px;font-weight:bold;color:#88cc66;margin:4px 0}
+.card .card-desc{font-size:10px;color:#b0ccb0;line-height:1.3}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="../" id="back-link">← 返回</a>
+  <div class="res-bar">
+    <span>☀️ <b id="sun-val">50</b></span>
+    <span>🧬 <b id="nut-val">0</b></span>
+  </div>
+  <div class="btn-group">
+    <button id="lang-btn">EN</button>
+    <button id="pause-btn">⏸</button>
+    <button id="mute-btn">🔊</button>
+  </div>
+</div>
+<div class="game-area">
+  <canvas id="game" width="640" height="640"></canvas>
+</div>
+<div class="action-bar">
+  <div class="wave-info" id="wave-info">Wave 0/15</div>
+  <button id="start-wave-btn">▶ 開始</button>
+  <div id="unit-buttons" style="display:flex;gap:6px;overflow-x:auto;flex:1"></div>
+</div>
+
+<!-- Overlays -->
+<div class="overlay" id="title-overlay">
+  <h2 id="title-text">🌿 水豚生態塔防</h2>
+  <p id="title-desc">種植物、養動物，讓生態系統成為你的防線！<br>擊退污染物，守護大自然。</p>
+  <button id="title-start">▶ 開始遊戲</button>
+</div>
+<div class="overlay hidden" id="card-overlay">
+  <h2 id="card-title">🃏 選擇升級</h2>
+  <div class="card-pick" id="card-pick"></div>
+</div>
+<div class="overlay hidden" id="result-overlay">
+  <h2 id="result-title"></h2>
+  <p id="result-desc"></p>
+  <button id="result-btn">再來一局</button>
+</div>
+<div class="overlay hidden" id="meta-overlay">
+  <h2 id="meta-title">🧬 生態升級</h2>
+  <div id="meta-list" style="display:flex;flex-direction:column;gap:8px;max-width:min(360px,calc(100vw - 32px))"></div>
+  <button id="meta-done">開始遊戲</button>
+</div>
+
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+
+<script>
+// === BLOCK 1: Constants, i18n, Audio ===
+const GW=640,GH=640,COLS=20,ROWS=20,CELL=32;
+let lang=localStorage.getItem('ecoLang')||'zh';
+const I18N={
+  zh:{
+    title:'🌿 水豚生態塔防',titleDesc:'種植物、養動物，讓生態系統成為你的防線！\n擊退污染物，守護大自然。',
+    start:'▶ 開始遊戲',back:'← 返回',wave:'波次',of:'/',
+    startWave:'▶ 下一波',waiting:'準備中...',
+    sunflower:'向日葵',thorn:'荊棘叢',oak:'橡樹',beehive:'蜂巢',
+    badger:'獾',wolf:'狼',stag:'鹿',capybara:'水豚',
+    pickCard:'🃏 選擇升級',win:'🎉 勝利！',lose:'💀 污染蔓延...',
+    winDesc:'你成功守護了生態！獲得 {n} 生態點數。',loseDesc:'堅持了 {n} 波。獲得 {p} 生態點數。',
+    again:'再來一局',metaTitle:'🧬 生態升級',metaDone:'開始遊戲',
+    soil:'土壤肥沃度',diversity:'生態多樣性',roots:'根系網路',instinct:'野性直覺',charm:'水豚魅力',
+    soilD:'起始陽光 +10',diversityD:'養分掉落 +10%',rootsD:'植物 HP +15%',instinctD:'動物攻擊 +10%',charmD:'水豚 buff +5%',
+    pts:'生態點數',cost:'花費',maxed:'已滿',lvl:'等級',
+    cards:{
+      photoBoost:'光合加速',photoBoostD:'向日葵產出 +30%',
+      thornMut:'尖刺突變',thornMutD:'荊棘叢傷害 ×2',
+      beeRage:'蜂群暴怒',beeRageD:'蜂巢攻速 +50%',
+      wolfKing:'狼王降臨',wolfKingD:'所有狼 +25% 傷害',
+      ecoBalance:'生態平衡',ecoBalanceD:'全場回復 30% HP',
+      richSoil:'營養土壤',richSoilD:'養分掉落 +50%',
+      capyPower:'水豚之力',capyPowerD:'水豚 buff +30%',
+      forestShield:'森林之盾',forestShieldD:'所有植物 +40% HP',
+      huntInstinct:'獵食本能',huntInstinctD:'所有動物 +20% 攻速'
+    }
+  },
+  en:{
+    title:'🌿 Capy Eco Defense',titleDesc:'Plant flora, raise fauna — let the ecosystem be your defense!\nRepel the polluters, protect nature.',
+    start:'▶ Start Game',back:'← Back',wave:'Wave',of:'/',
+    startWave:'▶ Next Wave',waiting:'Preparing...',
+    sunflower:'Sunflower',thorn:'Thorn Bush',oak:'Oak Tree',beehive:'Beehive',
+    badger:'Badger',wolf:'Wolf',stag:'Stag',capybara:'Capybara',
+    pickCard:'🃏 Pick Upgrade',win:'🎉 Victory!',lose:'💀 Pollution Spreads...',
+    winDesc:'You protected the ecosystem! Earned {n} eco points.',loseDesc:'Survived {n} waves. Earned {p} eco points.',
+    again:'Play Again',metaTitle:'🧬 Eco Upgrades',metaDone:'Start Game',
+    soil:'Fertile Soil',diversity:'Biodiversity',roots:'Root Network',instinct:'Wild Instinct',charm:'Capy Charm',
+    soilD:'Starting sun +10',diversityD:'Nutrient drop +10%',rootsD:'Plant HP +15%',instinctD:'Animal ATK +10%',charmD:'Capy buff +5%',
+    pts:'Eco Points',cost:'Cost',maxed:'MAX',lvl:'Lv',
+    cards:{
+      photoBoost:'Photosynthesis+',photoBoostD:'Sunflower output +30%',
+      thornMut:'Thorn Mutation',thornMutD:'Thorn Bush DMG ×2',
+      beeRage:'Bee Frenzy',beeRageD:'Beehive ATK speed +50%',
+      wolfKing:'Wolf King',wolfKingD:'All wolves +25% DMG',
+      ecoBalance:'Eco Balance',ecoBalanceD:'Heal all units 30% HP',
+      richSoil:'Rich Soil',richSoilD:'Nutrient drop +50%',
+      capyPower:'Capy Power',capyPowerD:'Capy buff +30%',
+      forestShield:'Forest Shield',forestShieldD:'All plants +40% HP',
+      huntInstinct:'Hunt Instinct',huntInstinctD:'All animals +20% ATK speed'
+    }
+  }
+};
+function t(k){const keys=k.split('.');let v=I18N[lang];for(const s of keys){v=v?.[s];if(!v)return k;}return v;}
+
+// Audio
+const AUDIO_CTX=new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS={};
+let audioMuted=(localStorage.getItem('ecoMuted')==='1');
+let bgmSource=null,bgmGain=null,bgmLoaded=false;
+const SFX_BASE='../../assets/sfx/';
+const SFX_MAP={
+  place:SFX_BASE+'400 Sounds Pack/Items/coin_collect.wav',
+  kill:SFX_BASE+'GameSFX3/PowerUp/Retro PowerUP 09.wav',
+  wave:SFX_BASE+'400 Sounds Pack/Musical Effects/brass_level_complete.wav',
+  hurt:SFX_BASE+'GameSFX2/Impact/Retro Impact Punch 07.wav',
+  select:SFX_BASE+'400 Sounds Pack/UI/select_1.wav',
+  error:SFX_BASE+'400 Sounds Pack/Musical Effects/8_bit_negative.wav',
+  win:SFX_BASE+'400 Sounds Pack/Musical Effects/8_bit_level_complete.wav'
+};
+const BGM_URL='../../assets/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Refreshing Dawn.ogg';
+function loadAudio(name,url){fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{AUDIO_BUFS[name]=buf}).catch(()=>{});}
+function playAudio(name,vol=0.7,rate=1,maxMs=0){if(audioMuted)return;const buf=AUDIO_BUFS[name];if(!buf)return;if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();const src=AUDIO_CTX.createBufferSource();src.buffer=buf;src.playbackRate.value=rate;const gain=AUDIO_CTX.createGain();gain.gain.value=vol;src.connect(gain);gain.connect(AUDIO_CTX.destination);src.start(0,0,maxMs>0?maxMs/1000:buf.duration);}
+function startBGM(url){if(bgmLoaded||audioMuted)return;bgmLoaded=true;fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();bgmSource=AUDIO_CTX.createBufferSource();bgmSource.buffer=buf;bgmSource.loop=true;bgmGain=AUDIO_CTX.createGain();bgmGain.gain.value=0.18;bgmSource.connect(bgmGain);bgmGain.connect(AUDIO_CTX.destination);bgmSource.start();}).catch(()=>{});}
+function toggleMute(){audioMuted=!audioMuted;if(bgmGain)bgmGain.gain.value=audioMuted?0:0.18;document.getElementById('mute-btn').textContent=audioMuted?'🔇':'🔊';localStorage.setItem('ecoMuted',audioMuted?'1':'0');if(!audioMuted&&!bgmLoaded)startBGM(BGM_URL);}
+for(const[k,v]of Object.entries(SFX_MAP))loadAudio(k,v);
+
+// === BLOCK 2: Game State, Map, Path ===
+// 0=grass, 1=path, 2=water
+const MAP=[
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,1,0,0,2,2,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,1,0,0,2,2,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],
+  [0,0,0,0,0,0,0,2,2,0,0,0,0,0,1,0,0,0,0,0],
+  [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+  [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,0],
+  [0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,2,2,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],
+  [0,0,2,2,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],
+  [0,0,2,2,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+// Build path waypoints from MAP
+function buildPath(){
+  const path=[];
+  let x=0,y=1; // entry point
+  path.push({x,y});
+  const visited=new Set();
+  visited.add(`${x},${y}`);
+  const dirs=[[1,0],[0,1],[-1,0],[0,-1]];
+  let found=true;
+  while(found){
+    found=false;
+    for(const[dx,dy]of dirs){
+      const nx=x+dx,ny=y+dy;
+      if(nx<0||nx>=COLS||ny<0||ny>=ROWS)continue;
+      if(MAP[ny][nx]===1&&!visited.has(`${nx},${ny}`)){
+        path.push({x:nx,y:ny});visited.add(`${nx},${ny}`);x=nx;y=ny;found=true;break;
+      }
+    }
+  }
+  return path;
+}
+const PATH=buildPath();
+const PATH_PX=PATH.map(p=>({x:p.x*CELL+CELL/2,y:p.y*CELL+CELL/2}));
+
+// Check if cell is adjacent to water
+function nearWater(col,row){
+  for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    const nx=col+dx,ny=row+dy;
+    if(nx>=0&&nx<COLS&&ny>=0&&ny<ROWS&&MAP[ny][nx]===2)return true;
+  }return false;
+}
+
+// Unit definitions
+const UNIT_DEFS=[
+  {id:'sunflower',emoji:'🌻',type:'plant',costType:'sun',cost:25,hp:60,atk:0,range:0,atkSpd:0,special:'produce',produceAmt:10,produceSpd:3000,nameKey:'sunflower'},
+  {id:'thorn',emoji:'🌿',type:'plant',costType:'sun',cost:30,hp:50,atk:8,range:1.2,atkSpd:1000,special:'slow',slowPct:0.3,nameKey:'thorn'},
+  {id:'oak',emoji:'🌳',type:'plant',costType:'sun',cost:60,hp:100,atk:15,range:2.2,atkSpd:2000,special:'aoe',aoeRadius:1,nameKey:'oak'},
+  {id:'beehive',emoji:'🐝',type:'plant',costType:'sun',cost:50,hp:45,atk:12,range:3,atkSpd:1000,special:'pollinate',nameKey:'beehive'},
+  {id:'badger',emoji:'🦡',type:'animal',costType:'nut',cost:40,hp:80,atk:20,range:1.2,atkSpd:1500,special:'burrow',nameKey:'badger'},
+  {id:'wolf',emoji:'🐺',type:'animal',costType:'nut',cost:60,hp:70,atk:25,range:2,atkSpd:1000,special:'pack',nameKey:'wolf'},
+  {id:'stag',emoji:'🦌',type:'animal',costType:'nut',cost:50,hp:150,atk:10,range:1.2,atkSpd:2000,special:'taunt',nameKey:'stag'},
+  {id:'capybara',emoji:'🦫',type:'animal',costType:'nut',cost:80,hp:90,atk:5,range:1.5,atkSpd:1000,special:'buff',nameKey:'capybara'},
+];
+
+// Enemy wave definitions
+const ENEMY_DEFS={
+  slime:{emoji:'💧',hp:30,speed:1,reward:5,rewardType:'nut',color:'#44cc44',name:'slime'},
+  smog:{emoji:'💨',hp:15,speed:2.2,reward:3,rewardType:'nut',color:'#999999',name:'smog'},
+  golem:{emoji:'🗑️',hp:120,speed:0.5,reward:15,rewardType:'nut',color:'#8866aa',name:'golem'},
+  acid:{emoji:'☢️',hp:40,speed:1.2,reward:8,rewardType:'nut',color:'#cccc00',name:'acid',special:'acid'},
+  boss:{emoji:'🏭',hp:300,speed:0.6,reward:30,rewardType:'nut',color:'#cc2222',name:'boss',special:'spawn'},
+};
+const WAVES=[
+  [{type:'slime',count:5}],
+  [{type:'slime',count:8}],
+  [{type:'slime',count:10},{type:'smog',count:3}],
+  [{type:'smog',count:8},{type:'slime',count:5}],
+  [{type:'slime',count:8},{type:'smog',count:6}],
+  [{type:'golem',count:2},{type:'slime',count:8}],
+  [{type:'slime',count:10},{type:'smog',count:6},{type:'golem',count:2}],
+  [{type:'acid',count:3},{type:'slime',count:8}],
+  [{type:'acid',count:5},{type:'smog',count:5},{type:'slime',count:5}],
+  [{type:'golem',count:3},{type:'acid',count:4},{type:'smog',count:6}],
+  [{type:'slime',count:12},{type:'smog',count:8},{type:'golem',count:3},{type:'acid',count:4}],
+  [{type:'acid',count:6},{type:'golem',count:4},{type:'smog',count:8}],
+  [{type:'slime',count:15},{type:'acid',count:6},{type:'golem',count:4}],
+  [{type:'golem',count:5},{type:'acid',count:8},{type:'smog',count:10}],
+  [{type:'boss',count:1},{type:'golem',count:3},{type:'acid',count:5},{type:'smog',count:8},{type:'slime',count:10}],
+];
+
+// Game state
+let sun=50,nutrients=0,wave=0,lives=10,paused=false,gameOver=false,waveActive=false;
+let selectedUnit=null,placedUnits=[],enemies=[],projectiles=[],particles=[];
+let cardBuffs={},runCards=[];
+let spawnQueue=[],spawnTimer=0;
+const SPAWN_INTERVAL=800; // ms between enemy spawns
+
+// Meta upgrades (localStorage)
+function loadMeta(){
+  const d=JSON.parse(localStorage.getItem('ecoMeta')||'{}');
+  return{soil:d.soil||0,diversity:d.diversity||0,roots:d.roots||0,instinct:d.instinct||0,charm:d.charm||0,points:d.points||0,bestWave:d.bestWave||0};
+}
+function saveMeta(m){localStorage.setItem('ecoMeta',JSON.stringify(m));}
+let meta=loadMeta();
+
+// === BLOCK 3: Defenders, Enemies, Combat Logic ===
+function placeUnit(col,row,def){
+  const hpMult=(def.type==='plant')?(1+meta.roots*0.15):1;
+  const atkMult=(def.type==='animal')?(1+meta.instinct*0.1):1;
+  const u={...def,col,row,x:col*CELL+CELL/2,y:row*CELL+CELL/2,
+    maxHp:Math.round(def.hp*hpMult),curHp:Math.round(def.hp*hpMult),
+    baseAtk:Math.round(def.atk*atkMult),lastAtk:0,lastProduce:0,
+    burrowCd:0,alive:true};
+  placedUnits.push(u);
+  playAudio('place',0.5,1,280);
+  return u;
+}
+
+function spawnEnemy(type){
+  const def=ENEMY_DEFS[type];
+  const hpScale=1+wave*0.1;
+  const e={type,emoji:def.emoji,hp:Math.round(def.hp*hpScale),maxHp:Math.round(def.hp*hpScale),
+    speed:def.speed,baseSpeed:def.speed,reward:def.reward,rewardType:def.rewardType,
+    color:def.color,special:def.special||null,
+    pathIdx:0,x:PATH_PX[0].x,y:PATH_PX[0].y,
+    slowTimer:0,alive:true,spawnCd:0};
+  enemies.push(e);
+}
+
+// Synergy calculations
+function getCapyBuff(){
+  let buff=0;
+  for(const u of placedUnits){
+    if(u.id==='capybara'&&u.alive&&nearWater(u.col,u.row)){
+      buff=Math.max(buff,0.2+meta.charm*0.05+(cardBuffs.capyPower||0));
+    }
+  }
+  return buff;
+}
+function getWolfPack(){
+  const wolves=placedUnits.filter(u=>u.id==='wolf'&&u.alive);
+  return wolves.length>=2?1.4:1;
+}
+function getForestBonus(){
+  const oaks=placedUnits.filter(u=>u.id==='oak'&&u.alive);
+  return oaks.length>=3?1.5:1;
+}
+function isBeePollinated(u){
+  if(u.type!=='plant')return false;
+  return placedUnits.some(b=>b.id==='beehive'&&b.alive&&Math.abs(b.col-u.col)<=1&&Math.abs(b.row-u.row)<=1);
+}
+function isBadgerBoosted(u){
+  if(u.id!=='thorn')return false;
+  return placedUnits.some(b=>b.id==='badger'&&b.alive&&Math.abs(b.col-u.col)<=1&&Math.abs(b.row-u.row)<=1);
+}
+
+function getEffAtk(u){
+  let atk=u.baseAtk;
+  const capyBuff=getCapyBuff();
+  atk*=(1+capyBuff);
+  if(u.id==='wolf')atk*=getWolfPack();
+  if(u.id==='wolf'&&(cardBuffs.wolfKing||0))atk*=(1+(cardBuffs.wolfKing||0));
+  if(u.id==='thorn'&&(cardBuffs.thornMut||0))atk*=(cardBuffs.thornMut||0);
+  return Math.round(atk);
+}
+function getEffAtkSpd(u){
+  let spd=u.atkSpd;
+  if(u.id==='beehive'&&(cardBuffs.beeRage||0))spd*=(1-(cardBuffs.beeRage||0));
+  if(u.type==='animal'&&(cardBuffs.huntInstinct||0))spd*=(1-(cardBuffs.huntInstinct||0));
+  return Math.max(200,spd);
+}
+
+// Find nearest enemy in range
+function findTarget(u){
+  let best=null,bestDist=Infinity;
+  const range=u.range*CELL;
+  for(const e of enemies){
+    if(!e.alive)continue;
+    const dx=e.x-u.x,dy=e.y-u.y,dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<=range&&dist<bestDist){best=e;bestDist=dist;}
+  }
+  return best;
+}
+
+// Projectile
+function fireProjectile(from,to,dmg,aoe=false,aoeR=0){
+  projectiles.push({x:from.x,y:from.y,tx:to.x,ty:to.y,dmg,aoe,aoeR:aoeR*CELL,speed:5,target:to,alive:true});
+}
+
+function updateUnits(dt,now){
+  for(const u of placedUnits){
+    if(!u.alive)continue;
+    // Sunflower production
+    if(u.special==='produce'&&now-u.lastProduce>=u.produceSpd){
+      let amt=u.produceAmt;
+      if(isBeePollinated(u))amt=Math.round(amt*1.5);
+      if(cardBuffs.photoBoost)amt=Math.round(amt*(1+cardBuffs.photoBoost));
+      sun+=amt;
+      u.lastProduce=now;
+      particles.push({x:u.x,y:u.y-8,text:`+${amt}☀️`,life:1000,maxLife:1000,color:'#ffdd44'});
+    }
+    // Attack
+    if(u.atk>0&&now-u.lastAtk>=getEffAtkSpd(u)){
+      const target=findTarget(u);
+      if(target){
+        u.lastAtk=now;
+        if(u.special==='aoe'){
+          fireProjectile(u,target,getEffAtk(u),true,u.aoeRadius);
+        }else{
+          fireProjectile(u,target,getEffAtk(u));
+        }
+      }
+    }
+  }
+}
+
+function updateProjectiles(dt){
+  for(const p of projectiles){
+    if(!p.alive)continue;
+    const dx=p.tx-p.x,dy=p.ty-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<6){
+      // Hit
+      if(p.aoe){
+        for(const e of enemies){
+          if(!e.alive)continue;
+          const edx=e.x-p.tx,edy=e.y-p.ty;
+          if(Math.sqrt(edx*edx+edy*edy)<=p.aoeR)damageEnemy(e,p.dmg);
+        }
+      }else if(p.target&&p.target.alive){
+        damageEnemy(p.target,p.dmg);
+      }
+      p.alive=false;
+    }else{
+      const s=p.speed*dt*60/1000;
+      p.x+=dx/dist*s;p.y+=dy/dist*s;
+    }
+  }
+  projectiles=projectiles.filter(p=>p.alive);
+}
+
+function damageEnemy(e,dmg){
+  e.hp-=dmg;
+  if(e.hp<=0){
+    e.alive=false;
+    const nutMult=1+meta.diversity*0.1+(cardBuffs.richSoil||0);
+    const reward=Math.round(e.reward*nutMult);
+    nutrients+=reward;
+    particles.push({x:e.x,y:e.y-8,text:`+${reward}🧬`,life:800,maxLife:800,color:'#44ddaa'});
+    playAudio('kill',0.4,1,280);
+  }
+}
+
+function updateEnemies(dt,now){
+  for(const e of enemies){
+    if(!e.alive)continue;
+    // Move along path
+    if(e.pathIdx>=PATH_PX.length-1){
+      // Reached end
+      e.alive=false;lives--;
+      if(lives<=0)endGame(false);
+      continue;
+    }
+    const target=PATH_PX[e.pathIdx+1];
+    const dx=target.x-e.x,dy=target.y-e.y,dist=Math.sqrt(dx*dx+dy*dy);
+    let spd=e.speed;
+    if(e.slowTimer>0){spd*=0.5;e.slowTimer-=dt;}
+    const move=spd*dt*60/1000;
+    if(dist<move){
+      e.x=target.x;e.y=target.y;e.pathIdx++;
+    }else{
+      e.x+=dx/dist*move;e.y+=dy/dist*move;
+    }
+    // Acid special: damage nearby units
+    if(e.special==='acid'){
+      for(const u of placedUnits){
+        if(!u.alive)continue;
+        const udx=u.x-e.x,udy=u.y-e.y;
+        if(Math.sqrt(udx*udx+udy*udy)<CELL*1.5){
+          u.curHp-=0.05*dt;
+          if(u.curHp<=0){u.alive=false;}
+        }
+      }
+    }
+    // Boss spawn
+    if(e.special==='spawn'){
+      e.spawnCd=(e.spawnCd||0)+dt;
+      if(e.spawnCd>=10000){e.spawnCd=0;spawnEnemy('slime');spawnEnemy('slime');}
+    }
+  }
+  enemies=enemies.filter(e=>e.alive);
+}
+
+// Slow effect from thorn
+function applySlowEffects(){
+  for(const u of placedUnits){
+    if(u.id!=='thorn'||!u.alive)continue;
+    const range=u.range*CELL;
+    const slowPct=isBadgerBoosted(u)?0.5:u.slowPct;
+    for(const e of enemies){
+      if(!e.alive)continue;
+      const dx=e.x-u.x,dy=e.y-u.y;
+      if(Math.sqrt(dx*dx+dy*dy)<=range){e.slowTimer=500;}
+    }
+  }
+}
+
+// Stag taunt: enemies prefer attacking stags
+function applyStagTaunt(){
+  for(const u of placedUnits){
+    if(u.id!=='stag'||!u.alive)continue;
+    // Stag attracts enemy projectiles — handled via priority targeting
+  }
+}
+
+// === BLOCK 4: Wave System, Roguelike Cards, Meta ===
+function startWave(){
+  if(waveActive||gameOver)return;
+  if(wave>=WAVES.length){endGame(true);return;}
+  waveActive=true;
+  spawnQueue=[];
+  const waveDef=WAVES[wave];
+  for(const g of waveDef)for(let i=0;i<g.count;i++)spawnQueue.push(g.type);
+  // Shuffle slightly for variety
+  for(let i=spawnQueue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[spawnQueue[i],spawnQueue[j]]=[spawnQueue[j],spawnQueue[i]];}
+  spawnTimer=0;
+  wave++;
+  playAudio('wave',0.5,1,0);
+  updateUI();
+}
+
+function updateSpawner(dt){
+  if(!waveActive||spawnQueue.length===0)return;
+  spawnTimer+=dt;
+  if(spawnTimer>=SPAWN_INTERVAL){
+    spawnTimer-=SPAWN_INTERVAL;
+    const type=spawnQueue.shift();
+    spawnEnemy(type);
+  }
+  // Wave complete?
+  if(spawnQueue.length===0&&enemies.filter(e=>e.alive).length===0){
+    waveActive=false;
+    // Roguelike card pick every 3 waves
+    if(wave%3===0&&wave<WAVES.length){
+      showCardPick();
+    }
+    updateUI();
+  }
+}
+
+// Roguelike cards
+const ALL_CARDS=[
+  {id:'photoBoost',emoji:'🌻',nameKey:'cards.photoBoost',descKey:'cards.photoBoostD',apply:()=>{cardBuffs.photoBoost=(cardBuffs.photoBoost||0)+0.3;}},
+  {id:'thornMut',emoji:'🌿',nameKey:'cards.thornMut',descKey:'cards.thornMutD',apply:()=>{cardBuffs.thornMut=(cardBuffs.thornMut||0)+2;}},
+  {id:'beeRage',emoji:'🐝',nameKey:'cards.beeRage',descKey:'cards.beeRageD',apply:()=>{cardBuffs.beeRage=(cardBuffs.beeRage||0)+0.5;}},
+  {id:'wolfKing',emoji:'🐺',nameKey:'cards.wolfKing',descKey:'cards.wolfKingD',apply:()=>{cardBuffs.wolfKing=(cardBuffs.wolfKing||0)+0.25;}},
+  {id:'ecoBalance',emoji:'💚',nameKey:'cards.ecoBalance',descKey:'cards.ecoBalanceD',apply:()=>{for(const u of placedUnits){if(u.alive)u.curHp=Math.min(u.maxHp,u.curHp+u.maxHp*0.3);}}},
+  {id:'richSoil',emoji:'🧬',nameKey:'cards.richSoil',descKey:'cards.richSoilD',apply:()=>{cardBuffs.richSoil=(cardBuffs.richSoil||0)+0.5;}},
+  {id:'capyPower',emoji:'🦫',nameKey:'cards.capyPower',descKey:'cards.capyPowerD',apply:()=>{cardBuffs.capyPower=(cardBuffs.capyPower||0)+0.3;}},
+  {id:'forestShield',emoji:'🛡️',nameKey:'cards.forestShield',descKey:'cards.forestShieldD',apply:()=>{for(const u of placedUnits){if(u.alive&&u.type==='plant'){u.maxHp=Math.round(u.maxHp*1.4);u.curHp=Math.min(u.maxHp,u.curHp+u.maxHp*0.4);}}}},
+  {id:'huntInstinct',emoji:'🦁',nameKey:'cards.huntInstinct',descKey:'cards.huntInstinctD',apply:()=>{cardBuffs.huntInstinct=(cardBuffs.huntInstinct||0)+0.2;}},
+];
+
+function showCardPick(){
+  paused=true;
+  const shuffled=[...ALL_CARDS].sort(()=>Math.random()-0.5);
+  const picks=shuffled.slice(0,3);
+  const container=document.getElementById('card-pick');
+  container.innerHTML='';
+  document.getElementById('card-title').textContent=t('pickCard');
+  for(const c of picks){
+    const div=document.createElement('div');
+    div.className='card';
+    div.innerHTML=`<div class="card-emoji">${c.emoji}</div><div class="card-title">${t(c.nameKey)}</div><div class="card-desc">${t(c.descKey)}</div>`;
+    div.addEventListener('click',()=>{
+      c.apply();
+      runCards.push(c.id);
+      document.getElementById('card-overlay').classList.add('hidden');
+      paused=false;
+      playAudio('select',0.5,1,150);
+    });
+    div.addEventListener('touchend',(ev)=>{
+      ev.preventDefault();
+      div.click();
+    });
+    container.appendChild(div);
+  }
+  document.getElementById('card-overlay').classList.remove('hidden');
+}
+
+// End game
+function endGame(win){
+  gameOver=true;paused=true;
+  const pts=win?5:Math.max(1,Math.floor(wave/3));
+  meta.points+=pts;
+  if(wave>meta.bestWave)meta.bestWave=wave;
+  saveMeta(meta);
+  document.getElementById('result-title').textContent=win?t('win'):t('lose');
+  document.getElementById('result-desc').textContent=win?t('winDesc').replace('{n}',pts):t('loseDesc').replace('{n}',wave).replace('{p}',pts);
+  document.getElementById('result-btn').textContent=t('again');
+  document.getElementById('result-overlay').classList.remove('hidden');
+  playAudio(win?'win':'error',0.6);
+}
+
+// Meta upgrade screen
+function showMetaScreen(){
+  const defs=[
+    {key:'soil',nameKey:'soil',descKey:'soilD',max:5,cost:2},
+    {key:'diversity',nameKey:'diversity',descKey:'diversityD',max:5,cost:2},
+    {key:'roots',nameKey:'roots',descKey:'rootsD',max:5,cost:3},
+    {key:'instinct',nameKey:'instinct',descKey:'instinctD',max:5,cost:3},
+    {key:'charm',nameKey:'charm',descKey:'charmD',max:5,cost:4},
+  ];
+  const list=document.getElementById('meta-list');
+  list.innerHTML='';
+  document.getElementById('meta-title').textContent=t('metaTitle');
+  const ptsDiv=document.createElement('div');
+  ptsDiv.style.cssText='text-align:center;font-size:14px;color:#88cc66;margin-bottom:4px';
+  ptsDiv.id='meta-pts-display';
+  ptsDiv.textContent=`${t('pts')}: ${meta.points}`;
+  list.appendChild(ptsDiv);
+  for(const d of defs){
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(40,70,40,0.6);border-radius:6px';
+    const isMax=meta[d.key]>=d.max;
+    const canBuy=!isMax&&meta.points>=d.cost;
+    row.innerHTML=`<div><b style="color:#88cc66">${t(d.nameKey)}</b> <span style="font-size:11px;opacity:0.7">${t('lvl')} ${meta[d.key]}/${d.max}</span><br><span style="font-size:10px;color:#90aa90">${t(d.descKey)}</span></div>
+    <button style="padding:4px 12px;border-radius:4px;border:1px solid ${canBuy?'#66ff44':'#555'};background:${canBuy?'rgba(100,255,68,0.15)':'rgba(60,60,60,0.3)'};color:${canBuy?'#66ff44':'#777'};cursor:${canBuy?'pointer':'not-allowed'};font-family:inherit;font-size:11px" data-key="${d.key}" data-cost="${d.cost}" ${isMax||!canBuy?'disabled':''}>${isMax?t('maxed'):t('cost')+' '+d.cost}</button>`;
+    const btn=row.querySelector('button');
+    if(canBuy){
+      btn.addEventListener('click',()=>{
+        meta[d.key]++;meta.points-=d.cost;saveMeta(meta);
+        playAudio('select',0.5,1,150);
+        showMetaScreen();
+      });
+    }
+    list.appendChild(row);
+  }
+  document.getElementById('meta-done').textContent=t('metaDone');
+  document.getElementById('meta-overlay').classList.remove('hidden');
+}
+
+// Reset game for new run
+function resetGame(){
+  sun=50+meta.soil*10;nutrients=0;wave=0;lives=10;paused=false;gameOver=false;waveActive=false;
+  selectedUnit=null;placedUnits=[];enemies=[];projectiles=[];particles=[];
+  cardBuffs={};runCards=[];spawnQueue=[];spawnTimer=0;
+  document.getElementById('result-overlay').classList.add('hidden');
+  document.getElementById('card-overlay').classList.add('hidden');
+  document.getElementById('meta-overlay').classList.add('hidden');
+  document.getElementById('title-overlay').classList.add('hidden');
+  updateUI();
+}
+
+// === BLOCK 5: Rendering ===
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+
+const COLORS={grass:'#2a5c2a',path:'#8b7355',water:'#2a5ca0',waterLight:'#3a6cb8',gridLine:'rgba(255,255,255,0.06)'};
+
+function drawMap(){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const v=MAP[r][c];
+    const x=c*CELL,y=r*CELL;
+    if(v===0){ctx.fillStyle=COLORS.grass;ctx.fillRect(x,y,CELL,CELL);
+      // Grass texture dots
+      ctx.fillStyle='rgba(50,120,50,0.4)';
+      const seed=(r*COLS+c)*17;
+      ctx.fillRect(x+(seed%7)*4+2,y+(seed%5)*5+3,2,2);
+      ctx.fillRect(x+((seed*3)%9)*3+1,y+((seed*7)%6)*4+2,2,2);
+    }else if(v===1){
+      ctx.fillStyle=COLORS.path;ctx.fillRect(x,y,CELL,CELL);
+      ctx.fillStyle='rgba(100,80,50,0.3)';ctx.fillRect(x+4,y+4,CELL-8,CELL-8);
+    }else if(v===2){
+      ctx.fillStyle=COLORS.water;ctx.fillRect(x,y,CELL,CELL);
+      // Water shimmer
+      ctx.fillStyle=COLORS.waterLight;
+      const t=Date.now()*0.002;
+      ctx.fillRect(x+8+Math.sin(t+c)*4,y+6+Math.cos(t+r)*3,8,3);
+    }
+    // Grid lines
+    ctx.strokeStyle=COLORS.gridLine;ctx.strokeRect(x,y,CELL,CELL);
+  }
+  // Highlight entry/exit
+  ctx.fillStyle='rgba(255,100,100,0.25)';
+  ctx.fillRect(PATH[0].x*CELL,PATH[0].y*CELL,CELL,CELL);
+  ctx.fillStyle='rgba(100,255,100,0.25)';
+  const last=PATH[PATH.length-1];
+  ctx.fillRect(last.x*CELL,last.y*CELL,CELL,CELL);
+}
+
+function drawUnits(){
+  for(const u of placedUnits){
+    if(!u.alive)continue;
+    // Draw emoji
+    ctx.font='22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(u.emoji,u.x,u.y);
+    // HP bar
+    if(u.curHp<u.maxHp){
+      const bw=CELL-4,bh=3;
+      const bx=u.x-bw/2,by=u.y-CELL/2+1;
+      ctx.fillStyle='#333';ctx.fillRect(bx,by,bw,bh);
+      ctx.fillStyle='#44cc44';ctx.fillRect(bx,by,bw*(u.curHp/u.maxHp),bh);
+    }
+    // Range indicator when selected
+    if(selectedUnit&&u.col===selectedUnit._previewCol&&u.row===selectedUnit._previewRow){
+      // skip, handled in preview
+    }
+    // Synergy glow
+    if(u.id==='capybara'&&nearWater(u.col,u.row)){
+      ctx.strokeStyle='rgba(100,255,200,0.4)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(u.x,u.y,CELL*0.6,0,Math.PI*2);ctx.stroke();
+    }
+  }
+}
+
+function drawEnemies(){
+  for(const e of enemies){
+    if(!e.alive)continue;
+    ctx.font='20px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(e.emoji,e.x,e.y);
+    // HP bar
+    const bw=CELL-6,bh=3;
+    const bx=e.x-bw/2,by=e.y-CELL/2+1;
+    ctx.fillStyle='#333';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=e.color;ctx.fillRect(bx,by,bw*(e.hp/e.maxHp),bh);
+    // Slow indicator
+    if(e.slowTimer>0){ctx.fillStyle='rgba(100,150,255,0.3)';ctx.beginPath();ctx.arc(e.x,e.y,10,0,Math.PI*2);ctx.fill();}
+  }
+}
+
+function drawProjectiles(){
+  for(const p of projectiles){
+    if(!p.alive)continue;
+    ctx.fillStyle='#ffee44';ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,238,68,0.3)';ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function drawParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.life-=dt;
+    if(p.life<=0){particles.splice(i,1);continue;}
+    const alpha=p.life/p.maxLife;
+    ctx.globalAlpha=alpha;
+    ctx.font='bold 12px sans-serif';ctx.textAlign='center';
+    ctx.fillStyle=p.color;
+    ctx.fillText(p.text,p.x,p.y-(1-alpha)*20);
+    ctx.globalAlpha=1;
+  }
+}
+
+function drawPlacementPreview(col,row,def){
+  if(!def)return;
+  const x=col*CELL,y=row*CELL;
+  const canPlace=MAP[row][col]===0&&!placedUnits.some(u=>u.alive&&u.col===col&&u.row===row);
+  // Range circle
+  if(def.range>0){
+    ctx.strokeStyle='rgba(100,255,100,0.3)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(x+CELL/2,y+CELL/2,def.range*CELL,0,Math.PI*2);ctx.stroke();
+  }
+  // Preview
+  ctx.globalAlpha=canPlace?0.6:0.3;
+  ctx.fillStyle=canPlace?'rgba(100,255,100,0.2)':'rgba(255,50,50,0.2)';
+  ctx.fillRect(x,y,CELL,CELL);
+  ctx.font='22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(def.emoji,x+CELL/2,y+CELL/2);
+  ctx.globalAlpha=1;
+}
+
+// HUD overlay on canvas
+function drawHUD(){
+  // Lives
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.fillRect(GW-80,4,76,20);
+  ctx.font='bold 13px sans-serif';ctx.textAlign='right';ctx.fillStyle='#ff6644';
+  ctx.fillText(`❤️ ${lives}`,GW-8,17);
+  // Wave progress bar
+  if(waveActive&&spawnQueue.length>0){
+    const total=WAVES[wave-1].reduce((s,g)=>s+g.count,0);
+    const spawned=total-spawnQueue.length;
+    ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(4,GH-10,GW-8,6);
+    ctx.fillStyle='#66ff44';ctx.fillRect(4,GH-10,(GW-8)*(spawned/total),6);
+  }
+}
+
+// === BLOCK 6: Input, UI, Main Loop ===
+let hoverCol=-1,hoverRow=-1;
+
+// Canvas coordinate conversion
+function canvasCoord(clientX,clientY){
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=GW/rect.width,scaleY=GH/rect.height;
+  return{x:(clientX-rect.left)*scaleX,y:(clientY-rect.top)*scaleY};
+}
+
+function handlePlace(px,py){
+  const col=Math.floor(px/CELL),row=Math.floor(py/CELL);
+  if(col<0||col>=COLS||row<0||row>=ROWS)return;
+  if(!selectedUnit)return;
+  if(MAP[row][col]!==0){playAudio('error',0.4,1,300);return;}
+  if(placedUnits.some(u=>u.alive&&u.col===col&&u.row===row)){playAudio('error',0.4,1,300);return;}
+  const def=selectedUnit;
+  if(def.costType==='sun'&&sun<def.cost){playAudio('error',0.4,1,300);return;}
+  if(def.costType==='nut'&&nutrients<def.cost){playAudio('error',0.4,1,300);return;}
+  if(def.costType==='sun')sun-=def.cost;else nutrients-=def.cost;
+  placeUnit(col,row,def);
+  updateUI();
+}
+
+// Mouse events
+canvas.addEventListener('mousemove',(e)=>{
+  const{x,y}=canvasCoord(e.clientX,e.clientY);
+  hoverCol=Math.floor(x/CELL);hoverRow=Math.floor(y/CELL);
+});
+canvas.addEventListener('click',(e)=>{
+  const{x,y}=canvasCoord(e.clientX,e.clientY);
+  handlePlace(x,y);
+});
+canvas.addEventListener('mouseleave',()=>{hoverCol=-1;hoverRow=-1;});
+
+// Touch events
+canvas.addEventListener('touchstart',(e)=>{
+  e.preventDefault();
+  const touch=e.touches[0];
+  const{x,y}=canvasCoord(touch.clientX,touch.clientY);
+  hoverCol=Math.floor(x/CELL);hoverRow=Math.floor(y/CELL);
+  handlePlace(x,y);
+},{passive:false});
+
+// Build unit buttons
+function buildUnitButtons(){
+  const container=document.getElementById('unit-buttons');
+  container.innerHTML='';
+  for(const def of UNIT_DEFS){
+    const btn=document.createElement('div');
+    btn.className='unit-btn';
+    btn.dataset.id=def.id;
+    const costIcon=def.costType==='sun'?'☀️':'🧬';
+    btn.innerHTML=`<div class="emoji">${def.emoji}</div><div>${t(def.nameKey)}</div><div class="cost">${costIcon}${def.cost}</div>`;
+    btn.addEventListener('click',()=>{
+      if(selectedUnit&&selectedUnit.id===def.id){selectedUnit=null;}
+      else{selectedUnit=def;}
+      updateUnitBtnStates();
+      playAudio('select',0.3,1,150);
+    });
+    btn.addEventListener('touchend',(e)=>{e.preventDefault();btn.click();});
+    container.appendChild(btn);
+  }
+}
+
+function updateUnitBtnStates(){
+  const btns=document.querySelectorAll('.unit-btn');
+  btns.forEach(b=>{
+    const id=b.dataset.id;
+    const def=UNIT_DEFS.find(d=>d.id===id);
+    const canAfford=(def.costType==='sun'?sun:nutrients)>=def.cost;
+    b.classList.toggle('selected',selectedUnit&&selectedUnit.id===id);
+    b.classList.toggle('locked',!canAfford);
+  });
+}
+
+function updateUI(){
+  document.getElementById('sun-val').textContent=Math.floor(sun);
+  document.getElementById('nut-val').textContent=Math.floor(nutrients);
+  document.getElementById('wave-info').textContent=`${t('wave')} ${wave}${t('of')}${WAVES.length}`;
+  const btn=document.getElementById('start-wave-btn');
+  btn.textContent=waveActive?t('waiting'):t('startWave');
+  btn.disabled=waveActive;
+  updateUnitBtnStates();
+}
+
+function applyLangUI(){
+  document.getElementById('back-link').textContent=t('back');
+  document.getElementById('title-text').textContent=t('title');
+  document.getElementById('title-desc').textContent=t('titleDesc');
+  document.getElementById('title-start').textContent=t('start');
+  document.getElementById('lang-btn').textContent=lang==='zh'?'EN':'繁中';
+  buildUnitButtons();
+  updateUI();
+}
+
+// Button events
+document.getElementById('lang-btn').addEventListener('click',()=>{
+  lang=lang==='zh'?'en':'zh';localStorage.setItem('ecoLang',lang);applyLangUI();
+});
+document.getElementById('pause-btn').addEventListener('click',()=>{
+  if(gameOver)return;paused=!paused;
+  document.getElementById('pause-btn').textContent=paused?'▶':'⏸';
+});
+document.getElementById('mute-btn').addEventListener('click',toggleMute);
+document.getElementById('start-wave-btn').addEventListener('click',startWave);
+document.getElementById('title-start').addEventListener('click',()=>{
+  document.getElementById('title-overlay').classList.add('hidden');
+  showMetaScreen();
+});
+document.getElementById('meta-done').addEventListener('click',()=>{
+  document.getElementById('meta-overlay').classList.add('hidden');
+  resetGame();
+});
+document.getElementById('result-btn').addEventListener('click',()=>{
+  meta=loadMeta();showMetaScreen();
+});
+
+// Resize
+function resizeCanvas(){
+  const area=document.querySelector('.game-area');
+  const aw=area.clientWidth,ah=area.clientHeight;
+  const scale=Math.min(aw/GW,ah/GH);
+  canvas.style.width=GW*scale+'px';
+  canvas.style.height=GH*scale+'px';
+}
+let resizeTimeout;
+window.addEventListener('resize',()=>{clearTimeout(resizeTimeout);resizeTimeout=setTimeout(resizeCanvas,100);});
+
+// Main loop
+let lastTime=0;
+function gameLoop(now){
+  requestAnimationFrame(gameLoop);
+  const dt=Math.min(now-lastTime,100);
+  lastTime=now;
+  if(!paused&&!gameOver){
+    const ts=performance.now();
+    // Sun passive income
+    sun+=0.015*dt*(1+(cardBuffs.photoBoost||0)*0.1);
+    updateSpawner(dt);
+    updateUnits(dt,ts);
+    applySlowEffects();
+    updateProjectiles(dt);
+    updateEnemies(dt,ts);
+    updateUI();
+  }
+  // Render
+  ctx.clearRect(0,0,GW,GH);
+  drawMap();
+  drawUnits();
+  drawEnemies();
+  drawProjectiles();
+  drawParticles(Math.min(dt,100));
+  if(selectedUnit&&hoverCol>=0&&hoverRow>=0){
+    drawPlacementPreview(hoverCol,hoverRow,selectedUnit);
+  }
+  drawHUD();
+}
+
+// Init
+if(audioMuted)document.getElementById('mute-btn').textContent='🔇';
+const startAudio=()=>{startBGM(BGM_URL);document.removeEventListener('click',startAudio);document.removeEventListener('touchend',startAudio);};
+document.addEventListener('click',startAudio);document.addEventListener('touchend',startAudio);
+applyLangUI();
+resizeCanvas();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
