@@ -243,9 +243,9 @@
 所有手機 Canvas 遊戲 **必須** 使用以下佈局結構：
 
 ```html
-<body style="display:flex;flex-direction:column;height:100vh">
+<body style="display:flex;flex-direction:column;height:100vh;height:100dvh">
   <!-- 1. 頂部工具列 -->
-  <div class="top-bar">
+  <div class="top-bar" style="position:relative;z-index:200;flex-shrink:0">
     <a href="../">← 返回</a>
     <div class="btn-group">
       <button>繁中/EN</button>
@@ -254,19 +254,31 @@
     </div>
   </div>
   <!-- 2. 遊戲區域 -->
-  <div class="game-area" style="flex:1;overflow:hidden">
+  <div class="game-area" style="flex:1;overflow:hidden;min-height:0">
     <canvas id="game"></canvas>
   </div>
   <!-- 3. 底部操作列 -->
-  <div class="action-bar">...</div>
+  <div class="action-bar" style="position:relative;z-index:200;flex-shrink:0">...</div>
 </body>
 ```
+
+### 必做事項（缺一個就會出 bug）
+
+| 項目 | 做法 | 不做的後果 |
+|------|------|-----------|
+| **body 高度** | `height:100vh;height:100dvh`（兩行，dvh 覆蓋 vh） | 手機網址列佔空間，底部按鈕被切掉 |
+| **top-bar / action-bar** | `position:relative; z-index:200; flex-shrink:0` | Canvas 的 touch 事件攔截按鈕，按不了 |
+| **game-area** | `flex:1; min-height:0; overflow:hidden` | Canvas 溢出撐開頁面，底部被推出螢幕 |
+| **Canvas resize** | 基於 `.game-area` 的 `clientWidth/clientHeight` | 用 `window.innerHeight` 會包含被工具列佔的空間 |
+| **Canvas touch-action** | `touch-action:none` 只加在 `<canvas>` | 加在 body 會讓所有按鈕 tap 失效 |
 
 ### 禁止事項
 
 - **不可**對返回/靜音/語言/暫停按鈕使用 `position:fixed`（會重疊）
 - **不可**對 Canvas 使用 `position:absolute; top:0`（會被工具列遮住）
-- Canvas 的 resize 應基於 `.game-area` 的 `clientWidth/clientHeight`，不是 `window.innerHeight`
+- **不可**用 `100vh` 不加 `100dvh`（手機瀏覽器網址列會導致溢出）
+- **不可**省略 top-bar/action-bar 的 `z-index`（Canvas touch 會攔截按鈕）
+- **不可**省略 game-area 的 `min-height:0`（flex 子元素不會正確收縮）
 
 ### 字體規則
 
