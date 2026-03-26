@@ -19,6 +19,21 @@
       --text: #2a1e0e; --text2: #5a4828; --text3: #6a5a48;
       --h1: #1a0e06;
     }
+    /* NEW badge for recently updated games */
+    .new-badge {
+      position: absolute; top: 10px; right: 10px; z-index: 5;
+      background: linear-gradient(135deg, #ff4466, #ff6644);
+      color: #fff; font-size: 11px; font-weight: 700;
+      padding: 3px 8px; border-radius: 6px;
+      letter-spacing: 1px; animation: new-pulse 2s ease-in-out infinite;
+      box-shadow: 0 2px 8px rgba(255,68,102,0.4);
+    }
+    @keyframes new-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    .update-date {
+      font-size: 11px; color: var(--text3); margin-top: 4px;
+    }
+    .game-card { position: relative; }
+
     /* Light theme: darken bright inline-colored tags for readability */
     [data-theme="light"] .tag { filter: brightness(0.52) saturate(1.3); }
     [data-theme="pink"] {
@@ -411,7 +426,7 @@
     <div class="games-grid">
 
       <!-- 水豚小村 -->
-      <a class="game-card" href="village/"
+      <a class="game-card" href="village/" data-updated="2026-03-18"
          style="--card-accent:#f0c040; --banner-bg:#1a1205; --banner-glow:rgba(240,192,64,0.3);">
         <div class="card-banner">
           <div class="game-emoji">🦫</div>
@@ -432,7 +447,7 @@
       </a>
 
       <!-- Evolution Mosquito -->
-      <a class="game-card" href="mosquito/"
+      <a class="game-card" href="mosquito/" data-updated="2026-03-20"
          style="--card-accent:#e8a020; --banner-bg:#2a1500; --banner-glow:rgba(232,160,32,0.3);">
         <div class="card-banner">
           <div class="game-emoji">🦟</div>
@@ -453,7 +468,7 @@
       </a>
 
       <!-- Virus.exe -->
-      <a class="game-card" href="virus/"
+      <a class="game-card" href="virus/" data-updated="2026-03-18"
          style="--card-accent:#00e060; --banner-bg:#001a08; --banner-glow:rgba(0,224,96,0.25);">
         <div class="card-banner">
           <div class="game-emoji">🦠</div>
@@ -473,7 +488,7 @@
       </a>
 
       <!-- Hero Idle RPG -->
-      <a class="game-card" href="hero/"
+      <a class="game-card" href="hero/" data-updated="2026-03-18"
          style="--card-accent:#9060ff; --banner-bg:#100a22; --banner-glow:rgba(144,96,255,0.3);">
         <div class="card-banner">
           <div class="game-emoji">⚔️</div>
@@ -493,7 +508,7 @@
       </a>
 
       <!-- 戰鬥陀螺 -->
-      <a class="game-card" href="beyblade/"
+      <a class="game-card" href="beyblade/" data-updated="2026-03-25"
          style="--card-accent:#aa44ff; --banner-bg:#0d0022; --banner-glow:rgba(170,68,255,0.35);">
         <div class="card-banner">
           <div class="game-emoji">🌀</div>
@@ -514,7 +529,7 @@
       </a>
 
       <!-- Zombie Idle -->
-      <a class="game-card" href="zombie-idle/"
+      <a class="game-card" href="zombie-idle/" data-updated="2026-03-18"
          style="--card-accent:#3ddc58; --banner-bg:#050a05; --banner-glow:rgba(61,220,88,0.35);">
         <div class="card-banner">
           <div class="game-emoji">🧟</div>
@@ -534,7 +549,7 @@
       </a>
 
       <!-- Earth Reborn -->
-      <a class="game-card" href="earth-civilization/"
+      <a class="game-card" href="earth-civilization/" data-updated="2026-03-24"
          style="--card-accent:#44ee88; --banner-bg:#010d04; --banner-glow:rgba(50,200,100,0.35);">
         <div class="card-banner">
           <div class="game-emoji">🌍</div>
@@ -554,7 +569,7 @@
       </a>
 
       <!-- Void Navigator -->
-      <a class="game-card" href="space-roguelike/"
+      <a class="game-card" href="space-roguelike/" data-updated="2026-03-20"
          style="--card-accent:#4af8ff; --banner-bg:#000818; --banner-glow:rgba(64,200,255,0.35);">
         <div class="card-banner">
           <div class="game-emoji">🚀</div>
@@ -575,7 +590,7 @@
       </a>
 
       <!-- 心理測驗 -->
-      <a class="game-card" href="psych-test/"
+      <a class="game-card" href="psych-test/" data-updated="2026-03-20"
          style="--card-accent:#a060f0; --banner-bg:#0e0818; --banner-glow:rgba(160,96,240,0.28);">
         <div class="card-banner">
           <div class="game-emoji">🔮</div>
@@ -595,7 +610,7 @@
       </a>
 
       <!-- 1對1情境聊天室 -->
-      <a class="game-card" href="chat-room/"
+      <a class="game-card" href="chat-room/" data-updated="2026-03-20"
          style="--card-accent:#ff80c0; --banner-bg:#1a0818; --banner-glow:rgba(255,128,192,0.28);">
         <div class="card-banner">
           <div class="game-emoji">💬</div>
@@ -615,7 +630,7 @@
       </a>
 
       <!-- 世界航道 Sea Route -->
-      <a class="game-card" href="sea-route/"
+      <a class="game-card" href="sea-route/" data-updated="2026-03-24"
          style="--card-accent:#4af8ff; --banner-bg:#020d1a; --banner-glow:rgba(74,248,255,0.3);">
         <div class="card-banner">
           <div class="game-emoji">⛵</div>
@@ -634,18 +649,8 @@
         </div>
       </a>
 
-    </div>
-
-    <!-- In Development -->
-    <div class="dev-section">
-      <div class="section-title">🔧 開發中 &nbsp; In Development</div>
-      <div class="dev-section-desc">
-        🛠 以下遊戲仍在打磨中，玩法可能不完整或有 Bug，歡迎試玩並給我們意見！
-      </div>
-      <div class="dev-grid">
-
-        <!-- 節拍戰士 -->
-        <a class="game-card dev-card" href="beat-warrior/"
+      <!-- 節拍戰士 -->
+        <a class="game-card dev-card" href="beat-warrior/" data-updated="2026-03-25"
            style="--card-accent:#a060ff; --banner-bg:#0c0820; --banner-glow:rgba(160,80,255,0.2); border-color:rgba(160,80,255,0.18);">
           <div class="card-banner">
             <div class="game-emoji">⚔</div>
@@ -661,7 +666,7 @@
         </a>
 
         <!-- 機甲蟲蟲危機 -->
-        <a class="game-card dev-card" href="bug-crisis/"
+        <a class="game-card dev-card" href="bug-crisis/" data-updated="2026-03-18"
            style="--card-accent:#f84020; --banner-bg:#180a04; --banner-glow:rgba(248,80,20,0.15); border-color:rgba(248,80,20,0.15);">
           <div class="card-banner">
             <div class="game-emoji">🐛</div>
@@ -677,7 +682,7 @@
         </a>
 
         <!-- 水豚跑酷 -->
-        <a class="game-card dev-card" href="capy-runner/"
+        <a class="game-card dev-card" href="capy-runner/" data-updated="2026-03-22"
            style="--card-accent:#ffd700; --banner-bg:#0a0a1a; --banner-glow:rgba(255,215,0,0.15); border-color:rgba(255,215,0,0.15);">
           <div class="card-banner">
             <div class="game-emoji">🦫</div>
@@ -693,7 +698,7 @@
         </a>
 
         <!-- 每日一題 RPG -->
-        <a class="game-card dev-card" href="daily-quiz-rpg/"
+        <a class="game-card dev-card" href="daily-quiz-rpg/" data-updated="2026-03-22"
            style="--card-accent:#00e5ff; --banner-bg:#000d1a; --banner-glow:rgba(0,229,255,0.12); border-color:rgba(0,229,255,0.15);">
           <div class="card-banner">
             <div class="game-emoji">📚</div>
@@ -709,7 +714,7 @@
         </a>
 
         <!-- Deep Diggers -->
-        <a class="game-card dev-card" href="deep-diggers.html"
+        <a class="game-card dev-card" href="deep-diggers.html" data-updated="2026-03-18"
            style="--card-accent:#f5a623; --banner-bg:#1a0e00; --banner-glow:rgba(245,166,35,0.15); border-color:rgba(245,166,35,0.15);">
           <div class="card-banner">
             <div class="game-emoji">⛏️</div>
@@ -725,7 +730,7 @@
         </a>
 
         <!-- 陽光農場 -->
-        <a class="game-card" href="sunnyside-farm/"
+        <a class="game-card" href="sunnyside-farm/" data-updated="2026-03-26"
            style="--card-accent:#7ac943; --banner-bg:#1a3a12; --banner-glow:rgba(122,201,67,0.28);">
           <div class="card-banner">
             <div class="game-emoji">🌾</div>
@@ -745,7 +750,7 @@
         </a>
 
         <!-- 農場三消 -->
-        <a class="game-card dev-card" href="farm-match/"
+        <a class="game-card dev-card" href="farm-match/" data-updated="2026-03-18"
            style="--card-accent:#ffd700; --banner-bg:#0d1a0a; --banner-glow:rgba(255,215,0,0.12); border-color:rgba(255,215,0,0.15);">
           <div class="card-banner">
             <div class="game-emoji">💎</div>
@@ -761,7 +766,7 @@
         </a>
 
         <!-- FPS Game -->
-        <a class="game-card dev-card" href="fps/"
+        <a class="game-card dev-card" href="fps/" data-updated="2026-03-18"
            style="--card-accent:#4080ff; --banner-bg:#0a1422; --banner-glow:rgba(64,128,255,0.12); border-color:rgba(64,128,255,0.15);">
           <div class="card-banner">
             <div class="game-emoji">🔫</div>
@@ -777,7 +782,7 @@
         </a>
 
         <!-- 末日求生 -->
-        <a class="game-card dev-card" href="zombie-spread/"
+        <a class="game-card dev-card" href="zombie-spread/" data-updated="2026-03-18"
            style="--card-accent:#44ff88; --banner-bg:#030d03; --banner-glow:rgba(64,255,100,0.12); border-color:rgba(64,255,100,0.15);">
           <div class="card-banner">
             <div class="game-emoji">☣️</div>
@@ -792,14 +797,13 @@
           </div>
         </a>
 
-      </div>
     </div>
 
     <!-- Battle Games -->
     <div class="coming-soon-section">
       <div class="section-title">⚔️ 對戰遊戲 &nbsp; Battle Games</div>
       <div class="coming-grid">
-        <a class="game-card" href="capy-tug/"
+        <a class="game-card" href="capy-tug/" data-updated="2026-03-20"
            style="--card-accent:#00e5ff; --banner-bg:#001a22; --banner-glow:rgba(0,229,255,0.28); text-decoration:none; opacity:1;">
           <div class="card-banner">
             <div class="game-emoji">🦫</div>
@@ -811,7 +815,7 @@
           </div>
           <div class="card-footer"><span class="play-btn" style="color:#00e5ff;">▶ 開始對戰</span></div>
         </a>
-        <a class="game-card" href="capy-rps/"
+        <a class="game-card" href="capy-rps/" data-updated="2026-03-20"
            style="--card-accent:#aa44ff; --banner-bg:#1a0028; --banner-glow:rgba(170,68,255,0.28); text-decoration:none; opacity:1;">
           <div class="card-banner">
             <div class="game-emoji">✂️</div>
@@ -823,7 +827,7 @@
           </div>
           <div class="card-footer"><span class="play-btn" style="color:#aa44ff;">▶ 開始對戰</span></div>
         </a>
-        <a class="game-card" href="capy-quiz/"
+        <a class="game-card" href="capy-quiz/" data-updated="2026-03-20"
            style="--card-accent:#ffd700; --banner-bg:#1a1400; --banner-glow:rgba(255,215,0,0.28); text-decoration:none; opacity:1;">
           <div class="card-banner">
             <div class="game-emoji">📚</div>
@@ -894,6 +898,49 @@
   }
   window.setTheme = setTheme;
   setTheme(saved);
+})();
+
+// Auto-sort game cards by data-updated (newest first) + add NEW badges
+(function(){
+  const grid = document.querySelector('.games-grid');
+  if(!grid) return;
+  const cards = Array.from(grid.querySelectorAll('.game-card'));
+  const now = new Date();
+  const DAY_MS = 86400000;
+
+  // Sort descending by date
+  cards.sort((a,b) => {
+    const da = a.dataset.updated || '2026-01-01';
+    const db = b.dataset.updated || '2026-01-01';
+    return db.localeCompare(da);
+  });
+
+  // Re-append sorted + add badges
+  cards.forEach(card => {
+    const dateStr = card.dataset.updated;
+    if(dateStr){
+      const d = new Date(dateStr);
+      const diffDays = Math.floor((now - d) / DAY_MS);
+
+      // NEW badge for games updated within 3 days
+      if(diffDays <= 3 && !card.querySelector('.new-badge')){
+        const badge = document.createElement('span');
+        badge.className = 'new-badge';
+        badge.textContent = diffDays === 0 ? 'NEW!' : diffDays === 1 ? 'NEW' : 'UPDATED';
+        card.appendChild(badge);
+      }
+
+      // Add subtle update date to card footer
+      const footer = card.querySelector('.card-footer');
+      if(footer && !footer.querySelector('.update-date')){
+        const dateEl = document.createElement('span');
+        dateEl.className = 'update-date';
+        dateEl.textContent = dateStr.slice(5); // "03-26"
+        footer.appendChild(dateEl);
+      }
+    }
+    grid.appendChild(card);
+  });
 })();
 </script>
 </body>
