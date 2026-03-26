@@ -2285,22 +2285,45 @@ function quitGame(){
 // ── 動態縮放（canvas CSS 尺寸，保持內部解析度）──
 function applyScale(){
   const vw=window.innerWidth, vh=window.innerHeight;
-  const uiH=130; // titleBar + statsBar + legend 合計高度
-  const totalH=660+uiH;
-  const scaleX=vw/960;
-  const scaleY=vh/totalH;
-  const s=Math.min(scaleX,scaleY,1.5);
-  const gw=Math.floor(960*s);
-  const gh=Math.floor(660*s);
-  const scaledTotalH=Math.floor(totalH*s);
-  const pt=Math.max(0,Math.floor((vh-scaledTotalH)/2));
-  document.getElementById('gameWrapper').style.paddingTop=pt+'px';
-  // 直接設 #gameFrame 的寬度（唯一的尺寸來源，防止各子元素不一致）
-  const frame=document.getElementById('gameFrame');
-  frame.style.width=gw+'px';
-  document.documentElement.style.setProperty('--gh', gh+'px');
-  canvas.style.width=gw+'px';
-  canvas.style.height=gh+'px';
+  const isPortrait=vh>vw;// mobile portrait detection
+
+  if(isPortrait){
+    // Mobile portrait: hide HTML UI, canvas fills screen
+    document.getElementById('titleBar').style.display='none';
+    document.getElementById('statsBar').style.display='none';
+    document.getElementById('legend').style.display='none';
+    document.getElementById('gameWrapper').style.paddingTop='0';
+    const s=Math.min(vw/960,vh/660);
+    const gw=Math.floor(960*s), gh=Math.floor(660*s);
+    const frame=document.getElementById('gameFrame');
+    frame.style.width=gw+'px';
+    document.documentElement.style.setProperty('--gh',gh+'px');
+    canvas.style.width=gw+'px';
+    canvas.style.height=gh+'px';
+    // Center vertically
+    const pt=Math.max(0,Math.floor((vh-gh)/2));
+    document.getElementById('gameWrapper').style.paddingTop=pt+'px';
+  }else{
+    // Desktop/landscape: show HTML UI
+    document.getElementById('titleBar').style.display='';
+    document.getElementById('statsBar').style.display='';
+    document.getElementById('legend').style.display='';
+    const uiH=130;
+    const totalH=660+uiH;
+    const scaleX=vw/960;
+    const scaleY=vh/totalH;
+    const s=Math.min(scaleX,scaleY,1.5);
+    const gw=Math.floor(960*s);
+    const gh=Math.floor(660*s);
+    const scaledTotalH=Math.floor(totalH*s);
+    const pt=Math.max(0,Math.floor((vh-scaledTotalH)/2));
+    document.getElementById('gameWrapper').style.paddingTop=pt+'px';
+    const frame=document.getElementById('gameFrame');
+    frame.style.width=gw+'px';
+    document.documentElement.style.setProperty('--gh', gh+'px');
+    canvas.style.width=gw+'px';
+    canvas.style.height=gh+'px';
+  }
 }
 applyScale();
 let _resizeTimer;
