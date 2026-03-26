@@ -486,7 +486,6 @@ function toggleMute(){
 
 ### 機甲蟲蟲危機 `bug-crisis/`
 - 3 線道設計清楚、5 種兵種各有定位
-- 部署後無法升級、後期平衡感不足
 
 ### 水豚跑酷 `capy-runner/`（2026/3/22）
 - 直式手機跑酷、Canvas 縮放填滿螢幕、滑動觸控控制
@@ -499,7 +498,6 @@ function toggleMute(){
 
 ### Deep Diggers `deep-diggers.html`
 - 500 行縱向地城、5 種生物群系、7 升級樹
-- 鑽探方向單一（只能往下）
 
 ### 地球再生 `earth-civilization/`
 - 5 時代進程、與太空 Roguelike 跨遊戲連動（研究院×3、發電廠數值已調整）
@@ -508,12 +506,9 @@ function toggleMute(){
 - Gacha 元素、N/R/SR/SSR 稀有度、連擊系統
 - 卡片技能豐富多樣（炸行/3×3炸/十字清/全場核彈），爆發感強
 - 里程碑分數獎勵步數，給玩家持續動力，不易中途放棄
-- 無存檔機制，一局結束金幣/卡片全清，難以累積長線成就感
-- 後期缺乏難度曲線，寶石種類固定、無關卡障礙物
 
 ### FPS 射擊 `fps/`
 - 完整光線追蹤引擎、爆頭機制、3 種武器
-- 敵人 AI 會卡牆、地圖固定
 
 ### 勇者傳說 `hero/`
 - 完整 RPG：職業/技能/裝備/天賦/地城/Boss
@@ -531,15 +526,13 @@ function toggleMute(){
 
 ### VIRUS.EXE `virus/`
 - 賽博朋克視覺風格、VT323 字型、多層防禦
-- ~2446 行，學習曲線陡
+- ~2446 行，學習曲線需引導
 
 ### 殭屍蔓延 Zombie Idle `zombie-idle/`
 - 點擊 + 放置雙核心、DNA Prestige 系統
-- 後期缺乏更多循環目標
 
 ### 末日求生 `zombie-spread/`
 - PostApocalypse 素材包、3 種殭屍 sprite、波次系統
-- 地圖背景較簡單
 
 ---
 
