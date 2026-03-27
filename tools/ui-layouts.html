@@ -110,6 +110,33 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
 .lob-tab .ti{font-size:20px;}
 .lob-tab .tt{font-size:10px;color:#666;}
 .lob-tab.cur .tt{color:#a060ff;}
+/* == L5: Lobby B - Town Map == */
+.town-main{flex:1;min-height:0;background:#0c1018;position:relative;overflow:hidden;}
+.town-map{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:12px;padding:16px;}
+.town-building{width:calc(45% - 6px);aspect-ratio:1;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:transform .15s;position:relative;}
+.town-building:active{transform:scale(.94);}
+.town-building .bi{font-size:40px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5));}
+.town-building .bn{font-size:13px;font-weight:bold;}
+.town-building .bd{font-size:10px;color:rgba(255,255,255,.5);}
+.town-building .bb{position:absolute;top:6px;right:6px;width:8px;height:8px;background:#f33;border-radius:50%;}
+.town-path{position:absolute;border:1px dashed rgba(255,255,255,.08);}
+/* == L6: Lobby C - Vertical Cards == */
+.vc-hero{flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 80%,rgba(255,120,60,.1),transparent 60%),#0c0a10;position:relative;}
+.vc-char{font-size:72px;filter:drop-shadow(0 0 16px rgba(255,120,60,.3));}
+.vc-info{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);text-align:center;}
+.vc-name{font-size:16px;font-weight:bold;}
+.vc-sub{font-size:11px;color:#aa8866;}
+.vc-scroll{flex:1;overflow-y:auto;min-height:0;padding:8px 12px;display:flex;flex-direction:column;gap:8px;background:#0a0810;-webkit-overflow-scrolling:touch;}
+.vc-scroll::-webkit-scrollbar{width:3px;}
+.vc-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
+.vc-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;cursor:pointer;transition:transform .12s;}
+.vc-card:active{transform:scale(.97);}
+.vc-card-icon{font-size:28px;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.vc-card-body{flex:1;}
+.vc-card-title{font-size:14px;font-weight:bold;}
+.vc-card-desc{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+.vc-card-arrow{font-size:18px;color:rgba(255,255,255,.25);}
+.vc-card-notif{width:8px;height:8px;background:#f33;border-radius:50%;position:absolute;top:10px;right:10px;}
 </style>
 </head>
 <body>
@@ -118,7 +145,9 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
   <button class="mode-tab active" onclick="showLayout(0)">RPG 標準</button>
   <button class="mode-tab" onclick="showLayout(1)">Idle 儀表板</button>
   <button class="mode-tab" onclick="showLayout(2)">動作全螢幕</button>
-  <button class="mode-tab" onclick="showLayout(3)">大廳模式</button>
+  <button class="mode-tab" onclick="showLayout(3)">大廳 A</button>
+  <button class="mode-tab" onclick="showLayout(4)">大廳 B</button>
+  <button class="mode-tab" onclick="showLayout(5)">大廳 C</button>
 </div>
 
 <!-- L1: RPG Standard -->
@@ -248,6 +277,108 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
   <div class="lob-tabs">
     <div class="lob-tab"><span class="ti">🏠</span><span class="tt">主頁</span></div>
     <div class="lob-tab cur"><span class="ti">⚔️</span><span class="tt">冒險</span></div>
+    <div class="lob-tab"><span class="ti">🎒</span><span class="tt">背包</span></div>
+    <div class="lob-tab"><span class="ti">🎲</span><span class="tt">召喚</span></div>
+    <div class="lob-tab"><span class="ti">⚙</span><span class="tt">設定</span></div>
+  </div>
+</div>
+
+<!-- L5: Lobby B - Town Map -->
+<div class="layout" id="lay4">
+  <div class="lob-hud">
+    <div class="lob-player">
+      <div class="lob-avatar" style="border-color:#44aaff">🏠</div>
+      <div><div style="font-size:14px;font-weight:bold">我的小鎮</div><div style="font-size:11px;color:#88aacc">人口 247</div></div>
+    </div>
+    <div class="lob-res">
+      <div class="lob-r" style="color:#fd0">💰 18K</div>
+      <div class="lob-r" style="color:#88ddff">🔮 45</div>
+    </div>
+  </div>
+  <div class="town-main">
+    <div class="town-map">
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(255,200,60,.15),rgba(200,150,40,.08));border:1px solid rgba(255,200,60,.2)">
+        <span class="bi">⚔️</span><span class="bn" style="color:#FFD700">競技場</span><span class="bd">排名 #42</span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(100,200,255,.15),rgba(60,150,220,.08));border:1px solid rgba(100,200,255,.2)">
+        <span class="bi">🏪</span><span class="bn" style="color:#88ddff">商店</span><span class="bd">3 件新品</span><span class="bb"></span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(160,96,255,.15),rgba(120,60,200,.08));border:1px solid rgba(160,96,255,.2)">
+        <span class="bi">🔮</span><span class="bn" style="color:#c088ff">魔法塔</span><span class="bd">研究中...</span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(68,238,136,.15),rgba(40,180,100,.08));border:1px solid rgba(68,238,136,.2)">
+        <span class="bi">🌳</span><span class="bn" style="color:#44ee88">農場</span><span class="bd">收穫可領</span><span class="bb"></span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(255,100,100,.15),rgba(200,60,60,.08));border:1px solid rgba(255,100,100,.2)">
+        <span class="bi">🏰</span><span class="bn" style="color:#ff8888">城堡</span><span class="bd">防禦 Lv.5</span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(255,180,60,.15),rgba(200,140,40,.08));border:1px solid rgba(255,180,60,.2)">
+        <span class="bi">⚒️</span><span class="bn" style="color:#ffbb44">鍛造坊</span><span class="bd">鍛造完成</span><span class="bb"></span>
+      </div>
+    </div>
+  </div>
+  <div class="lob-tabs">
+    <div class="lob-tab cur" style="color:#44aaff"><span class="ti">🏠</span><span class="tt" style="color:#44aaff">城鎮</span></div>
+    <div class="lob-tab"><span class="ti">🗺️</span><span class="tt">世界</span></div>
+    <div class="lob-tab"><span class="ti">🎒</span><span class="tt">背包</span></div>
+    <div class="lob-tab"><span class="ti">👤</span><span class="tt">角色</span></div>
+    <div class="lob-tab"><span class="ti">⚙</span><span class="tt">設定</span></div>
+  </div>
+</div>
+
+<!-- L6: Lobby C - Vertical Cards -->
+<div class="layout" id="lay5">
+  <div class="lob-hud" style="border-color:rgba(255,120,60,.2)">
+    <div class="lob-player">
+      <div class="lob-avatar" style="border-color:#ff7844;background:#2a1510">🔥</div>
+      <div><div style="font-size:14px;font-weight:bold">焰刃 Lv.48</div><div style="font-size:11px;color:#cc8860">戰力 256,800</div></div>
+    </div>
+    <div class="lob-res">
+      <div class="lob-r" style="color:#fd0">💰 120K</div>
+      <div class="lob-r" style="color:#ff7844">🔥 88</div>
+    </div>
+  </div>
+  <div class="vc-hero">
+    <div class="vc-char">🗡️</div>
+    <div class="vc-info"><div class="vc-name">焰刃戰士</div><div class="vc-sub">SSR · 覺醒 ★★★☆☆</div></div>
+  </div>
+  <div class="vc-scroll">
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(255,68,68,.12),rgba(200,40,40,.06));border:1px solid rgba(255,68,68,.2);position:relative">
+      <div class="vc-card-icon" style="background:rgba(255,68,68,.15)">⚔️</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#ff6666">主線戰役</div><div class="vc-card-desc">第 12 章 · 火焰之門</div></div>
+      <span class="vc-card-arrow">›</span>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(160,96,255,.12),rgba(120,60,200,.06));border:1px solid rgba(160,96,255,.2);position:relative">
+      <div class="vc-card-icon" style="background:rgba(160,96,255,.15)">🏰</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#c088ff">地城探索</div><div class="vc-card-desc">深淵 B7 · 今日 3/5 次</div></div>
+      <span class="vc-card-arrow">›</span>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(255,200,60,.12),rgba(200,150,40,.06));border:1px solid rgba(255,200,60,.2);position:relative">
+      <div class="vc-card-icon" style="background:rgba(255,200,60,.15)">🏆</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#FFD700">競技場</div><div class="vc-card-desc">排名 #128 · 獎勵可領</div></div>
+      <span class="vc-card-arrow">›</span>
+      <div class="vc-card-notif"></div>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(68,238,136,.12),rgba(40,180,100,.06));border:1px solid rgba(68,238,136,.2)">
+      <div class="vc-card-icon" style="background:rgba(68,238,136,.15)">👥</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#44ee88">公會戰</div><div class="vc-card-desc">週六 20:00 開戰</div></div>
+      <span class="vc-card-arrow">›</span>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(100,200,255,.12),rgba(60,150,220,.06));border:1px solid rgba(100,200,255,.2);position:relative">
+      <div class="vc-card-icon" style="background:rgba(100,200,255,.15)">🎲</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#88ddff">每日任務</div><div class="vc-card-desc">4/6 完成</div></div>
+      <span class="vc-card-arrow">›</span>
+      <div class="vc-card-notif"></div>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(255,120,60,.12),rgba(200,80,30,.06));border:1px solid rgba(255,120,60,.2)">
+      <div class="vc-card-icon" style="background:rgba(255,120,60,.15)">⚒️</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#ff7844">裝備鍛造</div><div class="vc-card-desc">傳說大劍 鍛造中 02:15:30</div></div>
+      <span class="vc-card-arrow">›</span>
+    </div>
+  </div>
+  <div class="lob-tabs" style="border-color:rgba(255,120,60,.15)">
+    <div class="lob-tab"><span class="ti">🏠</span><span class="tt">主頁</span></div>
+    <div class="lob-tab cur" style="color:#ff7844"><span class="ti">⚔️</span><span class="tt" style="color:#ff7844">冒險</span></div>
     <div class="lob-tab"><span class="ti">🎒</span><span class="tt">背包</span></div>
     <div class="lob-tab"><span class="ti">🎲</span><span class="tt">召喚</span></div>
     <div class="lob-tab"><span class="ti">⚙</span><span class="tt">設定</span></div>
