@@ -14,6 +14,40 @@
 
 ---
 
+## Push 衝突預防規則（最優先執行）
+
+**每次 `git push` 到任何分支之前**，Claude 必須先執行預檢：
+
+```bash
+# 1. 取得最新 main
+git fetch origin main
+
+# 2. 乾跑合併，確認有無衝突（不真正 commit）
+git merge --no-commit --no-ff origin/main 2>&1
+git merge --abort 2>/dev/null   # 不管成不成功，都立刻中止
+```
+
+**判斷與處理：**
+
+| 結果 | 行動 |
+|------|------|
+| 無衝突 | 直接 push，不需告知 |
+| 有衝突（Merge conflict） | **先 rebase** → 解決衝突 → push，事後告知「已預先解決衝突 ✅」 |
+| origin/main 落後於 HEAD | 無衝突風險，直接 push |
+
+**強制順序**（缺一不可）：
+
+```
+fetch origin main
+  → 乾跑 merge 確認衝突
+    → 若有衝突 → rebase + 解決
+      → git push
+```
+
+**不需要問**：全程自動執行，只有遇到無法自動解決的衝突才暫停報告。
+
+---
+
 ## Push 後自動衝突檢查規則（最優先執行）
 
 **每次 `git push` 到 `claude/` 分支後**，Claude 必須立即執行以下流程：
