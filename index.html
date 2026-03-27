@@ -208,6 +208,92 @@
     .recent-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; }
     .recent-date { font-size: 10px; color: var(--accent); font-weight: 600; letter-spacing: 0.5px; }
 
+    /* ── What's New ── */
+    .whats-new {
+      max-width: 900px;
+      margin: 28px auto 0;
+      padding: 0 24px;
+    }
+    .whats-new-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+      padding-left: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .whats-new-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(var(--accent-rgb),.4), transparent);
+    }
+    .whats-new-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .wn-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: border-color 0.18s;
+    }
+    .wn-entry:hover {
+      border-color: var(--accent);
+    }
+    .wn-date {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 46px;
+      padding-top: 1px;
+    }
+    .wn-icon {
+      font-size: 18px;
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+    .wn-text {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wn-text .wn-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .wn-tag.new { background: rgba(68,238,136,.15); color: #44ee88; }
+    .wn-tag.update { background: rgba(74,248,255,.15); color: #4af8ff; }
+    .wn-tag.fix { background: rgba(255,168,68,.15); color: #ffa844; }
+    .wn-tag.backend { background: rgba(160,96,255,.15); color: #a060ff; }
+    .whats-new-toggle {
+      margin-top: 8px;
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 0;
+      font-family: inherit;
+      transition: color 0.18s;
+    }
+    .whats-new-toggle:hover { color: var(--accent); }
+
     /* ── Nav Sections ── */
     .nav-sections {
       max-width: 900px;
@@ -646,6 +732,68 @@
     <div class="recent-scroll" id="recentScroll"></div>
   </div>
 
+  <!-- What's New -->
+  <div class="whats-new">
+    <div class="whats-new-label">📢 最新動態 · What's New</div>
+    <div class="whats-new-list" id="whatsNewList">
+      <div class="wn-entry">
+        <div class="wn-date">03/27</div>
+        <div class="wn-icon">📊</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增流量分析儀表板，追蹤全站頁面瀏覽數據</div>
+      </div>
+      <div class="wn-entry">
+        <div class="wn-date">03/27</div>
+        <div class="wn-icon">⚙️</div>
+        <div class="wn-text"><span class="wn-tag backend">BACKEND</span>GitHub Actions 自動部署 — push 到 main 即自動上線</div>
+      </div>
+      <div class="wn-entry">
+        <div class="wn-date">03/27</div>
+        <div class="wn-icon">📡</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增社群趨勢雷達 — Dcard / YT / PTT 多平台熱門追蹤</div>
+      </div>
+      <div class="wn-entry">
+        <div class="wn-date">03/26</div>
+        <div class="wn-icon">🔍</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增寶可夢喜好攻略 — 306 隻寶可夢 × 212 棲息地查詢</div>
+      </div>
+      <div class="wn-entry">
+        <div class="wn-date">03/26</div>
+        <div class="wn-icon">💬</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增情境聊天室 — 配對異性 5 分鐘聊天</div>
+      </div>
+      <div class="wn-entry" style="display:none" data-extra>
+        <div class="wn-date">03/26</div>
+        <div class="wn-icon">🕳️</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增黑洞收割者 — 操控黑洞吞噬一切</div>
+      </div>
+      <div class="wn-entry" style="display:none" data-extra>
+        <div class="wn-date">03/25</div>
+        <div class="wn-icon">🗳️</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增議員做了什麼 — 查立委投票 × 質詢 × 出席率</div>
+      </div>
+      <div class="wn-entry" style="display:none" data-extra>
+        <div class="wn-date">03/25</div>
+        <div class="wn-icon">🔍</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增詐騙辨識器 — 貼上可疑訊息立即分析風險</div>
+      </div>
+      <div class="wn-entry" style="display:none" data-extra>
+        <div class="wn-date">03/25</div>
+        <div class="wn-icon">📋</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增租屋糾紛自救包 — 6 種情境 + 存證信函草稿</div>
+      </div>
+      <div class="wn-entry" style="display:none" data-extra>
+        <div class="wn-date">03/24</div>
+        <div class="wn-icon">⛵</div>
+        <div class="wn-text"><span class="wn-tag new">NEW</span>新增世界航道 Sea Route — 放置 Idle × 10 國航線探索</div>
+      </div>
+    </div>
+    <button class="whats-new-toggle" id="wnToggle" onclick="(function(){
+      var extras=document.querySelectorAll('[data-extra]'),show=extras[0]&&extras[0].style.display==='none';
+      extras.forEach(function(e){e.style.display=show?'':'none'});
+      document.getElementById('wnToggle').textContent=show?'▲ 收起 · Less':'▼ 顯示更多 · More';
+    })()">▼ 顯示更多 · More</button>
+  </div>
+
   <div class="nav-sections">
 
     <!-- 遊戲 -->
@@ -721,7 +869,7 @@
           <div class="card-label">議員做了什麼？</div>
           <div class="card-desc">查立委投票 × 質詢 × 出席率</div>
         </a>
-        <a class="nav-card" href="social-trends/">
+        <a class="nav-card" href="social-trends/" data-date="2026-03-27">
           <div class="card-icon">📡</div>
           <div class="card-label">社群趨勢雷達</div>
           <div class="card-desc">Dcard × YT × PTT 多平台熱門追蹤</div>
