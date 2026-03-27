@@ -152,8 +152,12 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;}
 @keyframes card-shine{0%{left:-100%;}100%{left:200%;}}
 @keyframes float-up{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-40px);}}
 @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+@keyframes particle-rise{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-60px) scale(0.5);}}
+@keyframes flash-white{0%{opacity:0;}20%{opacity:0.8;}100%{opacity:0;}}
+@keyframes rainbow-border{0%{border-color:hsl(0,80%,60%);}33%{border-color:hsl(120,80%,60%);}66%{border-color:hsl(240,80%,60%);}100%{border-color:hsl(360,80%,60%);}}
 .glow-anim{animation:glow-pulse 1.5s ease-in-out infinite;}
 .shake-anim{animation:shake 0.3s ease-in-out;}
+.ssr-glow{animation:rainbow-border 2s linear infinite;}
 .float-num{position:absolute;pointer-events:none;font-weight:bold;font-size:16px;
   color:var(--accent);animation:float-up 1s ease-out forwards;}
 
@@ -251,6 +255,7 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;}
 <script>
 /* ===== CONSTANTS & SPRITE MAP ===== */
 const CHAR_SHEET = '../../assets/capy-collector/char-sheet.png';
+const CHAR_SHEET2 = '../../assets/capy-collector/char-sheet2.png';
 const SCENE_SHEET = '../../assets/capy-collector/scene-sheet.png';
 const CARD_BACK = '../../assets/capy-collector/card-back.png';
 
@@ -271,10 +276,23 @@ const CHARS = [
   {id:'melon',    nameEn:'Melon Capy', nameTw:'西瓜豚',   rarity:'N',   skill:'idleHearts', skillVal:1,  col:0,row:2},
   {id:'bee',      nameEn:'Bee Capy',   nameTw:'蜜蜂豚',   rarity:'R',   skill:'idleCoins',  skillVal:4,  col:1,row:2},
   {id:'angel',    nameEn:'Angel Capy', nameTw:'天使豚',   rarity:'SSR', skill:'idleAll',    skillVal:3,  col:2,row:2},
-  {id:'captain',  nameEn:'Captain Capy',nameTw:'船長豚',  rarity:'SSR', skill:'idleAll',    skillVal:5,  col:3,row:2}
+  {id:'captain',  nameEn:'Captain Capy',nameTw:'船長豚',  rarity:'SSR', skill:'idleAll',    skillVal:5,  col:3,row:2},
+  {id:'ninja',      nameEn:'Ninja Capy',     nameTw:'忍者豚',    rarity:'SR',  skill:'idleStars',  skillVal:2, col:0,row:0,sheet:2},
+  {id:'astronaut',  nameEn:'Astro Capy',     nameTw:'太空豚',    rarity:'SSR', skill:'idleAll',    skillVal:4, col:1,row:0,sheet:2},
+  {id:'firefighter',nameEn:'Fire Capy',      nameTw:'消防豚',    rarity:'R',   skill:'idleHearts', skillVal:2, col:2,row:0,sheet:2},
+  {id:'samurai',    nameEn:'Samurai Capy',   nameTw:'武士豚',    rarity:'SR',  skill:'idleGems',   skillVal:2, col:3,row:0,sheet:2},
+  {id:'artist',     nameEn:'Artist Capy',    nameTw:'畫家豚',    rarity:'N',   skill:'idleHearts', skillVal:1, col:0,row:1,sheet:2},
+  {id:'scientist',  nameEn:'Science Capy',   nameTw:'科學豚',    rarity:'R',   skill:'idleGems',   skillVal:2, col:1,row:1,sheet:2},
+  {id:'farmer',     nameEn:'Farmer Capy',    nameTw:'農夫豚',    rarity:'N',   skill:'idleCoins',  skillVal:2, col:2,row:1,sheet:2},
+  {id:'vampire',    nameEn:'Vampire Capy',   nameTw:'吸血鬼豚',  rarity:'SR',  skill:'idleStars',  skillVal:2, col:3,row:1,sheet:2},
+  {id:'robot',      nameEn:'Robot Capy',     nameTw:'機器豚',    rarity:'SSR', skill:'idleAll',    skillVal:4, col:0,row:2,sheet:2},
+  {id:'princess',   nameEn:'Princess Capy',  nameTw:'公主豚',    rarity:'R',   skill:'idleHearts', skillVal:2, col:1,row:2,sheet:2},
+  {id:'viking',     nameEn:'Viking Capy',    nameTw:'維京豚',    rarity:'SR',  skill:'idleCoins',  skillVal:4, col:2,row:2,sheet:2},
+  {id:'santa',      nameEn:'Santa Capy',     nameTw:'聖誕豚',    rarity:'SSR', skill:'idleAll',    skillVal:5, col:3,row:2,sheet:2}
 ];
 
 const RARITY_WEIGHTS = {N:50, R:30, SR:15, SSR:5};
+const PREMIUM_WEIGHTS = {N:25, R:35, SR:25, SSR:15};
 const RARITY_COLORS = {N:'var(--card-n)',R:'var(--card-r)',SR:'var(--card-sr)',SSR:'var(--card-ssr)'};
 const SUMMON_COST_1 = 100;
 const SUMMON_COST_10 = 900;
@@ -285,8 +303,8 @@ const SCENES = [
   {id:'bedroom',   nameEn:'Bedroom',     nameTw:'臥室',     slots:2, res:'heart',  resIcon:'❤️'},
   {id:'dock',      nameEn:'Pirate Dock', nameTw:'海盜碼頭', slots:3, res:'chest',  resIcon:'📦'},
   {id:'garden',    nameEn:'Garden',      nameTw:'花園',     slots:3, res:'flower', resIcon:'🌸'},
-  {id:'hotspring', nameEn:'Hot Spring',  nameTw:'溫泉',     slots:2, res:'heart',  resIcon:'♨️'},
-  {id:'castle',    nameEn:'Castle',      nameTw:'城堡',     slots:4, res:'star',   resIcon:'⭐'}
+  {id:'hotspring', nameEn:'Hot Spring',  nameTw:'溫泉',     slots:2, res:'heart',  resIcon:'♨️', cost:200},
+  {id:'castle',    nameEn:'Castle',      nameTw:'城堡',     slots:4, res:'star',   resIcon:'⭐', cost:500}
 ];
 
 const I18N = {
@@ -297,11 +315,12 @@ const I18N = {
     levelUp:'Level Up', level:'Lv.', owned:'Owned', locked:'???',
     tapContinue:'Tap to continue', noCoins:'Not enough coins!',
     deploy:'Deploy', remove:'Remove', empty:'Empty', income:'Income',
+    noGems:'Not enough gems!', premium:'Premium', locked:'???', unlock:'Unlock',
     perSec:'/sec', collected:'Collected', total:'Total',
     newCapy:'New!', duplicate:'Duplicate → Level Up!',
     tutTitle:'Welcome to Capy Collector!',
     tut1:'🪙 Earn coins to summon capybaras',
-    tut2:'✨ Summon to collect 12 unique capybaras (N/R/SR/SSR)',
+    tut2:'✨ Summon to collect 24 unique capybaras (N/R/SR/SSR)',
     tut3:'🏝️ Deploy capybaras to scenes for idle income',
     tut4:'⬆️ Get duplicates to level up and boost production',
     tut5:'Have fun collecting them all!',
@@ -317,11 +336,12 @@ const I18N = {
     levelUp:'升級', level:'Lv.', owned:'已擁有', locked:'???',
     tapContinue:'點擊繼續', noCoins:'金幣不足！',
     deploy:'部署', remove:'移除', empty:'空位', income:'收入',
+    noGems:'寶石不足！', premium:'高級', unlock:'解鎖',
     perSec:'/秒', collected:'已收集', total:'全部',
     newCapy:'新角色！', duplicate:'重複 → 升級！',
     tutTitle:'歡迎來到水豚收藏家！',
     tut1:'🪙 賺取金幣來召喚水豚',
-    tut2:'✨ 召喚收集 12 隻獨特水豚（N/R/SR/SSR）',
+    tut2:'✨ 召喚收集 24 隻獨特水豚（N/R/SR/SSR）',
     tut3:'🏝️ 把水豚部署到場景賺取被動收入',
     tut4:'⬆️ 抽到重複角色可以升級，提升產量',
     tut5:'收集它們全部吧！',
@@ -339,6 +359,7 @@ let state = {
   coins: 500, gems: 10, hearts: 0, stars: 0,
   chars: {},       // {charId: {level, count}}
   deployed: {},    // {sceneId: [charId, charId, ...]}
+  unlockedScenes: ['beach','bedroom','dock','garden'],
   totalSummons: 0,
   lastTick: Date.now()
 };
@@ -409,16 +430,17 @@ function cropFromImage(img, sx, sy, sw, sh){
 
 function loadAllSprites(callback){
   let loaded = 0;
-  const total = 2; // only 2 sheets now
-  const charImg = new Image(), sceneImg = new Image();
+  const total = 3;
+  const charImg = new Image(), charImg2 = new Image(), sceneImg = new Image();
 
   function onLoad(){
     loaded++;
     if(loaded < total) return;
 
-    // Crop characters: col*600, row*597, 600×597
+    // Crop characters from both sheets
     CHARS.forEach(c => {
-      charDataUrls[c.id] = cropFromImage(charImg, c.col*CS_CW, c.row*CS_CH, CS_CW, CS_CH);
+      const img = c.sheet===2 ? charImg2 : charImg;
+      charDataUrls[c.id] = cropFromImage(img, c.col*CS_CW, c.row*CS_CH, CS_CW, CS_CH);
     });
 
     // Crop scenes: col*1024, row*512, 1024×512
@@ -441,9 +463,9 @@ function loadAllSprites(callback){
     callback();
   }
 
-  charImg.onload = onLoad; sceneImg.onload = onLoad;
-  charImg.onerror = onLoad; sceneImg.onerror = onLoad;
-  charImg.src = CHAR_SHEET; sceneImg.src = SCENE_SHEET;
+  charImg.onload = onLoad; charImg2.onload = onLoad; sceneImg.onload = onLoad;
+  charImg.onerror = onLoad; charImg2.onerror = onLoad; sceneImg.onerror = onLoad;
+  charImg.src = CHAR_SHEET; charImg2.src = CHAR_SHEET2; sceneImg.src = SCENE_SHEET;
 }
 
 function getCharPortraitStyle(c){
@@ -486,16 +508,17 @@ function switchTab(tabName){
 }
 
 /* ===== GACHA / SUMMON ===== */
-function rollRarity(){
+function rollRarity(premium=false){
+  const weights = premium ? PREMIUM_WEIGHTS : RARITY_WEIGHTS;
   const r = Math.random()*100;
   let cum=0;
-  for(const [rarity,w] of Object.entries(RARITY_WEIGHTS)){
+  for(const [rarity,w] of Object.entries(weights)){
     cum+=w; if(r<cum) return rarity;
   }
   return 'N';
 }
-function rollChar(){
-  const rarity = rollRarity();
+function rollChar(premium=false){
+  const rarity = rollRarity(premium);
   const pool = CHARS.filter(c=>c.rarity===rarity);
   return pool[Math.floor(Math.random()*pool.length)];
 }
@@ -517,19 +540,22 @@ function addChar(c){
 let summonQueue = [];
 let summonShowing = false;
 
-function doSummon(count){
-  const cost = count===1 ? SUMMON_COST_1 : SUMMON_COST_10;
-  if(state.coins < cost){
-    showToast(t('noCoins'));
-    return;
+function doSummon(count, premium=false){
+  if(premium){
+    const cost = count===1 ? 10 : 90;
+    if(state.gems < cost){ showToast(t('noGems')); return; }
+    state.gems -= cost;
+  } else {
+    const cost = count===1 ? SUMMON_COST_1 : SUMMON_COST_10;
+    if(state.coins < cost){ showToast(t('noCoins')); return; }
+    state.coins -= cost;
   }
-  state.coins -= cost;
   updateResDisplay();
   playAudio('summon', 0.6, 1, 280);
 
   summonQueue = [];
   for(let i=0;i<count;i++){
-    const c = rollChar();
+    const c = rollChar(premium);
     const result = addChar(c);
     summonQueue.push({char:c, result});
   }
@@ -580,9 +606,19 @@ function showNextSummon(){
     inner.classList.add('flipped');
     glow.style.opacity='1';
     glow.classList.add('glow-anim');
-    if(c.rarity==='SSR') playAudio('ssr',0.8,1,0);
-    else if(c.rarity==='SR') playAudio('upgrade',0.6,1,280);
-    else playAudio('collect',0.5,1,280);
+    if(c.rarity==='SSR'){
+      playAudio('ssr',0.8,1,0);
+      flashScreen('white');
+      spawnParticles(overlay,'⭐',8);
+      front.classList.add('ssr-glow');
+    } else if(c.rarity==='SR'){
+      playAudio('upgrade',0.6,1,280);
+      spawnParticles(overlay,'✨',5);
+      front.classList.remove('ssr-glow');
+    } else {
+      playAudio('collect',0.5,1,280);
+      front.classList.remove('ssr-glow');
+    }
   }, 600);
 
   $('summon-tap-hint').textContent = t('tapContinue') +
@@ -594,6 +630,26 @@ function onSummonOverlayTap(){
   $('summon-glow').classList.remove('glow-anim');
   $('summon-glow').style.opacity='0';
   showNextSummon();
+}
+
+function spawnParticles(parentEl, emoji, count){
+  for(let i=0;i<count;i++){
+    const p = document.createElement('div');
+    p.textContent = emoji;
+    p.style.cssText = `position:absolute;font-size:${14+Math.random()*10}px;pointer-events:none;`
+      +`left:${30+Math.random()*40}%;top:${20+Math.random()*30}%;`
+      +`animation:particle-rise ${0.8+Math.random()*0.6}s ease-out forwards;`
+      +`animation-delay:${Math.random()*0.3}s;`;
+    parentEl.appendChild(p);
+    setTimeout(()=>p.remove(), 1500);
+  }
+}
+
+function flashScreen(color='white'){
+  const f = document.createElement('div');
+  f.style.cssText=`position:fixed;inset:0;background:${color};pointer-events:none;z-index:999;animation:flash-white 0.4s ease-out forwards;`;
+  document.body.appendChild(f);
+  setTimeout(()=>f.remove(), 500);
 }
 
 function showToast(msg){
@@ -619,7 +675,7 @@ function renderHome(){
       <p>${t('welcomeMsg')}</p>
     </div>
     <div class="home-stats">
-      <div class="stat-card"><div class="val">${ownedCount}/12</div><div class="label">${t('statOwned')}</div></div>
+      <div class="stat-card"><div class="val">${ownedCount}/24</div><div class="label">${t('statOwned')}</div></div>
       <div class="stat-card"><div class="val">${state.totalSummons}</div><div class="label">${t('summon')}</div></div>
       <div class="stat-card"><div class="val">${totalLevels}</div><div class="label">${t('statLevel')}</div></div>
       <div class="stat-card"><div class="val">🪙${incomePerSec.toFixed(1)}</div><div class="label">${t('statIncome')}</div></div>
@@ -651,6 +707,21 @@ function renderSummon(){
         N: ${RARITY_WEIGHTS.N}% &nbsp; R: ${RARITY_WEIGHTS.R}% &nbsp;
         SR: ${RARITY_WEIGHTS.SR}% &nbsp; SSR: ${RARITY_WEIGHTS.SSR}%
       </p>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(192,112,240,0.3);">
+        <p style="font-size:13px;color:var(--card-sr);margin-bottom:8px;">💎 ${t('premium')} (SSR 15%)</p>
+        <div class="summon-btns">
+          <button class="summon-btn s1" style="background:linear-gradient(135deg,#c070f0,#9050d0);color:#fff;" onclick="doSummon(1,true)">
+            ${t('summon1')}<span class="summon-cost">💎 10</span>
+          </button>
+          <button class="summon-btn s10" style="background:linear-gradient(135deg,#f040a0,#c030d0);color:#fff;" onclick="doSummon(10,true)">
+            ${t('summon10')}<span class="summon-cost">💎 90</span>
+          </button>
+        </div>
+        <p style="margin-top:8px;font-size:12px;color:var(--text2);">
+          N: ${PREMIUM_WEIGHTS.N}% &nbsp; R: ${PREMIUM_WEIGHTS.R}% &nbsp;
+          SR: ${PREMIUM_WEIGHTS.SR}% &nbsp; SSR: ${PREMIUM_WEIGHTS.SSR}%
+        </p>
+      </div>
     </div>`;
 }
 
@@ -712,27 +783,40 @@ function renderScenes(){
       if(cid){const inc=calcCharIncome(cid); scIncome+=inc.coins+inc.gems*5+inc.hearts*2+inc.stars*3;}
     });
 
-    html+=`<div class="scene-card">
-      <div class="scene-banner" style="${getSceneBgStyle(sc)}">
-        <span class="scene-name">${sceneName}</span>
-      </div>
-      <div class="scene-slots">`;
+    const isLocked = sc.cost && !state.unlockedScenes.includes(sc.id);
 
-    for(let i=0;i<sc.slots;i++){
-      const cid = deployed[i];
-      if(cid && state.chars[cid]){
-        const c = CHARS.find(x=>x.id===cid);
-        html+=`<div class="scene-slot filled" onclick="onSlotClick('${sc.id}',${i})">
-          <div class="slot-img" style="${getCharPortraitStyle(c)}"></div>
-        </div>`;
-      } else {
-        html+=`<div class="scene-slot" onclick="onSlotClick('${sc.id}',${i})">
-          <span class="slot-empty">+</span>
-        </div>`;
+    html+=`<div class="scene-card" style="position:relative;${isLocked?'opacity:0.7;':''}">
+      <div class="scene-banner" style="${getSceneBgStyle(sc)}${isLocked?'filter:brightness(0.4);':''}">
+        <span class="scene-name">${sceneName}</span>
+      </div>`;
+
+    if(isLocked){
+      html+=`<div style="padding:16px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:6px;">🔒</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:10px;">${t('locked')}</p>
+        <button onclick="unlockScene('${sc.id}')" style="padding:10px 24px;border-radius:10px;border:none;
+          background:linear-gradient(135deg,#c070f0,#9050d0);color:#fff;font-size:14px;font-weight:bold;cursor:pointer;">
+          ${t('unlock')} — 💎 ${sc.cost}
+        </button>
+      </div>`;
+    } else {
+      html+=`<div class="scene-slots">`;
+      for(let i=0;i<sc.slots;i++){
+        const cid = deployed[i];
+        if(cid && state.chars[cid]){
+          const c = CHARS.find(x=>x.id===cid);
+          html+=`<div class="scene-slot filled" onclick="onSlotClick('${sc.id}',${i})">
+            <div class="slot-img" style="${getCharPortraitStyle(c)}"></div>
+          </div>`;
+        } else {
+          html+=`<div class="scene-slot" onclick="onSlotClick('${sc.id}',${i})">
+            <span class="slot-empty">+</span>
+          </div>`;
+        }
       }
+      html+=`</div>`;
+      if(scIncome>0) html+=`<div class="scene-income">${t('income')}: 🪙${scIncome.toFixed(1)}${t('perSec')}</div>`;
     }
-    html+=`</div>`;
-    if(scIncome>0) html+=`<div class="scene-income">${t('income')}: 🪙${scIncome.toFixed(1)}${t('perSec')}</div>`;
     html+=`</div>`;
   });
   html+='</div>';
@@ -805,10 +889,25 @@ function assignChar(charId){
   playAudio('collect',0.5,1,200);
 }
 
+function unlockScene(sceneId){
+  const sc = SCENES.find(s=>s.id===sceneId);
+  if(!sc||!sc.cost) return;
+  if(state.gems < sc.cost){ showToast(t('noGems')); return; }
+  state.gems -= sc.cost;
+  if(!state.unlockedScenes.includes(sceneId)) state.unlockedScenes.push(sceneId);
+  saveGame();
+  updateResDisplay();
+  playAudio('ssr',0.7,1,0);
+  flashScreen('rgba(192,112,240,0.3)');
+  const sceneScreen = $('screen-scenes');
+  if(sceneScreen) spawnParticles(sceneScreen,'💎',6);
+  renderScenes();
+}
+
 /* ===== COLLECTION ===== */
 function renderCollection(){
   let html=`<p style="margin-bottom:10px;font-size:13px;color:var(--text2);">
-    ${t('collected')}: ${Object.keys(state.chars).length}/12</p>`;
+    ${t('collected')}: ${Object.keys(state.chars).length}/24</p>`;
   html+='<div class="coll-grid">';
   CHARS.forEach(c=>{
     const owned = state.chars[c.id];
@@ -876,6 +975,8 @@ function doLevelUp(charId){
   saveGame();
   updateResDisplay();
   playAudio('upgrade',0.7,1,280);
+  const upgradeScreen = $('screen-upgrades');
+  if(upgradeScreen) spawnParticles(upgradeScreen,'⬆️',4);
   renderUpgrades();
 }
 
