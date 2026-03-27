@@ -136,7 +136,9 @@
     mobile.html          手遊專區（觸控優化精選，~318行）
     deep-diggers.html    單檔遊戲（例外）
     <game-name>/index.html  每款遊戲的唯一入口
-  worker/index.js        Cloudflare Worker 後端（留言/排行榜/彈幕）
+  worker/index.js        Cloudflare Worker 後端（留言/排行榜/彈幕/流量追蹤）
+  .github/workflows/deploy.yml  CI/CD 自動部署（push main → wrangler deploy）
+  analytics/index.html   流量分析儀表板（需 ADMIN_KEY 登入）
   assets/                素材庫（~180 MB，~10,600 檔）
     PostApocalypse_AssetPack_v1.1.2/
     sfx/                 GameSFX0~3 四個子資料夾
@@ -386,8 +388,20 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 | `/comments` | GET/POST/DELETE | 留言系統（name<=50, content<=500） |
 | `/leaderboard/:game` | GET/POST | 排行榜前 10 |
 | `/danmaku` | GET/POST | 彈幕（text<=40, color: hex） |
+| `/t` | POST | 流量追蹤（自動收集 path/referrer/UA/country/screen/sid） |
+| `/analytics-data` | GET | 流量查詢 API（需 Bearer ADMIN_KEY，支援 q=overview/daily/hourly/pages/countries/devices/referrers/languages） |
 
 資料庫：Cloudflare D1（`capyworlds-comments`）
+
+### CI/CD 自動部署
+
+- **GitHub Actions workflow**：`.github/workflows/deploy.yml`
+- **觸發條件**：push to `main`
+- **動作**：自動執行 `wrangler deploy`
+- **所需 Secret**（已設定 ✅）：
+  - `CLOUDFLARE_API_TOKEN` — Cloudflare API 權杖（Edit Workers 權限）
+  - `CLOUDFLARE_ACCOUNT_ID` — Cloudflare 帳戶 ID
+- **效果**：合併 PR 或 push to main 後，不需要手動跑 `npx wrangler deploy`
 
 ---
 
@@ -1172,3 +1186,9 @@ Step 9｜迭代 & 長尾運營
 - **2026/3/25** 新增首頁卡片管理規則（15 張提醒分類，目前 15 張 ⚠️ 已達門檻）
 - **2026/3/25** 新增詐騙辨識器 `scam-detector/`（關鍵字比對，5 種示範範例，165/CIB 檢舉連結）
 - **2026/3/25** 新增我的議員做了什麼 `legislator/`（示範資料 + 立院官方查詢連結彙整）
+- **2026/3/27** 新增流量分析儀表板 `analytics/`（自建追蹤，8 分析角度：趨勢/頁面/地理/裝置/來源/時段/建議/追蹤碼）
+  - Worker 新增 `POST /t`（收集）+ `GET /analytics-data`（查詢，需 ADMIN_KEY）
+  - 42 個頁面已安裝追蹤碼
+- **2026/3/27** 新增 GitHub Actions 自動部署（`.github/workflows/deploy.yml`）
+  - push to main → 自動 `wrangler deploy`
+  - GitHub Secrets 已設定：`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`
