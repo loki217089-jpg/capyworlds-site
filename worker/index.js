@@ -601,6 +601,11 @@ export default {
       '/trends/dcard':  { url:'https://www.dcard.tw/service/api/v2/posts?popular=true&limit=30', type:'application/json;charset=utf-8' },
       '/trends/ptt':    { url:'https://www.ptt.cc/bbs/hotboards.html', type:'text/html;charset=utf-8', extraHeaders:{'Cookie':'over18=1'} },
       '/trends/yahoo':  { url:'https://tw.news.yahoo.com/rss/', type:'application/xml;charset=utf-8' },
+      // 遊戲產業
+      '/trends/gnn':      { url:'https://gnn.gamer.com.tw/rss.xml', type:'application/xml;charset=utf-8' },
+      '/trends/4gamers':  { url:'https://www.4gamers.com.tw/rss/latest-news', type:'application/xml;charset=utf-8' },
+      '/trends/ign':      { url:'https://feeds.feedburner.com/ign/all', type:'application/xml;charset=utf-8' },
+      '/trends/steam':    { url:'https://store.steampowered.com/feeds/newreleases.xml', type:'application/xml;charset=utf-8' },
     };
     const trendSrc = TREND_SOURCES[url.pathname];
     if (trendSrc && request.method==='GET') {
@@ -617,9 +622,9 @@ export default {
       try {
         const r = await fetch(trendSrc.url, { headers:{'User-Agent':'Mozilla/5.0',...(trendSrc.extraHeaders||{})} });
         const body = await r.text();
-        const resp = new Response(body, { headers:{...cors,'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=21600','X-Cache':'MISS'} });
-        // 存入快取（6小時 = 21600秒）
-        const cacheResp = new Response(body, { headers:{'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=21600'} });
+        const resp = new Response(body, { headers:{...cors,'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=14400','X-Cache':'MISS'} });
+        // 存入快取（4小時 = 14400秒）
+        const cacheResp = new Response(body, { headers:{'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=14400'} });
         await cache.put(cacheKey, cacheResp);
         return resp;
       } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
