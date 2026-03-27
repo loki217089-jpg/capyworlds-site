@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Play 素材產生器 - CapyWorlds</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#13100c;color:#e8ddd0;font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+header{background:#1e1812;border-bottom:1px solid #3d3020;padding:14px 24px;display:flex;align-items:center;gap:12px}
+header h1{font-size:1.1rem;color:#34a853}
+header span{font-size:.85rem;color:#7a6a58}
+.main{display:flex;flex:1;gap:0;min-height:0}
+.panel{background:#1a1510;border-right:1px solid #3d3020;width:340px;flex-shrink:0;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#7a6a58;padding-bottom:6px;border-bottom:1px solid #2d2518}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:.78rem;color:#b09880}
+.field input,.field textarea,.field select{background:#13100c;border:1px solid #3d3020;color:#e8ddd0;padding:7px 10px;border-radius:6px;font-size:.85rem;outline:none;width:100%}
+.field input:focus,.field textarea:focus{border-color:#34a853}
+.field textarea{resize:vertical;min-height:60px;font-family:inherit}
+.color-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field input[type=color]{padding:3px;height:36px;cursor:pointer}
+.preview-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px;gap:16px;overflow:auto}
+.size-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.size-tab{background:#1e1812;border:1px solid #3d3020;color:#b09880;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:.78rem;transition:.15s}
+.size-tab.active{background:#34a853;color:#fff;border-color:#34a853;font-weight:600}
+.size-tab .dim{font-size:.65rem;opacity:.7;display:block}
+.canvas-wrap{position:relative;display:flex;align-items:center;justify-content:center;margin-top:8px}
+canvas{display:block;max-width:100%;max-height:55vh;object-fit:contain;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,.6)}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.dl-btn{background:#34a853;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;transition:.15s}
+.dl-btn:hover{background:#3dbc5e}
+.dl-all{background:#4285f4;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;transition:.15s}
+.dl-all:hover{background:#5a9bf6}
+.preset-row{display:flex;flex-wrap:wrap;gap:6px}
+.preset{border:1px solid #3d3020;background:#13100c;color:#b09880;padding:4px 9px;border-radius:5px;font-size:.75rem;cursor:pointer;transition:.1s}
+.preset:hover{border-color:#34a853;color:#34a853}
+.info-box{background:rgba(66,133,244,.1);border:1px solid rgba(66,133,244,.3);border-radius:8px;padding:12px 14px;font-size:.78rem;line-height:1.5;color:#9ab8e0}
+.info-box b{color:#4285f4}
+.size-label{text-align:center;font-size:.82rem;color:#7a6a58;margin-top:4px}
+.checklist{font-size:.78rem;color:#b09880;line-height:2}
+.checklist span{color:#34a853;margin-right:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>▶ Google Play 素材產生器</h1>
+  <span>App Icon + Feature Graphic + Screenshots — 一鍵全部下載</span>
+</header>
+<div class="main">
+  <div class="panel">
+    <h2>遊戲資訊</h2>
+    <div class="field">
+      <label>遊戲名稱（中文）</label>
+      <input id="nameZh" type="text" value="進化蚊子" oninput="draw()">
+    </div>
+    <div class="field">
+      <label>遊戲名稱（英文）</label>
+      <input id="nameEn" type="text" value="Mosquito Evolution" oninput="draw()">
+    </div>
+    <div class="field">
+      <label>Emoji / 圖示</label>
+      <input id="emoji" type="text" value="🦟" oninput="draw()">
+    </div>
+    <div class="field">
+      <label>副標語（英文）</label>
+      <textarea id="tagline" rows="2" oninput="draw()">Click & swat evolving mosquitoes before they drain your blood!</textarea>
+    </div>
+    <div class="field">
+      <label>類型標籤</label>
+      <input id="genre" type="text" value="Clicker • Idle • Evolution" oninput="draw()">
+    </div>
+
+    <h2>配色</h2>
+    <div class="color-row">
+      <div class="field"><label>背景色</label><input id="bgColor" type="color" value="#0a0600" oninput="draw()"></div>
+      <div class="field"><label>強調色</label><input id="accentColor" type="color" value="#e8a020" oninput="draw()"></div>
+    </div>
+    <div class="color-row">
+      <div class="field"><label>副色</label><input id="subColor" type="color" value="#ff6600" oninput="draw()"></div>
+      <div class="field"><label>文字色</label><input id="textColor" type="color" value="#ffffff" oninput="draw()"></div>
+    </div>
+
+    <h2>快速套用遊戲</h2>
+    <div class="preset-row" id="presets"></div>
+
+    <h2>Google Play 需求清單</h2>
+    <div class="checklist">
+      <span>✓</span> App Icon 512×512 (PNG, < 1MB)<br>
+      <span>✓</span> Feature Graphic 1024×500 (PNG/JPG)<br>
+      <span>✓</span> 手機截圖 1080×1920 ×4 張<br>
+      <span>✓</span> Launcher Icons 48~192px<br>
+      <span>✓</span> 平板截圖 1920×1200 (選填)
+    </div>
+
+    <div class="info-box">
+      <b>提示：</b>App Icon 必須是完整正方形，Play Store 會自動加圓角遮罩。不要自己加圓角或透明背景。
+    </div>
+  </div>
+
+  <div class="preview-area">
+    <div class="size-tabs" id="sizeTabs"></div>
+    <div class="size-label" id="sizeLabel">512 × 512 px</div>
+    <div class="canvas-wrap">
+      <canvas id="cvs"></canvas>
+    </div>
+    <div class="btn-row">
+      <button class="dl-btn" onclick="downloadCurrent()">⬇ 下載此圖</button>
+      <button class="dl-all" onclick="downloadAll()">📦 一鍵下載全部</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// All Google Play required sizes
+const SIZES = [
+  {w:512,h:512,name:'App Icon',file:'icon-512',type:'icon'},
+  {w:192,h:192,name:'Icon xxxhdpi',file:'icon-192',type:'icon'},
+  {w:144,h:144,name:'Icon xxhdpi',file:'icon-144',type:'icon'},
+  {w:96,h:96,name:'Icon xhdpi',file:'icon-96',type:'icon'},
+  {w:72,h:72,name:'Icon hdpi',file:'icon-72',type:'icon'},
+  {w:48,h:48,name:'Icon mdpi',file:'icon-48',type:'icon'},
+  {w:1024,h:500,name:'Feature Graphic',file:'feature-1024x500',type:'feature'},
+  {w:1080,h:1920,name:'手機截圖 1',file:'screenshot-phone-1',type:'phone'},
+  {w:1080,h:1920,name:'手機截圖 2',file:'screenshot-phone-2',type:'phone2'},
+  {w:1080,h:1920,name:'手機截圖 3',file:'screenshot-phone-3',type:'phone3'},
+  {w:1080,h:1920,name:'手機截圖 4',file:'screenshot-phone-4',type:'phone4'},
+];
+
+let curSize = 0;
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+
+const PRESETS = [
+  {name:'進化蚊子',zh:'進化蚊子',en:'Mosquito Evolution',emoji:'🦟',tag:'Click & swat evolving mosquitoes before they drain your blood!',bg:'#0a0600',accent:'#e8a020',sub:'#ff6600',text:'#ffffff',genre:'Clicker • Idle • Evolution'},
+  {name:'水豚小村',zh:'水豚小村',en:'Capy Village',emoji:'🦫',tag:'Build your own capybara village!',bg:'#0d0a05',accent:'#f0c040',sub:'#c8a456',text:'#ffffff',genre:'Village • Idle • Simulation'},
+  {name:'水豚跑酷',zh:'水豚跑酷',en:'Capy Runner',emoji:'🦫',tag:'Endless runner with your favorite capybara!',bg:'#0a0a14',accent:'#ffd700',sub:'#ff9900',text:'#ffffff',genre:'Runner • Mobile • Endless'},
+  {name:'勇者傳說',zh:'勇者傳說',en:'Hero Legend',emoji:'⚔️',tag:'Full RPG experience in your browser!',bg:'#07030f',accent:'#9060ff',sub:'#6633cc',text:'#ffffff',genre:'RPG • Adventure • Fantasy'},
+  {name:'VIRUS.EXE',zh:'VIRUS.EXE',en:'VIRUS.EXE',emoji:'🦠',tag:'Defend your system from cyber attacks!',bg:'#020a06',accent:'#00e060',sub:'#00aa44',text:'#ffffff',genre:'Hacker • Strategy • Cyber'},
+  {name:'虛空領航員',zh:'虛空領航員',en:'Void Navigator',emoji:'🚀',tag:'Explore the void between stars!',bg:'#020510',accent:'#4af8ff',sub:'#0099cc',text:'#ffffff',genre:'Space • Roguelike'},
+  {name:'殭屍蔓延',zh:'殭屍蔓延',en:'Zombie Idle',emoji:'🧟',tag:'Spread your zombie horde across the city!',bg:'#020602',accent:'#3ddc58',sub:'#00aa22',text:'#ffffff',genre:'Idle • Clicker • Zombie'},
+  {name:'農場三消',zh:'農場三消',en:'Farm Match',emoji:'🌾',tag:'Match crops and summon rare farm helpers!',bg:'#0a0800',accent:'#f5a623',sub:'#cc7700',text:'#ffffff',genre:'Match-3 • Gacha • Farm'},
+  {name:'地球再生',zh:'地球再生',en:'Earth Reborn',emoji:'🌍',tag:'Rebuild civilization from scratch!',bg:'#020d05',accent:'#44ee88',sub:'#00aa44',text:'#ffffff',genre:'Civilization • Idle'},
+  {name:'世界航道',zh:'世界航道',en:'Sea Route',emoji:'⛵',tag:'Discover the world\'s great trade routes!',bg:'#020810',accent:'#00aaff',sub:'#0066cc',text:'#ffffff',genre:'Idle • Nautical'},
+];
+
+// Build tabs
+const tabsEl = document.getElementById('sizeTabs');
+SIZES.forEach((s,i)=>{
+  const btn = document.createElement('button');
+  btn.className='size-tab'+(i===0?' active':'');
+  btn.innerHTML=`${s.name}<span class="dim">${s.w}×${s.h}</span>`;
+  btn.onclick=()=>setSize(i);
+  tabsEl.appendChild(btn);
+});
+
+// Presets
+const pr = document.getElementById('presets');
+PRESETS.forEach(p=>{
+  const btn = document.createElement('button');
+  btn.className='preset'; btn.textContent=p.name;
+  btn.onclick=()=>{
+    document.getElementById('nameZh').value=p.zh;
+    document.getElementById('nameEn').value=p.en;
+    document.getElementById('emoji').value=p.emoji;
+    document.getElementById('tagline').value=p.tag;
+    document.getElementById('bgColor').value=p.bg;
+    document.getElementById('accentColor').value=p.accent;
+    document.getElementById('subColor').value=p.sub;
+    document.getElementById('textColor').value=p.text;
+    document.getElementById('genre').value=p.genre;
+    draw();
+  };
+  pr.appendChild(btn);
+});
+
+function setSize(i){
+  curSize=i;
+  document.querySelectorAll('.size-tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  document.getElementById('sizeLabel').textContent=`${SIZES[i].w} × ${SIZES[i].h} px`;
+  draw();
+}
+
+function hexToRgb(hex){
+  return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+}
+
+function getInputs(){
+  return {
+    nameZh: document.getElementById('nameZh').value,
+    nameEn: document.getElementById('nameEn').value,
+    emoji: document.getElementById('emoji').value,
+    tagline: document.getElementById('tagline').value,
+    genre: document.getElementById('genre').value,
+    bg: document.getElementById('bgColor').value,
+    accent: document.getElementById('accentColor').value,
+    sub: document.getElementById('subColor').value,
+    text: document.getElementById('textColor').value,
+  };
+}
+
+function drawIcon(c, cx, W, H, d){
+  const [ar,ag,ab]=hexToRgb(d.accent);
+  const [sr,sg,sb]=hexToRgb(d.sub);
+  // Solid bg
+  cx.fillStyle=d.bg; cx.fillRect(0,0,W,H);
+  // Radial glow
+  const g=cx.createRadialGradient(W/2,H*0.4,0,W/2,H*0.4,W*0.6);
+  g.addColorStop(0,`rgba(${ar},${ag},${ab},0.3)`);
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  cx.fillStyle=g; cx.fillRect(0,0,W,H);
+  // Emoji
+  const eSize=W*0.48;
+  cx.font=`${eSize}px serif`;
+  cx.textAlign='center'; cx.textBaseline='middle';
+  cx.fillText(d.emoji, W/2, H*0.42);
+  // Name
+  if(W>=96){
+    const fSize=W*0.12;
+    cx.font=`900 ${fSize}px "PingFang TC","Microsoft JhengHei",sans-serif`;
+    cx.fillStyle=d.text;
+    cx.textAlign='center'; cx.textBaseline='alphabetic';
+    cx.fillText(d.nameZh, W/2, H*0.82);
+    if(W>=192){
+      const efSize=W*0.065;
+      cx.font=`700 ${efSize}px Arial,sans-serif`;
+      cx.fillStyle=d.accent;
+      cx.fillText(d.nameEn.toUpperCase(), W/2, H*0.92);
+    }
+  }
+  // Bottom accent stripe
+  cx.fillStyle=`rgba(${ar},${ag},${ab},0.4)`;
+  cx.fillRect(0,H*0.95,W,H*0.05);
+}
+
+function drawFeature(c, cx, W, H, d){
+  const [ar,ag,ab]=hexToRgb(d.accent);
+  const [sr,sg,sb]=hexToRgb(d.sub);
+  // BG gradient
+  const grd=cx.createLinearGradient(0,0,W,H);
+  grd.addColorStop(0,d.bg);
+  grd.addColorStop(1,'#000');
+  cx.fillStyle=grd; cx.fillRect(0,0,W,H);
+  // Glow
+  const g=cx.createRadialGradient(W*0.3,H*0.5,0,W*0.3,H*0.5,W*0.4);
+  g.addColorStop(0,`rgba(${ar},${ag},${ab},0.2)`);
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  cx.fillStyle=g; cx.fillRect(0,0,W,H);
+  // Decorative lines
+  cx.strokeStyle=`rgba(${ar},${ag},${ab},0.1)`;
+  cx.lineWidth=2;
+  for(let i=0;i<8;i++){
+    const y=(H/8)*i;
+    cx.beginPath(); cx.moveTo(0,y); cx.lineTo(W,y+H*0.2); cx.stroke();
+  }
+  // Emoji left side
+  const eSize=H*0.65;
+  cx.font=`${eSize}px serif`;
+  cx.textAlign='center'; cx.textBaseline='middle';
+  cx.fillText(d.emoji, W*0.2, H*0.48);
+  // Title
+  const tSize=H*0.16;
+  cx.font=`900 ${tSize}px "PingFang TC","Microsoft JhengHei",sans-serif`;
+  cx.fillStyle=d.text;
+  cx.textAlign='left'; cx.textBaseline='middle';
+  cx.fillText(d.nameZh, W*0.38, H*0.35);
+  // EN subtitle
+  const eS=H*0.085;
+  cx.font=`700 ${eS}px Arial,sans-serif`;
+  cx.fillStyle=d.accent;
+  cx.fillText(d.nameEn.toUpperCase(), W*0.38, H*0.52);
+  // Tagline
+  const tlS=H*0.055;
+  cx.font=`400 ${tlS}px Arial,sans-serif`;
+  cx.fillStyle='rgba(255,255,255,0.7)';
+  cx.fillText(d.tagline.slice(0,60), W*0.38, H*0.68, W*0.55);
+  // Genre bar
+  cx.fillStyle=`rgba(${ar},${ag},${ab},0.3)`;
+  cx.fillRect(0,H*0.88,W,H*0.12);
+  const gS=H*0.05;
+  cx.font=`600 ${gS}px Arial,sans-serif`;
+  cx.fillStyle=`rgba(${ar},${ag},${ab},0.9)`;
+  cx.textAlign='center';
+  cx.fillText(d.genre, W/2, H*0.95);
+  // Watermark
+  cx.font=`500 ${H*0.035}px Arial,sans-serif`;
+  cx.fillStyle='rgba(255,255,255,0.25)';
+  cx.textAlign='right';
+  cx.fillText('capyworlds.com', W-16, H*0.06);
+}
+
+function drawScreenshot(c, cx, W, H, d, variant){
+  const [ar,ag,ab]=hexToRgb(d.accent);
+  const [sr,sg,sb]=hexToRgb(d.sub);
+  // BG
+  cx.fillStyle=d.bg; cx.fillRect(0,0,W,H);
+  // Glow
+  const g=cx.createRadialGradient(W/2,H*0.35,0,W/2,H*0.35,W*0.8);
+  g.addColorStop(0,`rgba(${ar},${ag},${ab},0.15)`);
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  cx.fillStyle=g; cx.fillRect(0,0,W,H);
+
+  // Phone frame mockup area
+  const fX=W*0.1, fY=H*0.22, fW=W*0.8, fH=H*0.58;
+  cx.fillStyle='rgba(30,25,18,0.9)';
+  cx.fillRect(fX,fY,fW,fH);
+  cx.strokeStyle=`rgba(${ar},${ag},${ab},0.4)`;
+  cx.lineWidth=3;
+  cx.strokeRect(fX,fY,fW,fH);
+  // Placeholder content inside frame
+  cx.fillStyle=`rgba(${ar},${ag},${ab},0.08)`;
+  cx.fillRect(fX+8,fY+8,fW-16,fH-16);
+  // Emoji in frame
+  const eSize=fW*0.35;
+  cx.font=`${eSize}px serif`;
+  cx.textAlign='center'; cx.textBaseline='middle';
+  cx.fillText(d.emoji, W/2, fY+fH*0.45);
+
+  const texts = {
+    phone: ['點擊消滅進化蚊子','Tap to Swat!','🦟 5 種蚊子 · Boss 戰 · 升級系統'],
+    phone2:['鍊化升級系統','Upgrade & Evolve','⚡ 電蚊拍 · 💣 炸彈 · 🛡 護盾 · ❄ 冰凍'],
+    phone3:['Boss 挑戰','Epic Boss Fights','🩸 吸血警告 · 連擊系統 · Prestige 轉生'],
+    phone4:['雙語支援','Bilingual Support','繁體中文 + English · 存檔跨裝置'],
+  };
+  const t = texts[variant] || texts.phone;
+
+  // Top text
+  const tS=W*0.075;
+  cx.font=`900 ${tS}px "PingFang TC","Microsoft JhengHei",sans-serif`;
+  cx.fillStyle=d.text;
+  cx.textAlign='center'; cx.textBaseline='alphabetic';
+  cx.fillText(t[0], W/2, H*0.13);
+  // EN sub
+  const eS2=W*0.045;
+  cx.font=`700 ${eS2}px Arial,sans-serif`;
+  cx.fillStyle=d.accent;
+  cx.fillText(t[1], W/2, H*0.18);
+
+  // Bottom description
+  const bS=W*0.032;
+  cx.font=`500 ${bS}px Arial,sans-serif`;
+  cx.fillStyle='rgba(255,255,255,0.65)';
+  cx.fillText(t[2], W/2, H*0.88, W*0.9);
+
+  // Bottom accent bar
+  cx.fillStyle=`rgba(${ar},${ag},${ab},0.35)`;
+  cx.fillRect(0,H*0.92,W,H*0.08);
+  // App name
+  const nS=W*0.04;
+  cx.font=`700 ${nS}px Arial,sans-serif`;
+  cx.fillStyle=`rgba(${ar},${ag},${ab},0.9)`;
+  cx.fillText(`${d.emoji} ${d.nameEn}`, W/2, H*0.97);
+}
+
+function drawToCanvas(c, cx, sizeIdx, d){
+  const s=SIZES[sizeIdx];
+  c.width=s.w; c.height=s.h;
+  if(s.type==='icon') drawIcon(c,cx,s.w,s.h,d);
+  else if(s.type==='feature') drawFeature(c,cx,s.w,s.h,d);
+  else drawScreenshot(c,cx,s.w,s.h,d,s.type);
+}
+
+function draw(){
+  drawToCanvas(cvs,ctx,curSize,getInputs());
+}
+
+function downloadCurrent(){
+  const d=getInputs();
+  const s=SIZES[curSize];
+  const nameSlug=d.nameEn.replace(/\s+/g,'-').toLowerCase();
+  const a=document.createElement('a');
+  a.download=`${nameSlug}-${s.file}.png`;
+  // Render at full size on temp canvas
+  const tc=document.createElement('canvas');
+  const tcx=tc.getContext('2d');
+  drawToCanvas(tc,tcx,curSize,d);
+  a.href=tc.toDataURL('image/png');
+  a.click();
+}
+
+function downloadAll(){
+  const d=getInputs();
+  const nameSlug=d.nameEn.replace(/\s+/g,'-').toLowerCase();
+  const tc=document.createElement('canvas');
+  const tcx=tc.getContext('2d');
+  SIZES.forEach((s,i)=>{
+    drawToCanvas(tc,tcx,i,d);
+    const a=document.createElement('a');
+    a.download=`${nameSlug}-gplay-${s.file}.png`;
+    a.href=tc.toDataURL('image/png');
+    a.click();
+  });
+}
+
+draw();
+</script>
+</body>
+</html>
