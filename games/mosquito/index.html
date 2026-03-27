@@ -6,7 +6,7 @@
 <!-- Nativefier / Electron 視窗大小提示 -->
 <meta name="nativefier-window-width" content="1000">
 <meta name="nativefier-window-height" content="820">
-<title>🦟 進化蚊子</title>
+<title>🦟 Evo Mosquito</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Share+Tech+Mono&display=swap');
   :root{--ink:#0d0b08;--amber:#e8a020;--border:#8a5c0a;--blood:#cc2244;--zap:#44ccff;}
@@ -74,24 +74,24 @@
 <div id="gameWrapper">
 <div id="gameFrame">
   <div id="titleBar">
-    <h1>🦟 進 化 蚊 子</h1>
-    <span class="ver">G哥企劃 × C哥開發</span>
+    <h1>🦟 Evo Mosquito</h1>
+    <span class="ver">Design: G · Code: C</span>
   </div>
   <canvas id="canvas" width="960" height="660"></canvas>
   <div id="statsBar">
-    <div class="stat"><span class="stat-label">場上蚊子</span><span class="stat-val" id="statCount">0</span></div>
-    <div class="stat"><span class="stat-label">最高連擊</span><span class="stat-val" id="statCombo">0</span></div>
-    <div class="stat"><span class="stat-label">擊殺首領</span><span class="stat-val" id="statBoss">0</span></div>
-    <div class="stat"><span class="stat-label">首領倒數</span><span class="stat-val" id="statNextBoss">60秒</span></div>
-    <div class="stat"><span class="stat-label">🩸 蚊子血</span><span class="stat-val blood" id="statBlood">0</span></div>
+    <div class="stat"><span class="stat-label">On Screen</span><span class="stat-val" id="statCount">0</span></div>
+    <div class="stat"><span class="stat-label">Best Combo</span><span class="stat-val" id="statCombo">0</span></div>
+    <div class="stat"><span class="stat-label">Boss Kills</span><span class="stat-val" id="statBoss">0</span></div>
+    <div class="stat"><span class="stat-label">Next Boss</span><span class="stat-val" id="statNextBoss">60s</span></div>
+    <div class="stat"><span class="stat-label">🩸 Blood</span><span class="stat-val blood" id="statBlood">0</span></div>
   </div>
   <div id="legend">
-    <div class="leg"><div class="dot" style="background:#7ecf6e"></div>普通蚊 +10</div>
-    <div class="leg"><div class="dot" style="background:#f0d060"></div>快速蚊 +20</div>
-    <div class="leg"><div class="dot" style="background:#8090e8"></div>隱形蚊 +30</div>
-    <div class="leg"><div class="dot" style="background:#e07840"></div>變異蚊 +40</div>
-    <div class="leg"><div class="dot" style="background:#e03050"></div>首領蚊 +200</div>
-    <div class="leg" style="color:#44ccff">⚡[S]鍊化商店</div>
+    <div class="leg"><div class="dot" style="background:#7ecf6e"></div>Normal +10</div>
+    <div class="leg"><div class="dot" style="background:#f0d060"></div>Fast +20</div>
+    <div class="leg"><div class="dot" style="background:#8090e8"></div>Stealth +30</div>
+    <div class="leg"><div class="dot" style="background:#e07840"></div>Mutant +40</div>
+    <div class="leg"><div class="dot" style="background:#e03050"></div>Boss +200</div>
+    <div class="leg" style="color:#44ccff">⚡[S]Upgrade Shop</div>
   </div>
 </div><!-- #gameFrame -->
 </div><!-- #gameWrapper -->
@@ -99,31 +99,31 @@
 <!-- 新手教學面板 -->
 <div id="tutOverlay">
   <div id="tutBox">
-    <h3 id="tutTitle">📖 新手指南</h3>
-    <p id="tutL1">🖱 點擊蚊子消滅牠們，獲得分數</p>
-    <p id="tutL2">🩸 擊殺掉落血珠，滑過收集（升級貨幣）</p>
-    <p id="tutL3">⚠ 場上超過 4 隻蚊子會開始吸你的血！</p>
-    <p id="tutL4">🧪 按 [S] 開啟商店，用血珠買強化道具</p>
-    <p id="tutL5">⏸ 按 [P] 暫停遊戲</p>
-    <button id="tutOk" onclick="closeTutorial()">知道了！</button>
+    <h3 id="tutTitle">📖 Guide</h3>
+    <p id="tutL1">🖱 Click mosquitoes to swat them</p>
+    <p id="tutL2">🩸 Kills drop blood — hover to collect (upgrade currency)</p>
+    <p id="tutL3">⚠ 4+ mosquitoes on screen will drain your HP!</p>
+    <p id="tutL4">🧪 Press [S] to open shop and buy upgrades</p>
+    <p id="tutL5">⏸ Press [P] to pause</p>
+    <button id="tutOk" onclick="closeTutorial()">Got it!</button>
   </div>
 </div>
 
 <!-- 鍊化商店面板 -->
 <div id="shopPanel">
-  <h2>🧪 鍊化升級</h2>
-  <div class="shop-sub">消耗蚊子血購買強化道具　·　跨局保留</div>
-  <div class="blood-display">🩸 當前蚊子血：<span id="shopBlood">0</span></div>
+  <h2>🧪 Upgrade Shop</h2>
+  <div class="shop-sub">Spend blood to buy upgrades · Persists across runs</div>
+  <div class="blood-display">🩸 Blood: <span id="shopBlood">0</span></div>
   <div class="shop-scroll">
 
-  <div class="shop-section-title">⚔ 攻擊類</div>
+  <div class="shop-section-title">⚔ Attack</div>
 
   <div class="shop-item" id="shopZap" onclick="buyUpgrade('zap')">
     <div class="icon">⚡</div>
     <div class="info">
-      <div class="name">電蚊拍</div>
-      <div class="desc">購買後移到目標位置按<b>[空白鍵]</b>或點 HUD ⚡ 鈕釋放大範圍閃電（充能 8 秒）</div>
-      <div class="level" id="zapLevel">未購買</div>
+      <div class="name">Bug Zapper</div>
+      <div class="desc">Aim and press <b>[Space]</b> or tap ⚡ for area lightning (8s cooldown)</div>
+      <div class="level" id="zapLevel">Not owned</div>
     </div>
     <div class="cost" id="zapCost">🩸 30</div>
   </div>
@@ -131,9 +131,9 @@
   <div class="shop-item" id="shopBomb" onclick="buyUpgrade('bomb')">
     <div class="icon">💣</div>
     <div class="info">
-      <div class="name">蚊子炸彈</div>
-      <div class="desc">瞬間清空全場所有蚊子（最多持有 2 顆）按 <b>[F]</b> 引爆</div>
-      <div class="level" id="bombLevel">持有：0 / 2</div>
+      <div class="name">Bomb</div>
+      <div class="desc">Clear all mosquitoes instantly (max 2). Press <b>[F]</b> to detonate</div>
+      <div class="level" id="bombLevel">Stock: 0 / 2</div>
     </div>
     <div class="cost" id="bombCost">🩸 45</div>
   </div>
@@ -141,9 +141,9 @@
   <div class="shop-item" id="shopBoots" onclick="buyUpgrade('boots')">
     <div class="icon">👟</div>
     <div class="info">
-      <div class="name">攻擊強化</div>
-      <div class="desc">擴大點擊攻擊範圍（每級 +18px，最多 3 級）</div>
-      <div class="level" id="bootsLevel">未購買</div>
+      <div class="name">Attack Range</div>
+      <div class="desc">Expand click attack radius (+18px/level, max 3)</div>
+      <div class="level" id="bootsLevel">Not owned</div>
     </div>
     <div class="cost" id="bootsCost">🩸 25</div>
   </div>
@@ -151,21 +151,21 @@
   <div class="shop-item" id="shopCrit" onclick="buyUpgrade('crit')">
     <div class="icon">🎯</div>
     <div class="info">
-      <div class="name">暴擊強化</div>
-      <div class="desc">每次攻擊有機率造成雙倍傷害（Lv1：20% / Lv2：40%）</div>
-      <div class="level" id="critLevel">未購買</div>
+      <div class="name">Critical Hit</div>
+      <div class="desc">Chance for double damage (Lv1: 20% / Lv2: 40%)</div>
+      <div class="level" id="critLevel">Not owned</div>
     </div>
     <div class="cost" id="critCost">🩸 35</div>
   </div>
 
-  <div class="shop-section-title">🛡 防禦 / 輔助類</div>
+  <div class="shop-section-title">🛡 Defense / Utility</div>
 
   <div class="shop-item" id="shopShield" onclick="buyUpgrade('shield')">
     <div class="icon">🛡️</div>
     <div class="info">
-      <div class="name">防蚊護盾</div>
-      <div class="desc">購買後按 <b>[E]</b> 或點 HUD 🛡 鈕啟動，10 秒內完全免疫叮咬（充能 20 秒）</div>
-      <div class="level" id="shieldLevel">未購買</div>
+      <div class="name">Shield</div>
+      <div class="desc">Press <b>[E]</b> or tap 🛡 for 10s immunity (20s cooldown)</div>
+      <div class="level" id="shieldLevel">Not owned</div>
     </div>
     <div class="cost" id="shieldCost">🩸 50</div>
   </div>
@@ -173,9 +173,9 @@
   <div class="shop-item" id="shopFreeze" onclick="buyUpgrade('freeze')">
     <div class="icon">❄️</div>
     <div class="info">
-      <div class="name">冰凍噴霧</div>
-      <div class="desc">購買後按 <b>[R]</b> 或點 HUD ❄ 鈕，凍結全場蚊子 4 秒（充能 18 秒）</div>
-      <div class="level" id="freezeLevel">未購買</div>
+      <div class="name">Freeze Spray</div>
+      <div class="desc">Press <b>[R]</b> or tap ❄ to freeze all 4s (18s cooldown)</div>
+      <div class="level" id="freezeLevel">Not owned</div>
     </div>
     <div class="cost" id="freezeCost">🩸 40</div>
   </div>
@@ -183,20 +183,20 @@
   <div class="shop-item" id="shopHeal" onclick="buyUpgrade('heal')">
     <div class="icon">💉</div>
     <div class="info">
-      <div class="name">驅蚊液</div>
-      <div class="desc">立即回復 1 滴血（最多持有 3 份），遊戲中按 <b>[Q]</b> 使用</div>
-      <div class="level" id="healLevel">持有：0 / 3</div>
+      <div class="name">Repellent</div>
+      <div class="desc">Restore 1 HP instantly (max 3 stock). Press <b>[Q]</b></div>
+      <div class="level" id="healLevel">Stock: 0 / 3</div>
     </div>
     <div class="cost" id="healCost">🩸 20</div>
   </div>
 
-  <div class="shop-section-title">📈 永久強化類</div>
+  <div class="shop-section-title">📈 Permanent</div>
 
   <div class="shop-item" id="shopMaxHp" onclick="buyUpgrade('maxhp')">
     <div class="icon">❤️</div>
     <div class="info">
-      <div class="name">強化體質</div>
-      <div class="desc">永久增加最大生命值（每局開始+1HP，最多 +3）</div>
+      <div class="name">Max HP</div>
+      <div class="desc">Permanently increase max HP (+1/level, max +3)</div>
       <div class="level" id="maxhpLevel">+0 / +3</div>
     </div>
     <div class="cost" id="maxhpCost">🩸 60</div>
@@ -205,8 +205,8 @@
   <div class="shop-item" id="shopBloodMag" onclick="buyUpgrade('bloodmag')">
     <div class="icon">🔮</div>
     <div class="info">
-      <div class="name">血珠感應</div>
-      <div class="desc">永久擴大滑鼠收集血珠的感應範圍（每級 +15px，最多 3 級）</div>
+      <div class="name">Blood Sense</div>
+      <div class="desc">Expand blood drop collection radius (+15px/level, max 3)</div>
       <div class="level" id="bloodmagLevel">Lv 0 / 3</div>
     </div>
     <div class="cost" id="bloodmagCost">🩸 25</div>
@@ -215,21 +215,21 @@
   <div class="shop-item" id="shopMagnet" onclick="buyUpgrade('magnet')">
     <div class="icon">🧲</div>
     <div class="info">
-      <div class="name">吸血磁鐵</div>
-      <div class="desc">購買後按 <b>[T]</b> 啟動，5 秒自動吸收全場血珠（充能 15 秒）</div>
-      <div class="level" id="magnetLevel">未購買</div>
+      <div class="name">Blood Magnet</div>
+      <div class="desc">Press <b>[T]</b> to auto-collect all blood for 5s (15s cooldown)</div>
+      <div class="level" id="magnetLevel">Not owned</div>
     </div>
     <div class="cost" id="magnetCost">🩸 40</div>
   </div>
 
-  <div class="shop-section-title">🌀 被動技能</div>
+  <div class="shop-section-title">🌀 Passive Skills</div>
 
   <div class="shop-item" id="shopBloodFlow" onclick="buyUpgrade('bloodflow')">
     <div class="icon">💧</div>
     <div class="info">
-      <div class="name">血流加速</div>
-      <div class="desc">蚊子掉落更多血珠（+1/+2/+3），Lv2 起每 8 秒自動產生 1 滴血珠，Lv3 縮短至 5 秒</div>
-      <div class="level" id="bloodflowLevel">未購買</div>
+      <div class="name">Blood Flow</div>
+      <div class="desc">More blood drops (+1/+2/+3). Lv2: auto-generate every 8s. Lv3: every 5s</div>
+      <div class="level" id="bloodflowLevel">Not owned</div>
     </div>
     <div class="cost" id="bloodflowCost">🩸 30</div>
   </div>
@@ -237,9 +237,9 @@
   <div class="shop-item" id="shopCoil" onclick="buyUpgrade('coil')">
     <div class="icon">🌀</div>
     <div class="info">
-      <div class="name">蚊香爐</div>
-      <div class="desc">自動燃燒蚊香，每 10 秒擊殺最近一隻蚊子（升級縮短間隔，最多 3 級）</div>
-      <div class="level" id="coilLevel">未購買</div>
+      <div class="name">Incense Coil</div>
+      <div class="desc">Auto-kill nearest mosquito every 10s (faster at higher levels, max 3)</div>
+      <div class="level" id="coilLevel">Not owned</div>
     </div>
     <div class="cost" id="coilCost">🩸 35</div>
   </div>
@@ -247,18 +247,18 @@
   <div class="shop-item" id="shopAutoSwat" onclick="buyUpgrade('autoswat')">
     <div class="icon">🤖</div>
     <div class="info">
-      <div class="name">自動蚊拍機</div>
-      <div class="desc">自動鎖定最近的蚊子並拍打，每 3/2/1 秒觸發（最多 3 級）</div>
-      <div class="level" id="autoswatLevel">未購買</div>
+      <div class="name">Auto-Swatter</div>
+      <div class="desc">Auto-swat nearest mosquito every 3/2/1s (max 3 levels)</div>
+      <div class="level" id="autoswatLevel">Not owned</div>
     </div>
     <div class="cost" id="autoswatCost">🩸 60</div>
   </div>
 
   </div><!-- end shop-scroll -->
-  <button id="shopClose" onclick="closeShop()">關　閉　[S]</button>
+  <button id="shopClose" onclick="closeShop()">Close [S]</button>
 </div>
 
-<button id="shopBtn" onclick="openShop()">🧪 鍊化 [S]</button>
+<button id="shopBtn" onclick="openShop()">🧪 Shop [S]</button>
 
 <script>
 // ── roundRect polyfill（Firefox / 舊版 Safari 相容）──
@@ -315,23 +315,23 @@ const i18n={
     leg_normal:'普通蚊 +10',leg_fast:'快速蚊 +20',leg_invisible:'隱形蚊 +30',
     leg_mutant:'變異蚊 +40',leg_boss:'首領蚊 +200',leg_shop:'⚡[S]鍊化商店',
     shop_title:'🧪 鍊化升級',shop_sub:'消耗蚊子血購買強化道具　·　跨局保留',
-    shop_blood:'🩸 當前蚊子血：',
+    shop_blood:'🩸 Blood: ',
     shop_sec_attack:'⚔ 攻擊類',shop_sec_defense:'🛡 防禦 / 輔助類',
     shop_sec_perm:'📈 永久強化類',shop_sec_passive:'🌀 被動技能',
-    shop_close:'關　閉　[S]',shop_btn:'🧪 鍊化 [S]',
-    zap_name:'電蚊拍',zap_desc:'購買後移到目標位置按<b>[空白鍵]</b>或點 HUD ⚡ 鈕釋放大範圍閃電（充能 8 秒）',
-    bomb_name:'蚊子炸彈',bomb_desc:'瞬間清空全場所有蚊子（最多持有 2 顆）按 <b>[F]</b> 引爆',
-    boots_name:'攻擊強化',boots_desc:'擴大點擊攻擊範圍（每級 +18px，最多 3 級）',
-    crit_name:'暴擊強化',crit_desc:'每次攻擊有機率造成雙倍傷害（Lv1：20% / Lv2：40%）',
-    shield_name:'防蚊護盾',shield_desc:'購買後按 <b>[E]</b> 或點 HUD 🛡 鈕啟動，10 秒內完全免疫叮咬（充能 20 秒）',
-    freeze_name:'冰凍噴霧',freeze_desc:'購買後按 <b>[R]</b> 或點 HUD ❄ 鈕，凍結全場蚊子 4 秒（充能 18 秒）',
-    heal_name:'驅蚊液',heal_desc:'立即回復 1 滴血（最多持有 3 份），遊戲中按 <b>[Q]</b> 使用',
-    maxhp_name:'強化體質',maxhp_desc:'永久增加最大生命值（每局開始+1HP，最多 +3）',
-    bloodmag_name:'血珠感應',bloodmag_desc:'永久擴大滑鼠收集血珠的感應範圍（每級 +15px，最多 3 級）',
-    magnet_name:'吸血磁鐵',magnet_desc:'購買後按 <b>[T]</b> 啟動，5 秒自動吸收全場血珠（充能 15 秒）',
-    bloodflow_name:'血流加速',bloodflow_desc:'蚊子掉落更多血珠（+1/+2/+3），Lv2 起每 8 秒自動產生 1 滴血珠，Lv3 縮短至 5 秒',
-    coil_name:'蚊香爐',coil_desc:'自動燃燒蚊香，每 10 秒擊殺最近一隻蚊子（升級縮短間隔，最多 3 級）',
-    ui_not_owned:'未購買',ui_owned:'已購買',ui_maxed:'已滿級',
+    shop_close:'Close [S]',shop_btn:'🧪 Shop [S]',
+    zap_name:'電蚊拍',zap_desc:'Aim and press <b>[Space]</b> or tap ⚡ for area lightning (8s cooldown)',
+    bomb_name:'蚊子炸彈',bomb_desc:'Clear all mosquitoes instantly (max 2). Press <b>[F]</b> to detonate',
+    boots_name:'攻擊強化',boots_desc:'Expand click attack radius (+18px/level, max 3)',
+    crit_name:'暴擊強化',crit_desc:'Chance for double damage (Lv1: 20% / Lv2: 40%)',
+    shield_name:'防蚊護盾',shield_desc:'Press <b>[E]</b> or tap 🛡 for 10s immunity (20s cooldown)',
+    freeze_name:'冰凍噴霧',freeze_desc:'Press <b>[R]</b> or tap ❄ to freeze all 4s (18s cooldown)',
+    heal_name:'驅蚊液',heal_desc:'Restore 1 HP instantly (max 3 stock). Press <b>[Q]</b>',
+    maxhp_name:'強化體質',maxhp_desc:'Permanently increase max HP (+1/level, max +3)',
+    bloodmag_name:'血珠感應',bloodmag_desc:'Expand blood drop collection radius (+15px/level, max 3)',
+    magnet_name:'吸血磁鐵',magnet_desc:'Press <b>[T]</b> to auto-collect all blood for 5s (15s cooldown)',
+    bloodflow_name:'血流加速',bloodflow_desc:'More blood drops (+1/+2/+3). Lv2: auto-generate every 8s. Lv3: every 5s',
+    coil_name:'蚊香爐',coil_desc:'Auto-kill nearest mosquito every 10s (faster at higher levels, max 3)',
+    ui_not_owned:'Not owned',ui_owned:'已購買',ui_maxed:'已滿級',
     ui_ready:'✅ 就緒，遊戲中點擊使用',ui_ready_e:'✅ 就緒，點此或按 [E] 啟動',
     ui_ready_r:'✅ 就緒，點此或按 [R] 使用',ui_ready_t:'✅ 就緒，點此或按 [T] 啟動',
     ui_active:'啟動',ui_in_effect:'生效中',ui_charging:'充能中',
@@ -356,7 +356,7 @@ const i18n={
     msg_bloodflow_upgrade_mid:'！每次擊殺 +',msg_bloodflow_upgrade_unit:' 血珠',
     msg_bloodflow_auto:'，每 ',msg_bloodflow_auto_unit:' 秒自動生成 1 血珠',
     msg_hp_full:'血量已滿！',msg_no_heal:'沒有驅蚊液！',
-    msg_no_bomb:'沒有炸彈！',msg_no_zap:'尚未購買電蚊拍！',
+    msg_no_bomb:'沒有炸彈！',msg_no_zap:'尚Not owned電蚊拍！',
     msg_maxed:'已滿級！',msg_no_blood:'蚊子血不足！需要 ',msg_autoswat_up:'自動蚊拍機升級',
     msg_zap_charging:'電蚊拍充能中… ',msg_zap_charging_unit:'s',
     tut_title:'📖 新手指南',
@@ -460,7 +460,7 @@ const i18n={
     hint_ready:'Ready',
   }
 };
-let lang=localStorage.getItem('mosquitoLang')||'zh';
+let lang=localStorage.getItem('mosquitoLang')||'en';
 function T(k){return i18n[lang][k]??k;}
 function applyLang(){
   // Stats bar
