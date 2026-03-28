@@ -321,10 +321,10 @@ Boss 關 ── 考驗你這國投資方向是否正確，打完看劇情
 
 | 檔名 | 路徑 | 排列 | 內容 | 狀態 |
 |------|------|------|------|------|
-| `ships.jfif` | `assets/sea-route/ships.jfif` | 4欄×2列 | 8 艘船（小木舟→鐵甲蒸汽艦） | ⬜ 待上傳 |
-| `landmarks-1.jfif` | `assets/sea-route/landmarks-1.jfif` | 4欄×1列 | 台灣、日本、韓國、中國 | ⬜ 待生成 |
-| `landmarks-2.jfif` | `assets/sea-route/landmarks-2.jfif` | 4欄×1列 | 越南、印度、希臘、義大利 | ⬜ 待生成 |
-| `landmarks-3.jfif` | `assets/sea-route/landmarks-3.jfif` | 2欄×1列 | 挪威、加拿大 | ⬜ 待生成 |
+| `ships.jfif` | `assets/sea-route/ships.jfif` | 1024×506, 4欄×2列, cellW=256 cellH=253 | 8 艘船（小木舟→鐵甲蒸汽艦） | ✅ 已整合 |
+| `landmarks-1.jfif` | `assets/sea-route/landmarks-1.jfif` | 1024×254, 4欄×1列, cellW=256 cellH=254 | 台灣、日本、韓國、中國 | ✅ 已整合 |
+| `landmarks-2.jfif` | `assets/sea-route/landmarks-2.jfif` | 1024×254, 4欄×1列, cellW=256 cellH=254 | 越南、印度、希臘、義大利 | ✅ 已整合 |
+| `landmarks-3.jfif` | `assets/sea-route/landmarks-3.jfif` | 1024×506, 2欄×1列, cellW=512 cellH=506 | 挪威、加拿大 | ✅ 已整合 |
 | `bosses-1.jfif` | `assets/sea-route/bosses-1.jfif` | 4欄×1列 | 颱風女神/海賊船長/幽靈鯊魚/龍王 | ⬜ 待生成 |
 | `bosses-2.jfif` | `assets/sea-route/bosses-2.jfif` | 4欄×1列 | 迷霧水鬼/大象神/克拉肯/海盜聯盟 | ⬜ 待生成 |
 | `bosses-3.jfif` | `assets/sea-route/bosses-3.jfif` | 2欄×1列 | 冰山艦隊/極光巨獸 | ⬜ 待生成 |

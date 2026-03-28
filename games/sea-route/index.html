@@ -336,7 +336,25 @@ const ITEMS={
 const UPG_ICONS=[['⚡','🔋','💨'],['🔭','⏩','✋'],['🛡','🩹','🔰'],['🌟','💫','👑']];
 const MAX_LV=5;
 const UPG_COSTS=[[80,200,450,850,1600],[100,250,550,1050,1900],[120,280,600,1150,2100],[300,700,1500,2600,4200]];
-// State stores upgLevels[4 trees][3 skills] = 0-3
+
+// ─── SHIP & LANDMARK SPRITES ────────────────────────
+const shipImg=new Image(); shipImg.src='../../assets/sea-route/ships.jfif';
+const SHIP_COLS=4, SHIP_ROWS=2;
+const lmImgs=[new Image(),new Image(),new Image()];
+lmImgs[0].src='../../assets/sea-route/landmarks-1.jfif'; // TW,JP,KR,CN
+lmImgs[1].src='../../assets/sea-route/landmarks-2.jfif'; // VN,IN,GR,IT
+lmImgs[2].src='../../assets/sea-route/landmarks-3.jfif'; // NO,CA
+// Country→landmark mapping: [imgIndex, column, totalCols]
+const LM_MAP=[
+  [0,0,4],[0,1,4],[0,2,4],[0,3,4], // TW,JP,KR,CN
+  [1,0,4],[1,1,4],[1,2,4],[1,3,4], // VN,IN,GR,IT
+  [2,0,2],[2,1,2]                   // NO,CA
+];
+function getShipIdx(){
+  const spd=STATE.upgLevels[0].reduce((a,b)=>a+b,0);
+  const hull=STATE.upgLevels[2].reduce((a,b)=>a+b,0);
+  return Math.min(7,Math.floor((spd+hull)/4));
+}
 
 const STATE={
   country:0, progress:0, scroll:0,
@@ -668,6 +686,26 @@ function drawLandmarks(ci){
 }
 function drawLM(ci,ox){
   ctx.save(); ctx.translate(ox,0);
+  // Try sprite image first
+  const lm=LM_MAP[ci];
+  if(lm){
+    const img=lmImgs[lm[0]];
+    if(img&&img.complete&&img.naturalWidth>0){
+      const cols=lm[2], cellW=img.width/cols, cellH=img.height;
+      const dispH=H*.32; // landmark height on screen
+      const scale=dispH/cellH;
+      const dispW=cellW*scale;
+      const lx=(W-dispW)/2; // center in viewport
+      ctx.save();
+      ctx.globalCompositeOperation='multiply';
+      ctx.globalAlpha=0.85;
+      ctx.drawImage(img,lm[1]*cellW,0,cellW,cellH,lx,H*.28,dispW,dispH);
+      ctx.restore();
+      ctx.restore();
+      return;
+    }
+  }
+  // Canvas fallback
   switch(ci){
     case 0: // Taiwan
       drawHills(H*.44,'#3a7a50','#2a6040');
@@ -822,69 +860,47 @@ function drawShip(){
   // Glow for special upgrade
   if(sp2>0){ ctx.save(); ctx.shadowBlur=18+sp2*8; ctx.shadowColor='#4af8ff'; }
 
-  // Hull (grows with hull upgrade)
-  const hw=38+hu*8, hh=20+hu*4;
-  // Water reflection (mirror below waterline)
-  ctx.save();
-  ctx.globalAlpha=0.18+Math.sin(STATE.waveTime*1.5)*.04;
-  const rg=ctx.createLinearGradient(0,hh,0,hh+hh*.9);
-  rg.addColorStop(0,hu>=2?'#2a5a8a':hu>=1?'#1a4a7a':'#1a3a6a');
-  rg.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=rg;
-  ctx.scale(1,-0.55); ctx.translate(0,-hh*2);
-  ctx.beginPath(); ctx.moveTo(-hw,0); ctx.lineTo(hw,0); ctx.lineTo(hw-10,hh); ctx.lineTo(-hw+6,hh); ctx.closePath(); ctx.fill();
-  ctx.restore();
-  ctx.fillStyle=hu>=2?'#2a5a8a':hu>=1?'#1a4a7a':'#1a3a6a';
-  ctx.beginPath(); ctx.moveTo(-hw,0); ctx.lineTo(hw,0); ctx.lineTo(hw-10,hh); ctx.lineTo(-hw+6,hh); ctx.closePath(); ctx.fill();
-  // Hull highlight
-  ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(-hw+4,-1); ctx.lineTo(hw-4,-1); ctx.stroke();
-  // Hull armor plating (hull upgrade 2+)
-  if(hu>=2){
-    ctx.fillStyle='rgba(74,248,255,.15)';
-    for(let i=0;i<3;i++) ctx.fillRect(-hw+10+i*22,2,16,hh-4);
-  }
-
-  // Deck
-  ctx.fillStyle=hu>=1?'#3a6a8a':'#2a5a7a';
-  ctx.fillRect(-hw+4,-8,hw*2-8,9);
-
-  // Cabin (grows with speed upgrade)
-  const cw=18+sp*4, ch=14+sp*3;
-  ctx.fillStyle='#1a2a4a';
-  ctx.fillRect(-cw/2,-8-ch,cw,ch);
-  // Porthole
-  ctx.fillStyle='#4af8ff'; ctx.globalAlpha=.7;
-  ctx.beginPath(); ctx.arc(0,-8-ch/2,3,0,Math.PI*2); ctx.fill();
-  ctx.globalAlpha=1;
-
-  // Mast
-  ctx.strokeStyle='#8a7a60'; ctx.lineWidth=2+sp*.5;
-  ctx.beginPath(); ctx.moveTo(6,-8-ch); ctx.lineTo(6,-8-ch-35-sp*8); ctx.stroke();
-
-  // Sail (grows with speed upgrade, billows with motion)
-  const sailH=28+sp*7, sailW=20+sp*5;
-  const sailBulge=3+sp*2+Math.sin(STATE.waveTime*2)*(1+sp*.5);
-  ctx.fillStyle=sp>=2?'rgba(255,240,180,.92)':sp>=1?'rgba(255,255,220,.88)':'rgba(255,255,255,.85)';
-  ctx.beginPath();
-  ctx.moveTo(6,-8-ch);
-  ctx.quadraticCurveTo(6+sailW+sailBulge,-8-ch-sailH/2,6,-8-ch-sailH);
-  ctx.closePath(); ctx.fill();
-
-  // Country flag at mast top
-  const fc=COUNTRIES[STATE.country];
-  ctx.font=(12+sp)+'px sans-serif'; ctx.textAlign='center';
-  ctx.fillText(fc.flag,6+8+sp,-8-ch-sailH-2);
-
-  // Engine smoke (speed upgrade 3)
-  if(sp>=3){
-    ctx.globalAlpha=.3;
-    ctx.fillStyle='#aaa';
-    for(let i=0;i<3;i++){
-      const a=((STATE.waveTime*60+i*40)%100)/100;
-      ctx.beginPath(); ctx.arc(-hw+5,-(a*22),4+a*4,0,Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha=1;
+  // Ship sprite or canvas fallback
+  if(shipImg.complete && shipImg.naturalWidth>0){
+    const cellW=shipImg.width/SHIP_COLS, cellH=shipImg.height/SHIP_ROWS;
+    const idx=getShipIdx();
+    const col=idx%SHIP_COLS, row=Math.floor(idx/SHIP_COLS);
+    const dispW=110+getShipIdx()*6;
+    const scale=dispW/cellW;
+    const dispH=cellH*scale;
+    // Water reflection
+    ctx.save();
+    ctx.globalAlpha=0.15+Math.sin(STATE.waveTime*1.5)*.04;
+    ctx.scale(1,-0.45);
+    ctx.translate(0,-dispH*0.15);
+    ctx.globalCompositeOperation='multiply';
+    ctx.drawImage(shipImg,col*cellW,row*cellH,cellW,cellH,-dispW/2,-dispH*0.1,dispW,dispH);
+    ctx.restore();
+    // Ship image (multiply removes white bg)
+    ctx.save();
+    ctx.globalCompositeOperation='multiply';
+    ctx.drawImage(shipImg,col*cellW,row*cellH,cellW,cellH,-dispW/2,-dispH*0.65,dispW,dispH);
+    ctx.restore();
+    // Country flag above ship
+    const fc=COUNTRIES[STATE.country];
+    ctx.font='14px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(fc.flag,8,-dispH*0.65-4);
+  } else {
+    // Canvas fallback (original drawing)
+    const hw=38+hu*8, hh=20+hu*4;
+    ctx.fillStyle=hu>=2?'#2a5a8a':hu>=1?'#1a4a7a':'#1a3a6a';
+    ctx.beginPath();ctx.moveTo(-hw,0);ctx.lineTo(hw,0);ctx.lineTo(hw-10,hh);ctx.lineTo(-hw+6,hh);ctx.closePath();ctx.fill();
+    ctx.fillStyle=hu>=1?'#3a6a8a':'#2a5a7a';
+    ctx.fillRect(-hw+4,-8,hw*2-8,9);
+    const cw=18+sp*4,ch=14+sp*3;
+    ctx.fillStyle='#1a2a4a';ctx.fillRect(-cw/2,-8-ch,cw,ch);
+    ctx.strokeStyle='#8a7a60';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(6,-8-ch);ctx.lineTo(6,-8-ch-35);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.beginPath();ctx.moveTo(6,-8-ch);ctx.quadraticCurveTo(28,-8-ch-14,6,-8-ch-28);ctx.closePath();ctx.fill();
+    const fc=COUNTRIES[STATE.country];
+    ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText(fc.flag,14,-8-ch-30);
   }
 
   // Collection range ring – always visible
@@ -1119,45 +1135,25 @@ function tickSpawn(dt){
 let _prevRAF=null, _prevT=0, _prevHL=null; // highlight: {ti,si} or null
 
 function _drawShipOnCtx(px,PW,PH,lv,t){
-  const sp=lv[0][0],hu=lv[2][0],sp2=lv[3][0];
+  const sp2=lv[3][0];
   const bob=Math.sin(t*1.2)*2;
   const sx=PW*.5, sy=PH*.62+bob;
   px.save(); px.translate(sx,sy);
   if(sp2>0){px.save();px.shadowBlur=14+sp2*6;px.shadowColor='#4af8ff';}
-  // Hull
-  const hw=38+hu*8,hh=20+hu*4;
-  px.fillStyle=hu>=2?'#2a5a8a':hu>=1?'#1a4a7a':'#1a3a6a';
-  px.beginPath();px.moveTo(-hw,0);px.lineTo(hw,0);px.lineTo(hw-10,hh);px.lineTo(-hw+6,hh);px.closePath();px.fill();
-  px.strokeStyle='rgba(255,255,255,.2)';px.lineWidth=1.5;
-  px.beginPath();px.moveTo(-hw+4,-1);px.lineTo(hw-4,-1);px.stroke();
-  if(hu>=2){px.fillStyle='rgba(74,248,255,.2)';for(let i=0;i<3;i++)px.fillRect(-hw+10+i*22,2,16,hh-4);}
-  // Deck
-  px.fillStyle=hu>=1?'#3a6a8a':'#2a5a7a';
-  px.fillRect(-hw+4,-8,hw*2-8,9);
-  // Cabin
-  const cw=18+sp*4,ch=14+sp*3;
-  px.fillStyle='#1a2a4a';px.fillRect(-cw/2,-8-ch,cw,ch);
-  px.fillStyle='#4af8ff';px.globalAlpha=.7;
-  px.beginPath();px.arc(0,-8-ch/2,3,0,Math.PI*2);px.fill();px.globalAlpha=1;
-  // Mast
-  px.strokeStyle='#8a7a60';px.lineWidth=2+sp*.5;
-  px.beginPath();px.moveTo(6,-8-ch);px.lineTo(6,-8-ch-35-sp*8);px.stroke();
-  // Sail
-  const sailH=28+sp*7,sailW=20+sp*5;
-  const sailBulge=3+sp*2+Math.sin(t*2)*(1+sp*.5);
-  px.fillStyle=sp>=2?'rgba(255,240,180,.92)':sp>=1?'rgba(255,255,220,.88)':'rgba(255,255,255,.85)';
-  px.beginPath();px.moveTo(6,-8-ch);
-  px.quadraticCurveTo(6+sailW+sailBulge,-8-ch-sailH/2,6,-8-ch-sailH);
-  px.closePath();px.fill();
-  // Flag
-  const fc=COUNTRIES[STATE.country];
-  px.font=(12+sp)+'px sans-serif';px.textAlign='center';
-  px.fillText(fc.flag,6+8+sp,-8-ch-sailH-2);
-  // Engine smoke
-  if(sp>=3){
-    px.globalAlpha=.3;px.fillStyle='#aaa';
-    for(let i=0;i<3;i++){const a=((t*60+i*40)%100)/100;px.beginPath();px.arc(-hw+5,-(a*22),4+a*4,0,Math.PI*2);px.fill();}
-    px.globalAlpha=1;
+  if(shipImg.complete&&shipImg.naturalWidth>0){
+    const spd=lv[0].reduce((a,b)=>a+b,0), hull=lv[2].reduce((a,b)=>a+b,0);
+    const idx=Math.min(7,Math.floor((spd+hull)/4));
+    const cellW=shipImg.width/SHIP_COLS, cellH=shipImg.height/SHIP_ROWS;
+    const col=idx%SHIP_COLS, row=Math.floor(idx/SHIP_COLS);
+    const dispW=90+idx*4, scale=dispW/cellW, dispH=cellH*scale;
+    px.save();px.globalCompositeOperation='multiply';
+    px.drawImage(shipImg,col*cellW,row*cellH,cellW,cellH,-dispW/2,-dispH*0.65,dispW,dispH);
+    px.restore();
+  } else {
+    px.fillStyle='#1a3a6a';
+    px.beginPath();px.moveTo(-38,0);px.lineTo(38,0);px.lineTo(28,20);px.lineTo(-32,20);px.closePath();px.fill();
+    px.fillStyle='rgba(255,255,255,.85)';
+    px.beginPath();px.moveTo(6,-8);px.quadraticCurveTo(28,-22,6,-36);px.closePath();px.fill();
   }
   if(sp2>0)px.restore();
   px.restore();
