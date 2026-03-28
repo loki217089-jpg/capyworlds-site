@@ -764,7 +764,8 @@ function renderHome(){
           ❤️100 → 💎1
         </button>
       </div>
-    </div>`;
+    </div>
+    ${renderKitchen()}`;
   state.offlineEarnings = null;
 }
 
@@ -824,6 +825,12 @@ function calcCharIncome(charId){
   else if(c.skill==='idleHearts') out.hearts=base*0.5;
   else if(c.skill==='idleStars') out.stars=base*0.3;
   else if(c.skill==='idleAll'){ out.coins=base; out.gems=base*0.1; out.hearts=base*0.3; out.stars=base*0.2; }
+  const k = state.kitchen;
+  const kitchenMult = (k && k.buff && k.buff.type==='production' && Date.now() < k.buffEnd) ? k.buff.mult : 1;
+  out.coins *= kitchenMult;
+  out.gems *= kitchenMult;
+  out.hearts *= kitchenMult;
+  out.stars *= kitchenMult;
   return out;
 }
 
@@ -1308,6 +1315,153 @@ const ACHIEVEMENTS = [
   {id:'exp1',      nameEn:'Explorer',        nameTw:'探險家',      check:()=>(state.expeditionsCompleted||0)>=1, reward:{coins:1000}},
 ];
 
+/* ===== CAPY KITCHEN ===== */
+const INGREDIENTS = [
+  {id:'apple',  emoji:'🍎', nameEn:'Apple',     nameTw:'蘋果'},
+  {id:'fish',   emoji:'🐟', nameEn:'Fish',      nameTw:'烤魚'},
+  {id:'cake',   emoji:'🍰', nameEn:'Cake',      nameTw:'蛋糕'},
+  {id:'carrot', emoji:'🥕', nameEn:'Carrot',    nameTw:'胡蘿蔔'}
+];
+
+const RECIPES = [
+  {ing:['apple','carrot'],  emoji:'🥗', nameEn:'Fresh Salad',    nameTw:'繽紛沙拉',   reward:{hearts:50},  buff:{type:'production',mult:2,duration:300}},
+  {ing:['fish','carrot'],   emoji:'🍲', nameEn:'Capy Hot Pot',   nameTw:'水豚火鍋',   reward:{hearts:100,coins:500}, buff:null},
+  {ing:['apple','cake'],    emoji:'🎂', nameEn:'Capy Cake',      nameTw:'水豚蛋糕',   reward:{stars:30},   buff:{type:'affection',charRandom:true}},
+  {ing:['fish','cake'],     emoji:'🍣', nameEn:'Luxury Sushi',   nameTw:'豪華壽司',   reward:{gems:20},    buff:{type:'luck',duration:600}},
+  {ing:['apple','fish'],    emoji:'🍱', nameEn:'Bento Box',      nameTw:'便當盒',     reward:{coins:1000,hearts:30}, buff:null},
+  {ing:['cake','carrot'],   emoji:'🥧', nameEn:'Carrot Pie',     nameTw:'胡蘿蔔派',   reward:{stars:20,hearts:40},   buff:{type:'production',mult:1.5,duration:600}}
+];
+
+function getKitchenState(){
+  if(!state.kitchen) state.kitchen = {cooldownEnd:0, currentIngredients:null, buff:null, buffEnd:0};
+  return state.kitchen;
+}
+
+function refreshIngredients(){
+  const k = getKitchenState();
+  const shuffled = [...INGREDIENTS].sort(()=>Math.random()-0.5);
+  k.currentIngredients = shuffled.slice(0,3).map(i=>i.id);
+  saveGame();
+}
+
+function cookRecipe(ing1, ing2){
+  const k = getKitchenState();
+  if(Date.now() < k.cooldownEnd){
+    const remaining = Math.ceil((k.cooldownEnd - Date.now())/1000);
+    showToast(`⏰ ${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`);
+    return;
+  }
+  const pair = [ing1, ing2].sort();
+  const recipe = RECIPES.find(r => {
+    const sorted = [...r.ing].sort();
+    return sorted[0]===pair[0] && sorted[1]===pair[1];
+  });
+  if(!recipe){
+    showToast(lang==='tw'?'這個組合...不太行':'This combination... doesn\'t work');
+    return;
+  }
+  Object.entries(recipe.reward).forEach(([key,val])=>{
+    state[key] = (state[key]||0) + val;
+  });
+  if(recipe.buff){
+    if(recipe.buff.type==='affection' && recipe.buff.charRandom){
+      const owned = Object.keys(state.chars);
+      if(owned.length>0){
+        const rId = owned[Math.floor(Math.random()*owned.length)];
+        const cd = state.chars[rId];
+        if(!cd.affection) cd.affection=0;
+        if(cd.affection<10) cd.affection++;
+        const c = CHARS.find(x=>x.id===rId);
+        showToast(`${recipe.emoji} ${lang==='tw'?c.nameTw:c.nameEn} ❤️+1`);
+      }
+    } else if(recipe.buff.type==='production'||recipe.buff.type==='luck'){
+      k.buff = recipe.buff;
+      k.buffEnd = Date.now() + recipe.buff.duration * 1000;
+    }
+  }
+  k.cooldownEnd = Date.now() + 180000;
+  refreshIngredients();
+  saveGame();
+  updateResDisplay();
+  playAudio('ssr',0.5,1,0);
+  flashScreen('rgba(255,200,50,0.2)');
+  const rName = lang==='tw'?recipe.nameTw:recipe.nameEn;
+  const rewardStr = Object.entries(recipe.reward)
+    .map(([k,v])=>`${k==='coins'?'🪙':k==='gems'?'💎':k==='hearts'?'❤️':'⭐'}${v}`).join(' ');
+  showToast(`${recipe.emoji} ${rName}! ${rewardStr}`);
+  renderHome();
+}
+
+function renderKitchen(){
+  const k = getKitchenState();
+  if(!k.currentIngredients) refreshIngredients();
+  const cooldownActive = Date.now() < k.cooldownEnd;
+  const remaining = cooldownActive ? Math.ceil((k.cooldownEnd - Date.now())/1000) : 0;
+  let buffHtml = '';
+  if(k.buff && Date.now() < k.buffEnd){
+    const buffRemain = Math.ceil((k.buffEnd - Date.now())/1000);
+    const buffMin = Math.floor(buffRemain/60);
+    const buffDesc = k.buff.type==='production'
+      ? `${lang==='tw'?'產出':'Production'} x${k.buff.mult}`
+      : `${lang==='tw'?'幸運加成':'Lucky boost'}`;
+    buffHtml = `<div style="background:rgba(240,192,64,0.15);border:1px solid var(--accent);border-radius:8px;
+      padding:6px 10px;margin-bottom:8px;font-size:12px;color:var(--accent);text-align:center;">
+      ✨ ${buffDesc} — ${buffMin}:${String(buffRemain%60).padStart(2,'0')}</div>`;
+  }
+  const ings = (k.currentIngredients||[]).map(id => INGREDIENTS.find(i=>i.id===id));
+  let html = `<h3 style="color:var(--accent);margin:20px 0 8px;font-size:15px;border-top:1px solid var(--bg3);padding-top:16px;">
+    🍳 ${lang==='tw'?'水豚廚房':'Capy Kitchen'}</h3>
+    ${buffHtml}
+    <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid rgba(240,192,64,0.15);">
+    <p style="font-size:12px;color:var(--text2);margin-bottom:8px;">
+      ${lang==='tw'?'選 2 個食材組合料理！':'Pick 2 ingredients to cook!'}</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;" id="kitchen-ingredients">`;
+  ings.forEach(ing => {
+    if(!ing) return;
+    const name = lang==='tw'?ing.nameTw:ing.nameEn;
+    html += `<button class="kitchen-ing" data-id="${ing.id}" onclick="toggleKitchenIng(this,'${ing.id}')"
+      style="flex:1;padding:12px 4px;border-radius:10px;border:2px solid var(--bg3);background:var(--bg3);
+      cursor:pointer;text-align:center;transition:border-color 0.2s;${cooldownActive?'opacity:0.4;pointer-events:none;':''}">
+      <div style="font-size:28px;">${ing.emoji}</div>
+      <div style="font-size:11px;color:var(--text);margin-top:4px;">${name}</div>
+    </button>`;
+  });
+  html += `</div>
+    <button id="cook-btn" onclick="doCook()" disabled
+      style="width:100%;padding:10px;border-radius:10px;border:none;
+      background:linear-gradient(135deg,#ff8c00,#ff6600);color:#fff;font-size:15px;font-weight:bold;
+      cursor:pointer;opacity:0.4;transition:opacity 0.2s;">
+      ${cooldownActive ? `⏰ ${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}` : '🍳 '+(lang==='tw'?'開始料理！':'Cook!')}
+    </button>
+    </div>`;
+  return html;
+}
+
+let kitchenSelected = [];
+
+function toggleKitchenIng(el, id){
+  const idx = kitchenSelected.indexOf(id);
+  if(idx>=0){
+    kitchenSelected.splice(idx,1);
+    el.style.borderColor = 'var(--bg3)';
+  } else {
+    if(kitchenSelected.length>=2) return;
+    kitchenSelected.push(id);
+    el.style.borderColor = 'var(--accent)';
+  }
+  const btn = document.getElementById('cook-btn');
+  if(btn){
+    btn.disabled = kitchenSelected.length < 2;
+    btn.style.opacity = kitchenSelected.length >= 2 ? '1' : '0.4';
+  }
+}
+
+function doCook(){
+  if(kitchenSelected.length < 2) return;
+  cookRecipe(kitchenSelected[0], kitchenSelected[1]);
+  kitchenSelected = [];
+}
+
 function checkAchievements(){
   if(!state.achievements) state.achievements = [];
   let newOnes = false;
@@ -1475,6 +1629,19 @@ function init(){
     tickIncome();
     checkAchievements();
     saveGame();
+    // Update kitchen cooldown timer
+    const kState = state.kitchen;
+    if(kState && kState.cooldownEnd > Date.now()){
+      const cookBtn = document.getElementById('cook-btn');
+      if(cookBtn){
+        const rem = Math.ceil((kState.cooldownEnd - Date.now())/1000);
+        cookBtn.textContent = `⏰ ${Math.floor(rem/60)}:${String(rem%60).padStart(2,'0')}`;
+      }
+    }
+    // Clear expired buff
+    if(kState && kState.buff && kState.buffEnd <= Date.now()){
+      kState.buff = null;
+    }
     // Update expedition timers
     const exState = state.expeditions||{};
     EXPEDITIONS.forEach(exp=>{
