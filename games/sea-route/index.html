@@ -1465,7 +1465,7 @@ function playAudio(name, vol=0.7, rate=1, maxMs=0){
 function startBGM(){
   if(bgmLoaded||audioMuted) return;
   bgmLoaded=true;
-  fetch('../../assets/music/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Beach Vibes.ogg')
+  fetch('../../assets/music/10 Ambient RPG Tracks/ogg/Ambient 2.ogg')
     .then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
       if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
       bgmSource=AUDIO_CTX.createBufferSource();
