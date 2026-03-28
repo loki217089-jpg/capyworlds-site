@@ -743,7 +743,28 @@ function renderHome(){
         ${state.offlineEarnings.hearts>0?'❤️'+Math.floor(state.offlineEarnings.hearts)+' ':''}
         ${state.offlineEarnings.stars>0?'⭐'+Math.floor(state.offlineEarnings.stars):''}
       </p>
-    </div>` : ''}`;
+    </div>` : ''}
+    <div style="margin-top:12px;">
+      <h3 style="color:var(--accent);font-size:15px;margin-bottom:8px;">🔨 ${lang==='tw'?'工坊':'Workshop'}</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <button onclick="convertResource('coins','gems',1000,1)" style="padding:8px;border-radius:8px;border:1px solid var(--bg3);
+          background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;">
+          🪙1000 → 💎1
+        </button>
+        <button onclick="convertResource('coins','hearts',500,10)" style="padding:8px;border-radius:8px;border:1px solid var(--bg3);
+          background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;">
+          🪙500 → ❤️10
+        </button>
+        <button onclick="convertResource('coins','stars',800,5)" style="padding:8px;border-radius:8px;border:1px solid var(--bg3);
+          background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;">
+          🪙800 → ⭐5
+        </button>
+        <button onclick="convertResource('hearts','gems',100,1)" style="padding:8px;border-radius:8px;border:1px solid var(--bg3);
+          background:var(--bg2);color:var(--text);font-size:12px;cursor:pointer;">
+          ❤️100 → 💎1
+        </button>
+      </div>
+    </div>`;
   state.offlineEarnings = null;
 }
 
