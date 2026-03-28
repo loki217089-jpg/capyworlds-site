@@ -286,8 +286,122 @@ Boss 關 ── 考驗你這國投資方向是否正確，打完看劇情
 
 ## 參考遊戲
 
-- **Trainatic**（手機）：Boss 關設計靈感，UFO/挑戰機制
+- **Trainatic**（手機）：Boss 關設計靈感，UFO/挑戰機制、速度顯示、燃料條
 - 差異：以真實國家為地圖單位，每國有獨特視覺/素材/音樂
+
+---
+
+## 美術素材清單 & 上傳路徑
+
+### 統一美術風格規範
+
+> **所有素材必須遵守此風格定義，確保視覺一致性。**
+> 每個 GE prompt 開頭都要附帶這段風格描述。
+
+```
+【世界航道統一美術風格】
+
+風格：Flat cartoon vector art, bold clean outlines (2-3px black stroke),
+      cel-shaded with 3-4 color shading per object.
+色彩：Vibrant saturated colors, warm wood browns for ships,
+      each country has its own distinct color palette.
+      NOT grey, NOT washed out, NOT pixel art, NOT realistic.
+視角：Side view (船隻) / Front panorama view (地標)
+背景：Pure white (#FFFFFF), NO checkerboard, NO gradient.
+排列：Strict grid, no gaps, no borders, no text labels.
+參考風格：Similar to the ship sprite sheet — cartoon wooden ships
+         with cream-colored sails and warm brown hulls.
+```
+
+### 素材總覽
+
+> 所有素材放在 `assets/sea-route/` 目錄下
+> 格式：JFIF（GE 生成，Canvas drawImage 原生支援）
+> 白色背景，遊戲內用 `globalCompositeOperation='multiply'` 自動消白
+
+| 檔名 | 路徑 | 排列 | 內容 | 狀態 |
+|------|------|------|------|------|
+| `ships.jfif` | `assets/sea-route/ships.jfif` | 4欄×2列 | 8 艘船（小木舟→鐵甲蒸汽艦） | ⬜ 待上傳 |
+| `landmarks-1.jfif` | `assets/sea-route/landmarks-1.jfif` | 4欄×1列 | 台灣、日本、韓國、中國 | ⬜ 待生成 |
+| `landmarks-2.jfif` | `assets/sea-route/landmarks-2.jfif` | 4欄×1列 | 越南、印度、希臘、義大利 | ⬜ 待生成 |
+| `landmarks-3.jfif` | `assets/sea-route/landmarks-3.jfif` | 2欄×1列 | 挪威、加拿大 | ⬜ 待生成 |
+| `bosses-1.jfif` | `assets/sea-route/bosses-1.jfif` | 4欄×1列 | 颱風女神/海賊船長/幽靈鯊魚/龍王 | ⬜ 待生成 |
+| `bosses-2.jfif` | `assets/sea-route/bosses-2.jfif` | 4欄×1列 | 迷霧水鬼/大象神/克拉肯/海盜聯盟 | ⬜ 待生成 |
+| `bosses-3.jfif` | `assets/sea-route/bosses-3.jfif` | 2欄×1列 | 冰山艦隊/極光巨獸 | ⬜ 待生成 |
+| `items.jfif` | `assets/sea-route/items.jfif` | 10欄×5列 | 50 格物品圖（替代 emoji） | 🔵 優先級低 |
+
+### GE 生圖 Prompt
+
+> ⚠️ 每個 prompt 開頭必須加上方【統一美術風格】描述
+
+**ships.jfif（已有，風格基準）：**
+> 此圖為風格基準。所有後續素材的畫風、描邊粗細、色彩飽和度都以此為參考。
+
+**landmarks-1.jfif：**
+> 【貼上統一美術風格】
+> Landmark sprite sheet. 4 columns, 1 row, white background.
+> Cell 1: Taiwan — Taipei 101 tower + warm city skyline, orange-brown wood tones (#f09040, #d87030, #1a3050)
+> Cell 2: Japan — Mt. Fuji with white snow cap + bright red torii gate, pink-red (#e05880, #c86090, #b8b8cc)
+> Cell 3: Korea — Traditional Gyeongbokgung palace with blue curved roof tiles, blue (#4870c8, #2a4898, #6898d8)
+> Cell 4: China — Red multi-tier pagoda + golden Great Wall battlement, red-gold (#cc2020, #ffd700, #c8a870)
+> Each landmark fills 70-80% of cell height, anchored to bottom edge.
+
+**landmarks-2.jfif：**
+> 【貼上統一美術風格】
+> Landmark sprite sheet. 4 columns, 1 row, white background.
+> Cell 1: Vietnam — Ha Long Bay karst limestone peaks + calm green river, green-yellow (#80c060, #508030, #fff0a0)
+> Cell 2: India — Taj Mahal dome + 4 minarets, sunset orange-cream (#ff9028, #e8e0d0, #9e3080)
+> Cell 3: Greece — Santorini white marble columns + blue dome church, white-blue (#4898e8, #d0d8e8, #ffffff)
+> Cell 4: Italy — Leaning Tower of Pisa + dark green cypress trees, warm terracotta (#e06040, #2a5010, #e8e0cc)
+> Each landmark fills 70-80% of cell height, anchored to bottom edge.
+
+**landmarks-3.jfif：**
+> 【貼上統一美術風格】
+> Landmark sprite sheet. 2 columns, 1 row, white background.
+> Cell 1: Norway — Dark dramatic fjord cliff walls + green/cyan aurora borealis streaks in sky, dark blue (#1a3a5a, #60d8ff, #00ff88)
+> Cell 2: Canada — Snow-capped Rocky Mountains + dark pine tree forest + red maple leaf accent, cool blue-white (#6888a8, #1a4020, #e83020)
+> Each landmark fills 70-80% of cell height, anchored to bottom edge.
+
+**bosses-1.jfif：**
+> 【貼上統一美術風格】
+> Boss character sprite sheet. 4 columns, 1 row, white background.
+> Half-body portraits facing front, dramatic expressions.
+> Cell 1: Storm Goddess (颱風女神) — swirling wind hair, lightning crown, teal-grey (#4af8ff, #1a4060)
+> Cell 2: Pirate Captain (海賊船長) — tricorn hat, scarred face, cutlass, dark red-brown (#8B0000, #d4a574)
+> Cell 3: Ghost Shark (幽靈鯊魚) — spectral blue shark head, glowing eyes, ethereal mist (#1a5aae, #60d8ff)
+> Cell 4: Dragon King (龍王) — golden scaled dragon head, red whiskers, imperial crown (#ffd700, #cc2020)
+
+**bosses-2.jfif：**
+> 【貼上統一美術風格】
+> Boss character sprite sheet. 4 columns, 1 row, white background.
+> Half-body portraits facing front, dramatic expressions.
+> Cell 1: Fog Wraith (迷霧水鬼) — ghostly pale face emerging from green fog, hollow eyes (#80c060, #d8a820)
+> Cell 2: Elephant God (大象神) — ornate golden elephant head, jeweled forehead, multiple arms (#ff9028, #ffd700)
+> Cell 3: Kraken (克拉肯) — giant octopus head, massive tentacles, deep sea blue-green (#0a6aae, #ffffff)
+> Cell 4: Pirate Alliance (海盜聯盟) — 3 pirate captains shoulder-to-shoulder, different hats, terracotta (#e06040, #8B4513)
+
+**bosses-3.jfif：**
+> 【貼上統一美術風格】
+> Boss character sprite sheet. 2 columns, 1 row, white background.
+> Half-body portraits facing front, dramatic expressions.
+> Cell 1: Iceberg Fleet (冰山艦隊) — giant iceberg with frozen warship embedded, frost blue (#0a3060, #60d8ff)
+> Cell 2: Aurora Beast (極光巨獸) — cosmic bear/wolf silhouette made of aurora light, green-purple-cyan (#00ff88, #aa44ff, #4af8ff)
+
+### 上傳指令模板
+
+```cmd
+cd capyworlds
+copy "來源路徑\ships.jfif" "assets\sea-route\ships.jfif"
+copy "來源路徑\landmarks-1.jfif" "assets\sea-route\landmarks-1.jfif"
+copy "來源路徑\landmarks-2.jfif" "assets\sea-route\landmarks-2.jfif"
+copy "來源路徑\landmarks-3.jfif" "assets\sea-route\landmarks-3.jfif"
+copy "來源路徑\bosses-1.jfif" "assets\sea-route\bosses-1.jfif"
+copy "來源路徑\bosses-2.jfif" "assets\sea-route\bosses-2.jfif"
+copy "來源路徑\bosses-3.jfif" "assets\sea-route\bosses-3.jfif"
+git add assets/sea-route/
+git commit -m "Add sea-route art assets"
+git push origin main
+```
 
 ---
 
