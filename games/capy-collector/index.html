@@ -158,6 +158,9 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;}
 .glow-anim{animation:glow-pulse 1.5s ease-in-out infinite;}
 .shake-anim{animation:shake 0.3s ease-in-out;}
 .ssr-glow{animation:rainbow-border 2s linear infinite;}
+.awakened-1{box-shadow:0 0 8px rgba(240,192,64,0.5);}
+.awakened-2{box-shadow:0 0 12px rgba(240,192,64,0.7);}
+.awakened-3{box-shadow:0 0 16px rgba(240,192,64,0.9);animation:glow-pulse 2s ease-in-out infinite;}
 .float-num{position:absolute;pointer-events:none;font-weight:bold;font-size:16px;
   color:var(--accent);animation:float-up 1s ease-out forwards;}
 
@@ -982,6 +985,7 @@ function renderCollection(){
       <div class="portrait" style="${owned?getCharPortraitStyle(c):'background:var(--bg3);'}"></div>
       <div class="cname">${name}</div>
       <div class="clevel">${levelText}</div>
+      ${owned && owned.awakened ? '<div style="font-size:10px;color:var(--card-ssr);">' + '★'.repeat(owned.awakened) + '</div>' : ''}
     </div>`;
   });
   html+='</div>';
@@ -1013,7 +1017,7 @@ function renderUpgrades(){
 
     html+=`<div class="upgrade-panel">
       <div class="upgrade-char">
-        <div class="upgrade-portrait" style="${getCharPortraitStyle(c)};border-color:${RARITY_COLORS[c.rarity]};"></div>
+        <div class="upgrade-portrait ${cd.awakened?'awakened-'+cd.awakened:''}" style="${getCharPortraitStyle(c)};border-color:${RARITY_COLORS[c.rarity]};"></div>
         <div class="upgrade-info">
           <div class="uname" style="color:${RARITY_COLORS[c.rarity]}">${lang==='tw'?c.nameTw:c.nameEn}
             <span style="font-size:12px;opacity:0.7;">[${c.rarity}]</span></div>
@@ -1040,6 +1044,8 @@ function renderUpgrades(){
       </div>
     </div>`;
   });
+  html += renderExpeditions();
+  html += renderAchievements();
   $('screen-upgrades').innerHTML=html;
 }
 
@@ -1064,6 +1070,7 @@ function getAffectionCost(level){
 
 function doAffection(charId){
   const cd = state.chars[charId]; if(!cd) return;
+  if((cd.affection||0) >= 10){ showToast(lang==='tw'?'親密度已滿！':'Max bond!'); return; }
   if(!cd.affection) cd.affection = 0;
   const cost = getAffectionCost(cd.affection + 1);
   if(state.hearts < cost){ showToast(t('noHearts')); return; }
@@ -1094,6 +1101,244 @@ function doAwaken(charId){
   const el = $('screen-upgrades');
   if(el) spawnParticles(el,'⭐',8);
   renderUpgrades();
+}
+
+/* ===== EXPEDITION SYSTEM ===== */
+const EXPEDITIONS = [
+  {id:'forest',  nameEn:'Forest Trail',    nameTw:'森林小徑',  duration:300,  reward:{coins:500,hearts:30},        slots:1, minRarity:'N'},
+  {id:'ocean',   nameEn:'Ocean Voyage',    nameTw:'海上航行',  duration:900,  reward:{coins:2000,gems:5,hearts:50}, slots:2, minRarity:'R'},
+  {id:'volcano', nameEn:'Volcano Depths',  nameTw:'火山深處',  duration:1800, reward:{coins:5000,gems:15,stars:30}, slots:2, minRarity:'SR'},
+  {id:'space',   nameEn:'Space Mission',   nameTw:'太空任務',  duration:3600, reward:{coins:10000,gems:30,hearts:100,stars:50}, slots:3, minRarity:'SR'}
+];
+
+function getExpeditionState(){
+  if(!state.expeditions) state.expeditions = {};
+  return state.expeditions;
+}
+
+function startExpedition(expId, charIds){
+  const exp = EXPEDITIONS.find(e=>e.id===expId);
+  if(!exp) return;
+  const exState = getExpeditionState();
+  if(exState[expId] && exState[expId].endTime > Date.now()) return;
+  exState[expId] = {
+    charIds: charIds,
+    startTime: Date.now(),
+    endTime: Date.now() + exp.duration * 1000
+  };
+  saveGame();
+  playAudio('summon',0.5,1,200);
+  renderExpeditions();
+}
+
+function claimExpedition(expId){
+  const exState = getExpeditionState();
+  const ex = exState[expId];
+  if(!ex || ex.endTime > Date.now()) return;
+  const exp = EXPEDITIONS.find(e=>e.id===expId);
+  if(!exp) return;
+  Object.entries(exp.reward).forEach(([key, val])=>{
+    state[key] = (state[key]||0) + val;
+  });
+  state.expeditionsCompleted = (state.expeditionsCompleted||0) + 1;
+  delete exState[expId];
+  saveGame();
+  updateResDisplay();
+  playAudio('ssr',0.6,1,0);
+  flashScreen('rgba(240,192,64,0.3)');
+  showToast((lang==='tw'?'遠征完成！':'Expedition complete!'));
+  renderExpeditions();
+}
+
+function renderExpeditions(){
+  let html = `<h3 style="color:var(--accent);margin:20px 0 12px;font-size:15px;border-top:1px solid var(--bg3);padding-top:16px;">
+    🗺️ ${lang==='tw'?'遠征':'Expeditions'}</h3>`;
+  const exState = getExpeditionState();
+  EXPEDITIONS.forEach(exp=>{
+    const running = exState[exp.id];
+    const expName = lang==='tw' ? exp.nameTw : exp.nameEn;
+    const mins = Math.floor(exp.duration / 60);
+    const rewardStr = Object.entries(exp.reward)
+      .map(([k,v])=>`${k==='coins'?'🪙':k==='gems'?'💎':k==='hearts'?'❤️':'⭐'}${v}`).join(' ');
+    html += `<div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;
+      border:1px solid rgba(240,192,64,0.15);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:14px;font-weight:bold;color:var(--text);">${expName}</div>
+          <div style="font-size:11px;color:var(--text2);">${mins}min · ${exp.slots} ${lang==='tw'?'隻':'slots'} · ${exp.minRarity}+</div>
+          <div style="font-size:12px;margin-top:2px;">${rewardStr}</div>
+        </div>`;
+    if(running){
+      const remaining = Math.max(0, Math.floor((running.endTime - Date.now())/1000));
+      if(remaining > 0){
+        const m = Math.floor(remaining/60);
+        const s = remaining%60;
+        html += `<div style="text-align:center;">
+          <div style="font-size:18px;color:var(--accent);font-weight:bold;" id="exp-timer-${exp.id}">${m}:${String(s).padStart(2,'0')}</div>
+          <div style="font-size:10px;color:var(--text2);">${lang==='tw'?'進行中':'In progress'}</div>
+        </div>`;
+      } else {
+        html += `<button onclick="claimExpedition('${exp.id}')" style="padding:8px 16px;border-radius:8px;border:none;
+          background:linear-gradient(135deg,#44dd66,#22bb44);color:#fff;font-size:13px;font-weight:bold;cursor:pointer;
+          animation:glow-pulse 1.5s infinite;">
+          ${lang==='tw'?'領取':'Claim'}
+        </button>`;
+      }
+    } else {
+      html += `<button onclick="showExpeditionPicker('${exp.id}')" style="padding:8px 16px;border-radius:8px;border:none;
+        background:linear-gradient(135deg,#f0c040,#e8a020);color:#1a1410;font-size:13px;font-weight:bold;cursor:pointer;">
+        ${lang==='tw'?'出發':'Go'}
+      </button>`;
+    }
+    html += `</div></div>`;
+  });
+  return html;
+}
+
+let pickingExpedition = null;
+let pickedChars = [];
+
+function showExpeditionPicker(expId){
+  pickingExpedition = expId;
+  pickedChars = [];
+  const exp = EXPEDITIONS.find(e=>e.id===expId);
+  const onExpedition = new Set();
+  Object.values(getExpeditionState()).forEach(ex=>{
+    if(ex.endTime > Date.now()) ex.charIds.forEach(id=>onExpedition.add(id));
+  });
+  const allDeployed = new Set();
+  Object.values(state.deployed).forEach(arr=>arr.forEach(c=>{if(c)allDeployed.add(c);}));
+  const rarityOrder = ['N','R','SR','SSR'];
+  const minIdx = rarityOrder.indexOf(exp.minRarity);
+  const available = Object.keys(state.chars).filter(cid=>{
+    if(allDeployed.has(cid)||onExpedition.has(cid)) return false;
+    const c = CHARS.find(x=>x.id===cid);
+    return rarityOrder.indexOf(c.rarity) >= minIdx;
+  });
+  const modal = $('assign-modal') || document.createElement('div');
+  modal.id = 'assign-modal';
+  modal.className = 'modal-overlay show';
+  const expName = lang==='tw' ? exp.nameTw : exp.nameEn;
+  let charHtml = '';
+  if(available.length === 0){
+    charHtml = `<p style="color:var(--text2);text-align:center;padding:20px;">
+      ${lang==='tw'?'沒有可用的水豚':'No available capybaras'}</p>`;
+  } else {
+    available.forEach(cid=>{
+      const c = CHARS.find(x=>x.id===cid);
+      charHtml += `<div class="modal-char" id="exp-pick-${cid}" onclick="toggleExpPick('${cid}')"
+        style="border:2px solid transparent;">
+        <div class="mc-img" style="${getCharPortraitStyle(c)}"></div>
+        <div class="mc-name">${lang==='tw'?c.nameTw:c.nameEn}</div>
+      </div>`;
+    });
+  }
+  modal.innerHTML = `<div class="modal">
+    <h3>${expName} (${exp.slots} ${lang==='tw'?'隻':'slots'})</h3>
+    <div class="modal-chars">${charHtml}</div>
+    <button id="exp-go-btn" class="modal-close" onclick="confirmExpedition()"
+      style="background:var(--accent);color:#1a1410;font-weight:bold;" disabled>
+      ${lang==='tw'?'出發！':'Go!'} (0/${exp.slots})
+    </button>
+    <button class="modal-close" onclick="closeAssignModal()">${t('close')}</button>
+  </div>`;
+  if(!document.getElementById('assign-modal')) document.body.appendChild(modal);
+}
+
+function toggleExpPick(cid){
+  const exp = EXPEDITIONS.find(e=>e.id===pickingExpedition);
+  const idx = pickedChars.indexOf(cid);
+  if(idx>=0){
+    pickedChars.splice(idx,1);
+    const el = document.getElementById('exp-pick-'+cid);
+    if(el) el.style.borderColor = 'transparent';
+  } else {
+    if(pickedChars.length >= exp.slots) return;
+    pickedChars.push(cid);
+    const el = document.getElementById('exp-pick-'+cid);
+    if(el) el.style.borderColor = 'var(--accent)';
+  }
+  const btn = document.getElementById('exp-go-btn');
+  if(btn){
+    btn.disabled = pickedChars.length === 0;
+    btn.textContent = `${lang==='tw'?'出發！':'Go!'} (${pickedChars.length}/${exp.slots})`;
+  }
+}
+
+function confirmExpedition(){
+  if(!pickingExpedition || pickedChars.length===0) return;
+  startExpedition(pickingExpedition, [...pickedChars]);
+  closeAssignModal();
+  pickingExpedition = null;
+  pickedChars = [];
+}
+
+/* ===== ACHIEVEMENTS ===== */
+const ACHIEVEMENTS = [
+  {id:'first',     nameEn:'First Capy',      nameTw:'第一隻水豚',  check:()=>Object.keys(state.chars).length>=1,   reward:{coins:200}},
+  {id:'five',      nameEn:'Starting Herd',   nameTw:'小型群落',    check:()=>Object.keys(state.chars).length>=5,   reward:{gems:10}},
+  {id:'ten',       nameEn:'Big Family',      nameTw:'大家庭',      check:()=>Object.keys(state.chars).length>=10,  reward:{gems:25}},
+  {id:'all24',     nameEn:'Gotta Catch All', nameTw:'全部收集',    check:()=>Object.keys(state.chars).length>=24,  reward:{gems:100}},
+  {id:'lv10',      nameEn:'Dedicated',       nameTw:'專注培養',    check:()=>Object.values(state.chars).some(c=>c.level>=10), reward:{stars:50}},
+  {id:'awaken1',   nameEn:'Awakened',        nameTw:'初次覺醒',    check:()=>Object.values(state.chars).some(c=>(c.awakened||0)>=1), reward:{stars:100}},
+  {id:'bond5',     nameEn:'Best Friend',     nameTw:'好朋友',      check:()=>Object.values(state.chars).some(c=>(c.affection||0)>=5), reward:{hearts:200}},
+  {id:'summon50',  nameEn:'Gacha Addict',    nameTw:'抽卡上癮',    check:()=>state.totalSummons>=50, reward:{gems:20}},
+  {id:'summon200', nameEn:'Whale',           nameTw:'課金王',      check:()=>state.totalSummons>=200, reward:{gems:50}},
+  {id:'exp1',      nameEn:'Explorer',        nameTw:'探險家',      check:()=>(state.expeditionsCompleted||0)>=1, reward:{coins:1000}},
+];
+
+function checkAchievements(){
+  if(!state.achievements) state.achievements = [];
+  let newOnes = false;
+  ACHIEVEMENTS.forEach(a=>{
+    if(state.achievements.includes(a.id)) return;
+    if(a.check()){
+      state.achievements.push(a.id);
+      Object.entries(a.reward).forEach(([k,v])=>{ state[k]=(state[k]||0)+v; });
+      const name = lang==='tw'?a.nameTw:a.nameEn;
+      showToast(`🏆 ${name}!`);
+      newOnes = true;
+    }
+  });
+  if(newOnes){ saveGame(); updateResDisplay(); }
+}
+
+function renderAchievements(){
+  if(!state.achievements) state.achievements = [];
+  let html = `<h3 style="color:var(--accent);margin:20px 0 12px;font-size:15px;border-top:1px solid var(--bg3);padding-top:16px;">
+    🏆 ${lang==='tw'?'成就':'Achievements'} (${state.achievements.length}/${ACHIEVEMENTS.length})</h3>`;
+  ACHIEVEMENTS.forEach(a=>{
+    const done = state.achievements.includes(a.id);
+    const name = lang==='tw'?a.nameTw:a.nameEn;
+    const rewardStr = Object.entries(a.reward)
+      .map(([k,v])=>`${k==='coins'?'🪙':k==='gems'?'💎':k==='hearts'?'❤️':'⭐'}${v}`).join(' ');
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:8px;
+      background:var(--bg2);border-radius:8px;margin-bottom:4px;
+      opacity:${done?'1':'0.5'};border:1px solid ${done?'var(--accent)':'var(--bg3)'};">
+      <span style="font-size:20px;">${done?'🏆':'🔒'}</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:bold;">${name}</div>
+        <div style="font-size:11px;color:var(--text2);">${rewardStr}</div>
+      </div>
+      ${done?'<span style="color:var(--accent);font-size:12px;">✅</span>':''}
+    </div>`;
+  });
+  return html;
+}
+
+/* ===== WORKSHOP (Resource Conversion) ===== */
+function convertResource(from, to, fromAmt, toAmt){
+  if(state[from] < fromAmt){
+    const names = {coins:'🪙',gems:'💎',hearts:'❤️',stars:'⭐'};
+    showToast(`${names[from]} ${lang==='tw'?'不足！':'not enough!'}`);
+    return;
+  }
+  state[from] -= fromAmt;
+  state[to] = (state[to]||0) + toAmt;
+  saveGame();
+  updateResDisplay();
+  playAudio('collect',0.5,1,200);
+  renderHome();
 }
 
 function getSkillDesc(c){
@@ -1207,7 +1452,18 @@ function init(){
   // Main loop: tick income every second
   setInterval(()=>{
     tickIncome();
+    checkAchievements();
     saveGame();
+    // Update expedition timers
+    const exState = state.expeditions||{};
+    EXPEDITIONS.forEach(exp=>{
+      const ex = exState[exp.id];
+      if(ex && ex.endTime > Date.now()){
+        const remaining = Math.max(0, Math.floor((ex.endTime - Date.now())/1000));
+        const el = document.getElementById('exp-timer-'+exp.id);
+        if(el) el.textContent = Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');
+      }
+    });
   }, 1000);
 
   // Auto-save every 30s
