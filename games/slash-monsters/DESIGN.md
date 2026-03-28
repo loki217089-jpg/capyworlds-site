@@ -85,4 +85,116 @@
 ## 素材
 - BGM: `Fantasy RPG Music Pack Vol.3/Loops/ogg/Action 1 Loop.ogg`
 - SFX: 斬擊音、怪物死亡、升級、Boss 出現
-- 怪物用 emoji 或 Canvas 繪製（無外部圖片依賴）
+
+---
+
+## 怪物 Sprite Sheet 規格（AI 生圖用）
+
+### 合圖規格
+
+```
+總尺寸：512 × 768 px
+排列：4 欄 × 6 列，每格 128 × 128 px
+間距：0px（格子緊貼）
+角色置中在格子內，佔 80% 面積
+背景：統一淺米色 #FAF4ED
+風格：像素藝術 (Pixel Art)，32×32 原始解析度放大至 128×128
+描邊：每個角色有 1px 深色描邊，確保在深色背景清晰可見
+```
+
+### 格子佈局
+
+| | Col 0 (Idle 1) | Col 1 (Idle 2) | Col 2 (Hit/受擊) | Col 3 (Death/死亡) |
+|---|---|---|---|---|
+| **Row 0**: 史萊姆 Slime | 圓潤彈跳狀 | 微壓扁 | 變紅閃爍 | 融化散開 |
+| **Row 1**: 蝙蝠 Bat | 翅膀展開 | 翅膀收合 | 翻轉受擊 | 墜落碎裂 |
+| **Row 2**: 骷髏 Skeleton | 站立持劍 | 微搖晃 | 頭骨後仰 | 骨頭散落 |
+| **Row 3**: 哥布林 Goblin | 持匕首站立 | 左右張望 | 後退受擊 | 倒地消散 |
+| **Row 4**: 暗影騎士 Knight | 舉盾站立 | 盾微移 | 盾碎受擊 | 盔甲崩落 |
+| **Row 5**: Boss 惡魔 Demon | 雙臂展開 | 蓄力姿態 | 後仰受擊 | 爆炸碎裂 |
+
+### 各怪物配色
+
+| 怪物 | 主色 | 輔色 | 發光色（遊戲用） | 說明 |
+|------|------|------|-----------------|------|
+| 史萊姆 | `#44DD66` 亮綠 | `#22AA44` 深綠 | `rgba(100,255,100,.5)` | 半透明果凍質感，大眼睛 |
+| 蝙蝠 | `#9944CC` 紫 | `#662299` 深紫 | `rgba(180,120,255,.45)` | 尖耳朵、紅眼、展翅 |
+| 骷髏 | `#EEDDCC` 米白 | `#AA8866` 骨褐 | `rgba(255,255,200,.45)` | 空洞眼窩、持生鏽短劍 |
+| 哥布林 | `#CC5533` 紅棕 | `#996622` 暗黃 | `rgba(255,100,60,.45)` | 尖耳、黃眼、狡猾表情、小匕首 |
+| 暗影騎士 | `#5577CC` 鋼藍 | `#334488` 深藍 | `rgba(100,160,255,.45)` | 全身鎧甲、藍色光暈面罩、圓盾 |
+| Boss 惡魔 | `#DD3322` 暗紅 | `#FF6644` 亮橘紅 | `rgba(255,50,0,.6)` | 雙角、火焰眼、巨大（佔滿格子） |
+
+### AI 生圖 Prompt（複製貼入 GPT-4 / Gemini）
+
+```
+Create a pixel art monster sprite sheet for a mobile action game.
+
+SPECIFICATIONS:
+- Total image size: 512 x 768 pixels
+- Grid: 4 columns × 6 rows, each cell 128 × 128 pixels
+- NO spacing between cells (tight grid)
+- Background: solid #FAF4ED (light beige) for ALL cells
+- Style: Pixel art, ~32px original scale upscaled to 128px, clean anti-aliased edges
+- Each character centered in cell, occupying about 80% of cell area
+- Every character must have a dark 1px outline for visibility on dark backgrounds
+
+ROWS (top to bottom):
+Row 0 — GREEN SLIME: Bright green (#44DD66) jelly blob with big cute eyes
+  Col 0: Idle bounce up | Col 1: Squished down | Col 2: Flash red (hit) | Col 3: Melting apart (death)
+
+Row 1 — PURPLE BAT: Purple (#9944CC) bat with spread wings and red eyes
+  Col 0: Wings spread | Col 1: Wings folded | Col 2: Tumbling (hit) | Col 3: Falling apart (death)
+
+Row 2 — SKELETON: Bone-white (#EEDDCC) skeleton warrior with rusty sword
+  Col 0: Standing with sword | Col 1: Slight sway | Col 2: Head tilted back (hit) | Col 3: Bones scattering (death)
+
+Row 3 — GOBLIN: Red-brown (#CC5533) goblin with yellow eyes and dagger
+  Col 0: Standing with dagger | Col 1: Looking around | Col 2: Stumbling back (hit) | Col 3: Falling down (death)
+
+Row 4 — SHADOW KNIGHT: Steel-blue (#5577CC) armored knight with glowing visor and round shield
+  Col 0: Shield raised | Col 1: Shield slightly moved | Col 2: Shield broken (hit) | Col 3: Armor crumbling (death)
+
+Row 5 — DEMON BOSS: Dark red (#DD3322) large demon with horns and fiery orange eyes
+  Col 0: Arms spread menacing | Col 1: Charging up energy | Col 2: Recoiling (hit) | Col 3: Exploding (death)
+
+IMPORTANT: Each cell is exactly 128x128. No borders, no labels, no text. Characters face forward (toward the player). Consistent pixel art style across all rows.
+```
+
+### 裁切程式碼（遊戲內使用）
+
+```javascript
+// 載入合圖
+const monsterSheet = new Image();
+monsterSheet.src = '../../assets/slash-monsters-sheet.png';
+
+// 常數
+const CELL_W = 128, CELL_H = 128;
+const COLS = 4, ROWS = 6;
+
+// 怪物類型對應行號
+const MON_ROW = { slime: 0, bat: 1, skeleton: 2, goblin: 3, knight: 4, boss: 5 };
+
+// 動畫幀對應列號
+const FRAME_COL = { idle1: 0, idle2: 1, hit: 2, death: 3 };
+
+// 裁切繪製函式
+function drawMonster(ctx, typeName, frame, x, y, displaySize) {
+  const row = MON_ROW[typeName];
+  const col = FRAME_COL[frame];
+  const sx = col * CELL_W;
+  const sy = row * CELL_H;
+  const half = displaySize / 2;
+  ctx.drawImage(monsterSheet, sx, sy, CELL_W, CELL_H, x - half, y - half, displaySize, displaySize);
+}
+
+// 使用範例
+// drawMonster(ctx, 'slime', 'idle1', m.x, m.y, m.size * 2);
+// drawMonster(ctx, 'boss', 'hit', b.x, b.y, 120);
+```
+
+### 驗證流程（素材上傳後必做）
+
+1. `file assets/slash-monsters-sheet.png` → 確認尺寸為 `512 x 768`
+2. `python3 -c "from PIL import Image; img=Image.open('assets/slash-monsters-sheet.png'); print(img.size)"` 雙重確認
+3. 確認 `512 / 4 = 128` ✓，`768 / 6 = 128` ✓
+4. 若尺寸不符 → 重算 cellW/cellH，更新程式碼常數
