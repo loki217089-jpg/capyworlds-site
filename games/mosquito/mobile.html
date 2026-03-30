@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Mosquito Evolution - Mobile</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0b08;overflow:hidden;width:100vw;height:100vh;height:100dvh}
+canvas{display:block;touch-action:none;position:absolute;top:0;left:0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+'use strict';
+// ═══════════ Mobile Mosquito Evolution ═══════════
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let GW=420,GH=750;
+canvas.width=GW;canvas.height=GH;
+
+// Layout
+const TOP_H=52,BOT_H=70,GAME_TOP=TOP_H,GAME_BOT=GH-BOT_H;
+const GAME_H=GAME_BOT-GAME_TOP;
+const ATTACK_R=50;// bigger for touch
+
+// Resize to fill screen
+function resize(){
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const s=Math.min(vw/GW,vh/GH);
+  canvas.style.width=Math.floor(GW*s)+'px';
+  canvas.style.height=Math.floor(GH*s)+'px';
+  canvas.style.left=Math.floor((vw-GW*s)/2)+'px';
+  canvas.style.top=Math.floor((vh-GH*s)/2)+'px';
+}
+resize();
+let _rt;window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(resize,100)});
+
+// Colors
+const C={amber:'#e8a020',dim:'#7a6e5a',blood:'#cc2244',zap:'#44ccff',
+  normal:{body:'#7ecf6e',glow:'#3aaa28'},fast:{body:'#f0d060',glow:'#c8a000'},
+  invisible:{body:'#8090e8',glow:'#4455cc'},mutant:{body:'#e07840',glow:'#b84800'},
+  boss:{body:'#e03050',glow:'#a00020'}};
+const TYPES={
+  normal:{...C.normal,speed:1.4,hp:1,score:10,size:14,bloodDrop:1},
+  fast:{...C.fast,speed:2.0,hp:1,score:20,size:12,bloodDrop:2},
+  invisible:{...C.invisible,speed:1.5,hp:1,score:30,size:14,bloodDrop:2},
+  mutant:{...C.mutant,speed:1.7,hp:2,score:40,size:16,bloodDrop:3},
+  boss:{...C.boss,speed:2.5,hp:10,score:200,size:28,bloodDrop:15},
+};
+
+// i18n
+let lang=localStorage.getItem('mosquitoLang')||'en';
+const i18n={
+  en:{title:'Evo Mosquito',start:'TAP TO START',shop:'Shop',score:'Score',
+    blood:'Blood',combo:'Combo',boss:'Boss',hp:'HP',time:'Time',pause:'PAUSED',
+    resume:'Tap to resume',gameover:'GAME OVER',restart:'Again',evolve:'Evolve',
+    quit:'Quit',rank:'RANK',earned:'Earned',best:'Best',day:'Day',
+    normal:'Normal',hard:'Hard',hell:'Hell',locked:'Locked',
+    need:'Need {d} 300+',perfect:'Perfect for beginners',
+    survive:'Survive',kills:'Kills',lang_btn:'繁中'},
+  zh:{title:'進化蚊子',start:'點擊開始',shop:'商店',score:'分數',
+    blood:'血量',combo:'連擊',boss:'首領',hp:'血量',time:'時間',pause:'暫停中',
+    resume:'點擊繼續',gameover:'遊戲結束',restart:'再來',evolve:'進化',
+    quit:'離開',rank:'評分',earned:'獲得',best:'最佳',day:'天',
+    normal:'普通',hard:'困難',hell:'地獄',locked:'鎖定',
+    need:'需要 {d} 300+',perfect:'適合初次挑戰',
+    survive:'存活',kills:'擊殺',lang_btn:'EN'},
+};
+function T(k){return i18n[lang][k]||k}
+
+// Audio (simplified, use real SFX)
+const SFX_ROOT='../../assets/sfx/';
+let actx=null,sfxBufs={},muted=false;
+function initAudio(){if(actx)return;actx=new(window.AudioContext||window.webkitAudioContext)()}
+function loadSFX(n,url){if(!actx)return;fetch(url).then(r=>r.arrayBuffer()).then(ab=>actx.decodeAudioData(ab)).then(b=>{sfxBufs[n]=b}).catch(()=>{})}
+function playSFX(n,vol=0.5,rate=1,ms=0){
+  if(!actx||muted)return;const b=sfxBufs[n];if(!b)return;
+  if(actx.state==='suspended')actx.resume();
+  const s=actx.createBufferSource();s.buffer=b;s.playbackRate.value=rate;
+  const g=actx.createGain();g.gain.value=vol;s.connect(g);g.connect(actx.destination);
+  s.start(0,0,ms>0?ms/1000:b.duration);
+}
+let bgmSrc=null,bgmGain=null,bgmPlaying=false;
+function startBGM(){
+  if(bgmPlaying||!actx)return;bgmPlaying=true;
+  fetch('../../assets/music/10 Ambient RPG Tracks/ogg/Ambient 3.ogg')
+    .then(r=>r.arrayBuffer()).then(ab=>actx.decodeAudioData(ab)).then(buf=>{
+      if(!bgmPlaying)return;bgmSrc=actx.createBufferSource();bgmSrc.buffer=buf;bgmSrc.loop=true;
+      bgmGain=actx.createGain();bgmGain.gain.value=0.2;
+      bgmSrc.connect(bgmGain);bgmGain.connect(actx.destination);bgmSrc.start();
+    }).catch(()=>{});
+}
+function stopBGM(){bgmPlaying=false;if(bgmSrc){try{bgmSrc.stop()}catch(e){}}bgmSrc=null}
+function toggleMute(){muted=!muted;if(bgmGain)bgmGain.gain.value=muted?0:0.2}
+
+// ═══════════ Game State (shared localStorage with desktop) ═══════════
+let totalBlood=0;
+let prestige={level:0,totalEarned:0,mult:1};
+let personalBest=JSON.parse(localStorage.getItem('mosquitoPB')||'{}');
+let achievements=JSON.parse(localStorage.getItem('mosquitoAch')||'[]');
+const DIFF={
+  normal:{key:'normal',color:'#7ecf6e',spawn:1400,max:14,bossT:50,speedM:1,mutP:.05},
+  hard:{key:'hard',color:'#f0d060',spawn:1200,max:16,bossT:40,speedM:1.35,mutP:.08},
+  hell:{key:'hell',color:'#e03050',spawn:800,max:20,bossT:28,speedM:1.75,mutP:.12},
+};
+let curDiff=DIFF.normal;
+let upgrades={zap:0,shield:0,freeze:0,heal:0,bomb:0,boots:0,crit:0,maxhp:0,bloodmag:0,magnet:0,coil:0,bloodflow:0,autoswat:0};
+function loadSave(){
+  try{const s=JSON.parse(localStorage.getItem('mosquitoSave'));if(s){totalBlood=s.totalBlood||0;if(s.upgrades)Object.keys(s.upgrades).forEach(k=>{if(k in upgrades){const v=s.upgrades[k];upgrades[k]=typeof v==='object'?(v.level||v.stock||(v.owned?1:0)):v}})}}catch(e){}
+  try{const p=JSON.parse(localStorage.getItem('mosquitoPrestige'));if(p)prestige=p}catch(e){}
+}
+function saveSave(){
+  localStorage.setItem('mosquitoSave',JSON.stringify({totalBlood,upgrades}));
+  localStorage.setItem('mosquitoPrestige',JSON.stringify(prestige));
+  localStorage.setItem('mosquitoLastTime',Date.now().toString());
+}
+function earnBlood(n){const e=Math.ceil(n*prestige.mult);totalBlood+=e;prestige.totalEarned+=e;return e}
+function isDiffUnlocked(k){
+  if(k==='normal')return true;
+  if(k==='hard')return(personalBest.normal?.score||0)>=300;
+  if(k==='hell')return(personalBest.hard?.score||0)>=300;
+  return false;
+}
+
+// State
+let state={phase:'title',score:0,hp:5,maxHp:5,time:0,combo:0,comboT:0,maxCombo:0,
+  bossKills:0,nextBoss:50,mosquitoes:[],particles:[],texts:[],bloods:[],
+  swat:null,spawnT:0,lastT:0};
+
+// Shake
+let shakeX=0,shakeY=0,shakeMag=0,shakeT=0;
+function shake(m,d){shakeMag=m;shakeT=d}
+function updateShake(dt){if(shakeT>0){shakeT-=dt;shakeX=(Math.random()-.5)*shakeMag*2;shakeY=(Math.random()-.5)*shakeMag*2;shakeMag*=0.92}else{shakeX=0;shakeY=0}}
+
+// Particles
+class Particle{
+  constructor(x,y,c){this.x=x;this.y=y;this.vx=(Math.random()-.5)*5;this.vy=-Math.random()*4-1;this.life=30+Math.random()*20;this.color=c;this.s=3+Math.random()*3}
+  update(dt){this.x+=this.vx;this.y+=this.vy;this.vy+=0.12;this.life-=1}
+  draw(){const a=Math.min(1,this.life/10);ctx.globalAlpha=a;ctx.fillStyle=this.color;ctx.fillRect(this.x,this.y,this.s,this.s);ctx.globalAlpha=1}
+}
+class FloatText{
+  constructor(x,y,t,c,s){this.x=x;this.y=y;this.text=t;this.color=c;this.size=s||16;this.life=60;this.maxLife=60}
+  update(){this.y-=0.8;this.life--}
+  draw(){const a=Math.min(1,this.life/15);ctx.globalAlpha=a;ctx.fillStyle=this.color;ctx.font=`bold ${this.size}px sans-serif`;ctx.textAlign='center';ctx.fillText(this.text,this.x,this.y);ctx.globalAlpha=1}
+}
+class BloodDrop{
+  constructor(x,y,amt){this.x=x;this.y=y;this.amt=amt;this.vx=(Math.random()-.5)*3;this.vy=-Math.random()*2;this.life=300;this.collected=false}
+  update(){this.x+=this.vx;this.y+=this.vy;this.vy+=0.08;this.vx*=0.97;this.life--}
+  draw(){if(this.collected)return;const a=Math.min(1,this.life/30);ctx.globalAlpha=a;ctx.fillStyle=C.blood;ctx.beginPath();ctx.arc(this.x,this.y,5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1}
+}
+
+// ═══════════ Mosquito class ═══════════
+class Mosquito{
+  constructor(type,x,y){
+    const t=TYPES[type];this.type=type;
+    this.x=x||(Math.random()*(GW-60)+30);
+    this.y=y||(GAME_TOP+20+Math.random()*(GAME_H*0.5));
+    this.hp=t.hp;this.maxHp=t.hp;this.score=t.score;this.size=t.size;
+    this.color=t.body;this.bloodDrop=t.bloodDrop;
+    this.speed=t.speed*curDiff.speedM*(0.8+Math.random()*0.4);
+    this.vx=(Math.random()-.5)*this.speed*2;this.vy=(Math.random()-.5)*this.speed*2;
+    this.alive=true;this.age=0;this.evolved=false;this.wing=0;this.hitFlash=0;
+    this.invisible=false;this.invisT=0;this.sprintCD=0;this.spawnT=0;
+    this.atkT=Math.random()*3000;
+  }
+  update(dt){
+    this.age+=dt;this.wing+=0.44;
+    if(this.hitFlash>0)this.hitFlash-=dt;
+    // Evolve
+    if(this.type==='normal'&&!this.evolved&&this.age>8000){
+      this.type='fast';this.evolved=true;this.speed=TYPES.fast.speed*curDiff.speedM;
+      this.color=TYPES.fast.body;state.particles.push(...Array.from({length:8},()=>new Particle(this.x,this.y,'#f0d060')));
+    }
+    // Invisible
+    if(this.type==='invisible'){this.invisT+=dt;this.invisible=(this.invisT%2000)>1000}
+    // Boss
+    if(this.type==='boss'){
+      this.sprintCD-=dt;this.spawnT+=dt;
+      const rage=this.hp<this.maxHp*0.4;
+      if(this.sprintCD<=0){
+        const a=Math.atan2(GH/2-this.y,GW/2-this.x)+(Math.random()-.5)*(rage?.5:1.5);
+        this.vx=Math.cos(a)*this.speed*3*(rage?2:1);this.vy=Math.sin(a)*this.speed*3*(rage?2:1);
+        this.sprintCD=rage?1500:3000+Math.random()*2000;
+        if(rage)shake(4,150);
+      }
+      if(this.spawnT>(rage?5000:8000)){this.spawnT=0;
+        for(let i=0;i<3;i++)state.mosquitoes.push(new Mosquito('normal',this.x+(Math.random()-.5)*40,this.y+(Math.random()-.5)*40));
+      }
+    }
+    // Move + bounce
+    this.x+=this.vx*(dt/16);this.y+=this.vy*(dt/16);
+    this.vx+=(Math.random()-.5)*0.3;this.vy+=(Math.random()-.5)*0.3;
+    if(this.x<20||this.x>GW-20)this.vx*=-1;
+    if(this.y<GAME_TOP+10||this.y>GAME_BOT-20)this.vy*=-1;
+    this.x=Math.max(10,Math.min(GW-10,this.x));this.y=Math.max(GAME_TOP,Math.min(GAME_BOT-10,this.y));
+    // Bleed attack (4+ mosquitoes)
+    if(state.mosquitoes.filter(m=>m.alive).length>=4){
+      this.atkT-=dt;
+      if(this.atkT<=0){this.atkT=3000;stingPlayer(this)}
+    }
+  }
+  hit(dmg){this.hp-=dmg;this.hitFlash=150;if(this.hp<=0){this.alive=false;return true}return false}
+  draw(){
+    if(!this.alive)return;
+    if(this.invisible&&this.type==='invisible')return;
+    const a=this.hitFlash>0?0.5:1;ctx.globalAlpha=a;
+    ctx.save();ctx.translate(this.x,this.y);
+    // Wings
+    const wf=Math.sin(this.wing)*0.6;
+    ctx.fillStyle='rgba(200,220,255,0.25)';
+    ctx.save();ctx.scale(1,wf);ctx.beginPath();ctx.ellipse(-this.size*.4,-this.size,this.size*.8,this.size*1.2,-.3,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.save();ctx.scale(1,-wf);ctx.beginPath();ctx.ellipse(this.size*.4,-this.size,this.size*.8,this.size*1.2,.3,0,Math.PI*2);ctx.fill();ctx.restore();
+    // Body
+    ctx.fillStyle=this.color;ctx.beginPath();ctx.ellipse(0,0,this.size,this.size*0.6,0,0,Math.PI*2);ctx.fill();
+    // Eyes
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-3,-2,2.5,0,Math.PI*2);ctx.arc(3,-2,2.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#111';ctx.beginPath();ctx.arc(-3,-2,1.5,0,Math.PI*2);ctx.arc(3,-2,1.5,0,Math.PI*2);ctx.fill();
+    // Boss HP bar
+    if(this.type==='boss'&&this.hp<this.maxHp){
+      ctx.fillStyle='#333';ctx.fillRect(-20,-this.size-8,40,5);
+      ctx.fillStyle=C.boss.body;ctx.fillRect(-20,-this.size-8,40*(this.hp/this.maxHp),5);
+    }
+    ctx.restore();ctx.globalAlpha=1;
+  }
+}
+
+function stingPlayer(mq){
+  if(state.hp<=0)return;
+  state.hp--;state.combo=0;
+  playSFX('hit',0.6,0.8,200);shake(8,300);
+  state.particles.push(...Array.from({length:8},()=>new Particle(mq.x,mq.y,C.blood)));
+  state.texts.push(new FloatText(GW/2,GH/2-40,'-1 HP',C.blood,22));
+  if(state.hp<=0){gameOver()}
+}
+function killMosquito(mq){
+  const drops=mq.bloodDrop+(mq.type==='boss'?5:0);
+  for(let i=0;i<Math.min(drops,5);i++)state.bloods.push(new BloodDrop(mq.x+(Math.random()-.5)*20,mq.y+(Math.random()-.5)*20,Math.ceil(drops/Math.min(drops,5))));
+  state.particles.push(...Array.from({length:mq.type==='boss'?20:8},()=>new Particle(mq.x,mq.y,mq.color)));
+  state.combo++;state.comboT=2000;if(state.combo>state.maxCombo)state.maxCombo=state.combo;
+  const mult=1+state.combo*0.1;
+  state.score+=Math.floor(mq.score*mult);
+  const label=mq.type==='boss'?'BOSS KILL!':'+'+Math.floor(mq.score*mult);
+  state.texts.push(new FloatText(mq.x,mq.y-20,label,mq.type==='boss'?'#ffd700':'#fff',mq.type==='boss'?24:16));
+  if(mq.type==='boss'){state.bossKills++;shake(15,600);playSFX('complete',0.7)}
+  else playSFX('pickup',0.4,1.1,280);
+}
+
+// ═══════════ Drawing ═══════════
+function drawRR(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath()}
+
+function drawBG(){
+  ctx.fillStyle='#1a1008';ctx.fillRect(0,0,GW,GH);
+  // Arm
+  ctx.save();ctx.translate(GW-80,GAME_TOP+GAME_H*0.6);ctx.rotate(-0.3);
+  ctx.fillStyle='#7a4a2c';ctx.beginPath();ctx.ellipse(20,0,40,16,0,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+  // Vignette
+  const vig=ctx.createRadialGradient(GW/2,GH/2,GH*0.2,GW/2,GH/2,GH*0.7);
+  vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(0,0,0,0.5)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,GW,GH);
+}
+
+function drawTopBar(){
+  ctx.fillStyle='rgba(10,8,4,0.9)';ctx.fillRect(0,0,GW,TOP_H);
+  // HP hearts
+  ctx.font='16px sans-serif';ctx.textAlign='left';
+  let hpStr='';for(let i=0;i<state.maxHp;i++)hpStr+=i<state.hp?'❤️':'🖤';
+  ctx.fillText(hpStr,8,22);
+  // Score
+  ctx.fillStyle=C.amber;ctx.font='bold 14px sans-serif';ctx.textAlign='center';
+  ctx.fillText(T('score')+': '+state.score,GW/2,20);
+  // Blood + mute
+  ctx.textAlign='right';ctx.fillStyle=C.blood;ctx.font='13px sans-serif';
+  ctx.fillText('🩸'+totalBlood,GW-50,20);
+  ctx.fillText(muted?'🔇':'🔊',GW-10,20);
+  // Time + boss
+  ctx.fillStyle='#888';ctx.font='11px sans-serif';ctx.textAlign='left';
+  ctx.fillText(Math.floor(state.time)+'s',8,42);
+  ctx.textAlign='center';ctx.fillStyle=state.nextBoss<10?'#ff4444':'#888';
+  ctx.fillText('👑 '+Math.ceil(state.nextBoss)+'s',GW/2,42);
+  // Combo
+  if(state.combo>=2){ctx.fillStyle=C.amber;ctx.font='bold 13px sans-serif';ctx.textAlign='right';ctx.fillText(state.combo+'x '+T('combo'),GW-10,42)}
+  // Lang toggle
+  ctx.fillStyle='#666';ctx.font='11px sans-serif';ctx.textAlign='right';
+  ctx.fillText(T('lang_btn'),GW-10,TOP_H-4);
+}
+
+const ACTION_BTNS=[
+  {id:'shop',icon:'🧪',label:'Shop'},
+  {id:'zap',icon:'⚡',label:'Zap'},
+  {id:'shield',icon:'🛡',label:'Shld'},
+  {id:'freeze',icon:'❄',label:'Frz'},
+  {id:'bomb',icon:'💣',label:'Bomb'},
+];
+function drawBottomBar(){
+  ctx.fillStyle='rgba(10,8,4,0.9)';ctx.fillRect(0,GH-BOT_H,GW,BOT_H);
+  const bw=GW/ACTION_BTNS.length;
+  ACTION_BTNS.forEach((b,i)=>{
+    const bx=i*bw+4,by=GH-BOT_H+6,bW=bw-8,bH=BOT_H-12;
+    ctx.fillStyle='rgba(30,20,8,0.8)';drawRR(bx,by,bW,bH,8);ctx.fill();
+    ctx.strokeStyle=C.amber+'88';ctx.lineWidth=1;drawRR(bx,by,bW,bH,8);ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='22px sans-serif';ctx.textAlign='center';
+    ctx.fillText(b.icon,bx+bW/2,by+28);
+    ctx.fillStyle='#aaa';ctx.font='10px sans-serif';
+    ctx.fillText(b.label,bx+bW/2,by+44);
+  });
+}
+
+// ═══════════ Title Screen ═══════════
+// Animated flies
+const titleBugs=Array.from({length:5},()=>({x:Math.random()*GW,y:GAME_TOP+Math.random()*GAME_H,vx:(Math.random()-.5)*1.5,vy:(Math.random()-.5)*1.5,w:0}));
+
+function drawTitle(){
+  drawBG();
+  ctx.fillStyle='rgba(8,6,2,0.6)';ctx.fillRect(0,0,GW,GH);
+  // Animated bugs
+  titleBugs.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.w+=0.4;if(b.x<0||b.x>GW)b.vx*=-1;if(b.y<GAME_TOP||b.y>GAME_BOT)b.vy*=-1;
+    ctx.globalAlpha=0.3;ctx.fillStyle='#7ecf6e';ctx.beginPath();ctx.arc(b.x,b.y,8,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1});
+  // Panel
+  const pw=GW-40,px=20,py=120,ph=440;
+  ctx.fillStyle='rgba(16,12,6,0.95)';drawRR(px,py,pw,ph,12);ctx.fill();
+  ctx.strokeStyle=C.amber+'66';ctx.lineWidth=2;drawRR(px,py,pw,ph,12);ctx.stroke();
+  // Title
+  ctx.fillStyle=C.amber;ctx.font='bold 32px sans-serif';ctx.textAlign='center';
+  ctx.fillText('🦟 '+T('title'),GW/2,py+60);
+  // Prestige
+  if(prestige.level>0){ctx.fillStyle='#bb66ff';ctx.font='bold 14px sans-serif';ctx.fillText('🧬 Evo Lv'+prestige.level+' (x'+prestige.mult.toFixed(1)+')',GW/2,py+85)}
+  ctx.fillStyle=C.blood+'aa';ctx.font='13px sans-serif';ctx.fillText('🩸 '+totalBlood,GW/2,py+105);
+  // Difficulty buttons
+  ctx.fillStyle='#888';ctx.font='13px sans-serif';ctx.fillText('— Select Difficulty —',GW/2,py+140);
+  const dkeys=['normal','hard','hell'],bW=pw/3-12;
+  dkeys.forEach((dk,i)=>{
+    const d=DIFF[dk],bx=px+8+i*(bW+8),by=py+155,bH=60;
+    const unlocked=isDiffUnlocked(dk);
+    ctx.fillStyle=unlocked?'rgba(30,20,8,0.8)':'rgba(15,10,5,0.9)';
+    drawRR(bx,by,bW,bH,6);ctx.fill();
+    ctx.strokeStyle=unlocked?d.color+'88':'#333';ctx.lineWidth=1;drawRR(bx,by,bW,bH,6);ctx.stroke();
+    ctx.fillStyle=unlocked?d.color:'#555';ctx.font='bold 16px sans-serif';ctx.textAlign='center';
+    ctx.fillText(unlocked?T(dk):'🔒 '+T(dk),bx+bW/2,by+25);
+    ctx.fillStyle=unlocked?'#888':'#444';ctx.font='10px sans-serif';
+    ctx.fillText(unlocked?(dk==='normal'?T('perfect'):''):T('need').replace('{d}',dk==='hard'?'Normal':'Hard'),bx+bW/2,by+45);
+  });
+  // Achievements
+  if(achievements.length>0){ctx.fillStyle='#8a8a5a';ctx.font='11px sans-serif';ctx.fillText('🏆 '+achievements.length+'/10',GW/2,py+240)}
+  // Start hint
+  ctx.fillStyle=C.amber+'88';ctx.font='14px sans-serif';
+  ctx.fillText(T('start'),GW/2,py+ph-40);
+  // Lang + Mute
+  ctx.fillStyle='#666';ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillText(T('lang_btn'),px+10,py+ph-10);
+  ctx.textAlign='right';ctx.fillText(muted?'🔇':'🔊',px+pw-10,py+ph-10);
+}
+
+// ═══════════ Game Over + Game Logic ═══════════
+function gameOver(){
+  state.phase='gameover';stopBGM();
+  // Save PB
+  const d=curDiff.key;
+  if(!personalBest[d]||state.score>personalBest[d].score){
+    personalBest[d]={score:state.score,combo:state.maxCombo,time:Math.floor(state.time),bosses:state.bossKills};
+    localStorage.setItem('mosquitoPB',JSON.stringify(personalBest));
+  }
+  saveSave();
+}
+function drawGameOver(){
+  drawBG();ctx.fillStyle='rgba(0,0,0,0.8)';ctx.fillRect(0,0,GW,GH);
+  const pw=GW-40,px=20,py=80,ph=500;
+  ctx.fillStyle='rgba(12,8,4,0.95)';drawRR(px,py,pw,ph,12);ctx.fill();
+  ctx.strokeStyle=C.boss.body+'88';ctx.lineWidth=2;drawRR(px,py,pw,ph,12);ctx.stroke();
+  ctx.fillStyle=C.boss.body;ctx.font='bold 28px sans-serif';ctx.textAlign='center';
+  ctx.fillText(T('gameover'),GW/2,py+50);
+  // Stats
+  ctx.fillStyle='#ddd';ctx.font='16px sans-serif';
+  ctx.fillText(T('score')+': '+state.score,GW/2,py+90);
+  ctx.fillText(T('combo')+': '+state.maxCombo,GW/2,py+115);
+  ctx.fillText(T('survive')+': '+Math.floor(state.time)+'s',GW/2,py+140);
+  ctx.fillText(T('boss')+': '+state.bossKills,GW/2,py+165);
+  ctx.fillStyle=C.blood;ctx.fillText(T('blood')+': '+totalBlood,GW/2,py+195);
+  // Rank
+  let rank='F';const s=Math.floor(state.score*(curDiff.key==='hell'?2.5:curDiff.key==='hard'?1.5:1));
+  if(s>=3000)rank='S';else if(s>=1500)rank='A';else if(s>=800)rank='B';else if(s>=300)rank='C';else if(s>=80)rank='D';
+  const rc={S:'#ffd700',A:'#7ecf6e',B:'#8090e8',C:'#c0b090',D:'#e07840',F:'#4a3a2a'}[rank];
+  ctx.fillStyle=rc;ctx.font='bold 60px sans-serif';ctx.fillText(rank,GW/2,py+280);
+  // PB
+  const pb=personalBest[curDiff.key];
+  if(pb){ctx.fillStyle='#6a8a6a';ctx.font='12px sans-serif';ctx.fillText(T('best')+': '+pb.score,GW/2,py+310)}
+  // Prestige
+  if(prestige.level>0){ctx.fillStyle='#bb66ff88';ctx.font='12px sans-serif';ctx.fillText('🧬 Evo Lv'+prestige.level+' (x'+prestige.mult.toFixed(1)+')',GW/2,py+330)}
+  // 3 buttons
+  const bW=(pw-30)/3,by=py+ph-60;
+  // Restart
+  ctx.fillStyle=C.amber;drawRR(px+5,by,bW,44,6);ctx.fill();
+  ctx.fillStyle='#1a0e00';ctx.font='bold 15px sans-serif';ctx.fillText(T('restart'),px+5+bW/2,by+28);
+  // Evolve
+  const pCost=Math.floor(50*Math.pow(2,prestige.level));const canP=totalBlood>=pCost;
+  ctx.fillStyle=canP?'rgba(100,40,180,0.9)':'rgba(40,20,60,0.5)';drawRR(px+10+bW,by,bW,44,6);ctx.fill();
+  if(canP){ctx.strokeStyle='#bb66ff';ctx.lineWidth=1.5;drawRR(px+10+bW,by,bW,44,6);ctx.stroke()}
+  ctx.fillStyle=canP?'#ddaaff':'#5a3a6a';ctx.font='bold 13px sans-serif';
+  ctx.fillText('🧬 '+T('evolve'),px+10+bW+bW/2,by+20);
+  ctx.font='10px sans-serif';ctx.fillText('🩸'+pCost,px+10+bW+bW/2,by+36);
+  // Quit
+  ctx.fillStyle='rgba(160,30,50,0.8)';drawRR(px+15+bW*2,by,bW,44,6);ctx.fill();
+  ctx.fillStyle='#ffcccc';ctx.font='bold 15px sans-serif';ctx.fillText(T('quit'),px+15+bW*2+bW/2,by+28);
+}
+
+function spawnMosquito(){
+  if(state.mosquitoes.filter(m=>m.alive).length>=curDiff.max)return;
+  const r=Math.random();let type='normal';
+  if(r<curDiff.mutP)type='mutant';else if(r<curDiff.mutP+0.1)type='invisible';else if(r<curDiff.mutP+0.25)type='fast';
+  state.mosquitoes.push(new Mosquito(type));
+}
+function startGame(){
+  stopBGM();
+  state={phase:'playing',score:0,hp:5+Math.min(upgrades.maxhp,3),maxHp:5+Math.min(upgrades.maxhp,3),
+    time:0,combo:0,comboT:0,maxCombo:0,bossKills:0,nextBoss:curDiff.bossT,
+    mosquitoes:[],particles:[],texts:[],bloods:[],swat:null,spawnT:0,lastT:performance.now()};
+  for(let i=0;i<3;i++)spawnMosquito();
+  startBGM();
+}
+
+// ═══════════ Input (touch only) ═══════════
+function getPos(e){
+  const r=canvas.getBoundingClientRect();
+  const sx=GW/r.width,sy=GH/r.height;
+  const t=e.touches?e.touches[0]:e;
+  return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};
+}
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const{x,y}=getPos(e);
+  initAudio();if(actx&&actx.state==='suspended')actx.resume();
+  handleTap(x,y);
+},{passive:false});
+canvas.addEventListener('click',e=>{const{x,y}=getPos(e);initAudio();handleTap(x,y)});
+// Collect blood by drag
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();if(!e.touches[0])return;
+  const{x,y}=getPos(e);
+  state.bloods.forEach(b=>{if(!b.collected&&Math.hypot(x-b.x,y-b.y)<35){b.collected=true;earnBlood(b.amt)}});
+},{passive:false});
+
+function handleTap(x,y){
+  // Top bar: mute (right side)
+  if(y<TOP_H&&state.phase==='playing'){
+    if(x>GW-40){toggleMute();return}
+    return;
+  }
+  // Bottom bar actions
+  if(y>GH-BOT_H&&state.phase==='playing'){
+    const bw=GW/ACTION_BTNS.length;
+    const idx=Math.floor(x/bw);
+    if(idx===0){/* shop - TODO: simple overlay */}
+    // For now just show message
+    return;
+  }
+  // Title screen
+  if(state.phase==='title'){
+    // Lang toggle (bottom left of panel)
+    if(y>500&&x<100){lang=lang==='en'?'zh':'en';localStorage.setItem('mosquitoLang',lang);return}
+    if(y>500&&x>GW-100){toggleMute();return}
+    // Difficulty buttons
+    const dkeys=['normal','hard','hell'],pw=GW-40,bW=pw/3-12;
+    for(let i=0;i<3;i++){
+      const bx=20+8+i*(bW+8),by=275,bH=60;
+      if(x>bx&&x<bx+bW&&y>by&&y<by+bH){
+        if(!isDiffUnlocked(dkeys[i]))return;
+        curDiff=DIFF[dkeys[i]];startGame();return;
+      }
+    }
+    return;
+  }
+  // Game over
+  if(state.phase==='gameover'){
+    const pw=GW-40,bW=(pw-30)/3,by=520;
+    if(y>by&&y<by+44){
+      if(x<20+5+bW){startGame();return}// restart
+      if(x<20+10+bW*2){// evolve
+        const cost=Math.floor(50*Math.pow(2,prestige.level));
+        if(totalBlood>=cost){totalBlood-=cost;prestige.level++;prestige.mult=1+prestige.level*0.5;saveSave();state.phase='title'}
+        return;
+      }
+      if(x>20+15+bW*2){state.phase='title';return}// quit
+    }
+    // Tap anywhere else = restart
+    return;
+  }
+  // Playing: swat mosquitoes + collect blood
+  if(state.phase==='playing'){
+    state.swat={x,y,life:200};
+    // Collect nearby blood
+    state.bloods.forEach(b=>{if(!b.collected&&Math.hypot(x-b.x,y-b.y)<40){b.collected=true;earnBlood(b.amt)}});
+    // Hit mosquito
+    let hit=false;
+    const bootsB=Math.min(upgrades.boots,3)*18;
+    const sorted=[...state.mosquitoes].filter(m=>m.alive).sort((a,b)=>({boss:0,mutant:1,invisible:2,fast:3,normal:4}[a.type]-{boss:0,mutant:1,invisible:2,fast:3,normal:4}[b.type]));
+    for(const mq of sorted){
+      if(!mq.alive||(mq.type==='invisible'&&mq.invisible))continue;
+      if(Math.hypot(x-mq.x,y-mq.y)<ATTACK_R+bootsB+mq.size){
+        playSFX('hit',0.5,1.2,200);
+        let dmg=1;
+        if(upgrades.crit>0&&Math.random()<upgrades.crit*20/100){dmg=2;state.texts.push(new FloatText(mq.x,mq.y-25,'CRIT!','#ffd700',18));shake(5,150)}
+        if(mq.hit(dmg))killMosquito(mq);
+        hit=true;break;
+      }
+    }
+    if(!hit){playSFX('hit',0.2,0.6,100);if(state.combo>0)state.combo=Math.max(0,state.combo-1)}
+  }
+}
+
+// ═══════════ Main Loop ═══════════
+function loop(ts){
+  if(state.phase!=='playing'){
+    if(state.phase==='title'){drawTitle();requestAnimationFrame(loop);return}
+    if(state.phase==='gameover'){drawGameOver();requestAnimationFrame(loop);return}
+    return;
+  }
+  const dt=Math.min(ts-state.lastT,50);state.lastT=ts;
+  state.time+=dt/1000;state.nextBoss-=dt/1000;state.spawnT+=dt;
+  updateShake(dt);
+  // Dynamic difficulty
+  const tSec=state.time;
+  const dynSpeed=1+tSec/120;// gets harder over time
+  const dynSpawn=Math.max(0.4,1/(1+tSec/120));
+
+  if(state.combo>0){state.comboT-=dt;if(state.comboT<=0)state.combo=0}
+  // Spawn
+  if(state.spawnT>=curDiff.spawn*dynSpawn){state.spawnT=0;spawnMosquito()}
+  // Boss
+  if(state.nextBoss<=0){
+    state.nextBoss=curDiff.bossT;
+    state.mosquitoes.push(new Mosquito('boss',GW/2,GAME_TOP+40));
+    shake(12,500);state.texts.push(new FloatText(GW/2,GH/2-40,'⚠ BOSS!',C.boss.body,28));
+    playSFX('complete',0.5,0.7);
+  }
+  // Update
+  state.mosquitoes=state.mosquitoes.filter(m=>m.alive);
+  state.mosquitoes.forEach(m=>m.update(dt));
+  state.particles=state.particles.filter(p=>p.life>0);
+  state.particles.forEach(p=>p.update(dt));
+  state.texts=state.texts.filter(t=>t.life>0);
+  state.texts.forEach(t=>t.update());
+  state.bloods=state.bloods.filter(b=>!b.collected&&b.life>0);
+  state.bloods.forEach(b=>b.update());
+  if(state.swat){state.swat.life-=dt;if(state.swat.life<=0)state.swat=null}
+
+  // Render
+  ctx.save();if(shakeT>0)ctx.translate(shakeX,shakeY);
+  drawBG();
+  state.bloods.forEach(b=>b.draw());
+  state.particles.forEach(p=>p.draw());
+  state.mosquitoes.forEach(m=>m.draw());
+  // Swat effect
+  if(state.swat){
+    const sa=state.swat.life/200;
+    ctx.strokeStyle=`rgba(255,255,255,${sa*0.4})`;ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(state.swat.x,state.swat.y,ATTACK_R,0,Math.PI*2);ctx.stroke();
+  }
+  state.texts.forEach(t=>t.draw());
+  ctx.restore();
+  drawTopBar();drawBottomBar();
+  requestAnimationFrame(loop);
+}
+
+// ═══════════ Init ═══════════
+loadSave();
+// Load SFX
+initAudio();
+if(actx){
+  loadSFX('hit',SFX_ROOT+'GameSFX2/Impact/Retro Impact Punch 07.wav');
+  loadSFX('pickup',SFX_ROOT+'400 Sounds Pack/Items/coin_collect.wav');
+  loadSFX('complete',SFX_ROOT+'400 Sounds Pack/Musical Effects/brass_level_complete.wav');
+}
+// Offline earnings
+const lastT=parseInt(localStorage.getItem('mosquitoLastTime')||'0');
+if(lastT){const elapsed=Math.min(Date.now()-lastT,86400000)/1000;const rate=Math.max(upgrades.bloodflow,0)*0.1+Math.max(upgrades.autoswat,0)*0.3;const earned=Math.floor(elapsed*rate*prestige.mult*0.5);if(earned>0)totalBlood+=earned}
+
+state.phase='title';
+requestAnimationFrame(loop);
+
+</script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+</body>
+</html>
