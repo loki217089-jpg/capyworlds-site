@@ -1,4 +1,35 @@
-// v2.0 - Generic room system (/room/:type/*)
+// v2.1 - Generic room system + IAP (/iap/*)
+
+// ── Google Play JWT 生成（Service Account 驗證用）─────────────────
+async function makeGoogleJWT(svcAccount) {
+  const header = btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'');
+  const now = Math.floor(Date.now()/1000);
+  const payload = btoa(JSON.stringify({
+    iss: svcAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/androidpublisher',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now, exp: now+3600,
+  })).replace(/=/g,'');
+  const msg = `${header}.${payload}`;
+  // import RSA private key
+  const pemBody = svcAccount.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/,'')
+    .replace(/-----END PRIVATE KEY-----/,'')
+    .replace(/\n/g,'');
+  const keyBuf = Uint8Array.from(atob(pemBody), c=>c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', keyBuf, {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'}, false, ['sign']);
+  const sigBuf = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(msg));
+  const sig = btoa(String.fromCharCode(...new Uint8Array(sigBuf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const jwt = `${msg}.${sig}`;
+  // exchange JWT for access token
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+  const tokenData = await tokenRes.json();
+  return tokenData.access_token;
+}
 
 function rpsWinner(c1, c2) {
   if (c1 === c2) return 'draw';
@@ -592,6 +623,181 @@ export default {
         }
       } catch(e){ return Response.json({error:'tables not yet created, no chats yet'},{headers:cors}); }
       return Response.json({rooms,totalWaiting,totalChatting,now},{headers:cors});
+    }
+
+    // ── IAP 內購系統 ───────────────────────────────────────────────
+    // D1 tables: iap_users, iap_purchases (auto-created on first call)
+    if (url.pathname.startsWith('/iap/')) {
+      // ensure tables
+      try {
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS iap_users (
+          id TEXT PRIMARY KEY,
+          device_id TEXT UNIQUE NOT NULL,
+          gems INTEGER NOT NULL DEFAULT 0,
+          total_spent_gems INTEGER NOT NULL DEFAULT 0,
+          total_purchased INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        )`).run();
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS iap_purchases (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          order_id TEXT UNIQUE,
+          purchase_token TEXT,
+          gems_granted INTEGER NOT NULL DEFAULT 0,
+          price_micros INTEGER NOT NULL DEFAULT 0,
+          currency TEXT NOT NULL DEFAULT 'TWD',
+          platform TEXT NOT NULL DEFAULT 'android',
+          status TEXT NOT NULL DEFAULT 'pending',
+          receipt TEXT,
+          created_at INTEGER NOT NULL,
+          verified_at INTEGER
+        )`).run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_iap_usr_dev ON iap_users(device_id)").run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_iap_pur_usr ON iap_purchases(user_id)").run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_iap_pur_ord ON iap_purchases(order_id)").run();
+      } catch(e){}
+
+      // ── 商品清單 ──
+      const IAP_PRODUCTS = [
+        { id:'gems_100',  gems:100,  price:'NT$30',  price_micros:30000000,  currency:'TWD', bonus:0,   label_zh:'💎 100 寶石',        label_en:'💎 100 Gems' },
+        { id:'gems_500',  gems:600,  price:'NT$150', price_micros:150000000, currency:'TWD', bonus:20,  label_zh:'💎 500+100 寶石',    label_en:'💎 500+100 Gems' },
+        { id:'gems_1200', gems:1680, price:'NT$300', price_micros:300000000, currency:'TWD', bonus:40,  label_zh:'💎 1200+480 寶石',   label_en:'💎 1200+480 Gems' },
+        { id:'monthly',   gems:30,   price:'NT$60/月', price_micros:60000000, currency:'TWD', bonus:0, label_zh:'🎫 月卡 (每日30💎)', label_en:'🎫 Monthly (30💎/day)', type:'subscription' },
+        { id:'no_ads',    gems:0,    price:'NT$90',  price_micros:90000000,  currency:'TWD', bonus:0,   label_zh:'🚫 去廣告 (永久)',   label_en:'🚫 Remove Ads', type:'lifetime' },
+      ];
+
+      // GET /iap/products
+      if (url.pathname==='/iap/products' && request.method==='GET') {
+        return Response.json(IAP_PRODUCTS, {headers:cors});
+      }
+
+      // POST /iap/register  { device_id }
+      if (url.pathname==='/iap/register' && request.method==='POST') {
+        let b; try{b=await request.json();}catch{return Response.json({error:'bad request'},{status:400,headers:cors});}
+        const device_id=(b.device_id||'').trim().slice(0,80);
+        if (!device_id) return Response.json({error:'device_id required'},{status:400,headers:cors});
+        const now=Date.now();
+        // check existing
+        const existing=await env.DB.prepare('SELECT id,gems,total_spent_gems,total_purchased,created_at FROM iap_users WHERE device_id=?').bind(device_id).first();
+        if (existing) return Response.json({user:existing},{headers:cors});
+        // create new
+        const uid='u_'+Math.random().toString(36).slice(2,14);
+        await env.DB.prepare('INSERT INTO iap_users (id,device_id,gems,total_spent_gems,total_purchased,created_at,updated_at) VALUES (?,?,0,0,0,?,?)').bind(uid,device_id,now,now).run();
+        return Response.json({user:{id:uid,gems:0,total_spent_gems:0,total_purchased:0,created_at:now}},{headers:cors});
+      }
+
+      // GET /iap/user?uid=xxx
+      if (url.pathname==='/iap/user' && request.method==='GET') {
+        const uid=url.searchParams.get('uid')||'';
+        if (!uid) return Response.json({error:'uid required'},{status:400,headers:cors});
+        const user=await env.DB.prepare('SELECT id,gems,total_spent_gems,total_purchased,created_at FROM iap_users WHERE id=?').bind(uid).first();
+        if (!user) return Response.json({error:'user not found'},{status:404,headers:cors});
+        return Response.json({user},{headers:cors});
+      }
+
+      // POST /iap/verify  { uid, product_id, order_id, purchase_token, receipt }
+      // Google Play receipt verification
+      if (url.pathname==='/iap/verify' && request.method==='POST') {
+        let b; try{b=await request.json();}catch{return Response.json({error:'bad request'},{status:400,headers:cors});}
+        const uid=(b.uid||'').trim(), product_id=(b.product_id||'').trim();
+        const order_id=(b.order_id||'').trim(), purchase_token=(b.purchase_token||'').trim();
+        if (!uid||!product_id||!order_id) return Response.json({error:'missing fields'},{status:400,headers:cors});
+
+        // check user exists
+        const user=await env.DB.prepare('SELECT id,gems FROM iap_users WHERE id=?').bind(uid).first();
+        if (!user) return Response.json({error:'user not found'},{status:404,headers:cors});
+
+        // check duplicate order
+        const dup=await env.DB.prepare('SELECT id FROM iap_purchases WHERE order_id=?').bind(order_id).first();
+        if (dup) return Response.json({error:'order already processed',gems:user.gems},{status:409,headers:cors});
+
+        // find product
+        const product=IAP_PRODUCTS.find(p=>p.id===product_id);
+        if (!product) return Response.json({error:'unknown product'},{status:400,headers:cors});
+
+        const now=Date.now();
+        let verified=false;
+
+        // Google Play Server-Side Verification
+        // Requires GOOGLE_PLAY_KEY (service account JSON) in env
+        if (env.GOOGLE_PLAY_KEY && purchase_token) {
+          try {
+            const svcAccount=JSON.parse(env.GOOGLE_PLAY_KEY);
+            const jwt = await makeGoogleJWT(svcAccount);
+            const pkg = env.ANDROID_PACKAGE || 'com.capyworlds.app';
+            const gpUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${pkg}/purchases/products/${product_id}/tokens/${purchase_token}`;
+            const gpRes = await fetch(gpUrl, { headers:{'Authorization':`Bearer ${jwt}`} });
+            if (gpRes.ok) {
+              const gpData = await gpRes.json();
+              // purchaseState: 0=purchased, 1=canceled, 2=pending
+              if (gpData.purchaseState===0) verified=true;
+            }
+          } catch(e) {
+            // verification failed, fall through to sandbox mode
+          }
+        }
+
+        // Sandbox/dev mode: if no GOOGLE_PLAY_KEY configured, auto-verify
+        // (Remove this in production!)
+        if (!env.GOOGLE_PLAY_KEY) {
+          verified=true;
+        }
+
+        if (!verified) {
+          await env.DB.prepare('INSERT INTO iap_purchases (user_id,product_id,order_id,purchase_token,gems_granted,price_micros,currency,platform,status,receipt,created_at) VALUES (?,?,?,?,0,?,?,?,?,?,?)').bind(uid,product_id,order_id,purchase_token,product.price_micros,product.currency,'android','failed',b.receipt||'',now).run();
+          return Response.json({error:'verification failed',gems:user.gems},{status:402,headers:cors});
+        }
+
+        // Grant gems
+        const gemsToGrant=product.gems;
+        const newGems=user.gems+gemsToGrant;
+        await env.DB.prepare('UPDATE iap_users SET gems=?,total_purchased=total_purchased+1,updated_at=? WHERE id=?').bind(newGems,now,uid).run();
+        await env.DB.prepare('INSERT INTO iap_purchases (user_id,product_id,order_id,purchase_token,gems_granted,price_micros,currency,platform,status,receipt,created_at,verified_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(uid,product_id,order_id,purchase_token,gemsToGrant,product.price_micros,product.currency,'android','verified',b.receipt||'',now,now).run();
+
+        return Response.json({ok:true,gems:newGems,granted:gemsToGrant},{headers:cors});
+      }
+
+      // POST /iap/spend  { uid, amount, reason }
+      if (url.pathname==='/iap/spend' && request.method==='POST') {
+        let b; try{b=await request.json();}catch{return Response.json({error:'bad request'},{status:400,headers:cors});}
+        const uid=(b.uid||'').trim(), amount=parseInt(b.amount)||0, reason=(b.reason||'').slice(0,100);
+        if (!uid||amount<=0) return Response.json({error:'invalid params'},{status:400,headers:cors});
+        const user=await env.DB.prepare('SELECT id,gems FROM iap_users WHERE id=?').bind(uid).first();
+        if (!user) return Response.json({error:'user not found'},{status:404,headers:cors});
+        if (user.gems<amount) return Response.json({error:'insufficient gems',gems:user.gems},{status:402,headers:cors});
+        const newGems=user.gems-amount;
+        await env.DB.prepare('UPDATE iap_users SET gems=?,total_spent_gems=total_spent_gems+?,updated_at=? WHERE id=?').bind(newGems,amount,Date.now(),uid).run();
+        return Response.json({ok:true,gems:newGems,spent:amount},{headers:cors});
+      }
+
+      // GET /iap/history?uid=xxx
+      if (url.pathname==='/iap/history' && request.method==='GET') {
+        const uid=url.searchParams.get('uid')||'';
+        if (!uid) return Response.json({error:'uid required'},{status:400,headers:cors});
+        const {results}=await env.DB.prepare('SELECT product_id,order_id,gems_granted,status,created_at FROM iap_purchases WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(uid).all();
+        return Response.json(results||[],{headers:cors});
+      }
+
+      // GET /iap/admin  (requires ADMIN_KEY)
+      if (url.pathname==='/iap/admin' && request.method==='GET') {
+        const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+        if (!env.ADMIN_KEY||auth!==env.ADMIN_KEY) return Response.json({error:'unauthorized'},{status:401,headers:cors});
+        const days=parseInt(url.searchParams.get('days')||'7');
+        const since=Date.now()-days*86400000;
+        const totalUsers=await env.DB.prepare('SELECT COUNT(*) as c FROM iap_users').first();
+        const totalRevenue=await env.DB.prepare('SELECT SUM(price_micros) as s, COUNT(*) as c FROM iap_purchases WHERE status=? AND created_at>?').bind('verified',since).first();
+        const recentPurchases=await env.DB.prepare('SELECT p.product_id,p.gems_granted,p.price_micros,p.currency,p.status,p.created_at,u.device_id FROM iap_purchases p JOIN iap_users u ON p.user_id=u.id WHERE p.created_at>? ORDER BY p.created_at DESC LIMIT 50').bind(since).all();
+        return Response.json({
+          total_users:totalUsers?.c||0,
+          period_revenue_micros:totalRevenue?.s||0,
+          period_purchases:totalRevenue?.c||0,
+          recent:(recentPurchases.results||[]),
+        },{headers:cors});
+      }
+
+      return Response.json({error:'not found'},{status:404,headers:cors});
     }
 
     // ── 社群趨勢代理 (/trends/:source) ────────────────────────────

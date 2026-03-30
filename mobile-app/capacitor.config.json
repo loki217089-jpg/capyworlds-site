@@ -1,0 +1,22 @@
+{
+  "appId": "com.capyworlds.app",
+  "appName": "CapyWorlds",
+  "webDir": "../",
+  "server": {
+    "url": "https://capyworlds.com",
+    "cleartext": false
+  },
+  "plugins": {
+    "CapacitorPurchases": {
+      "apiKey": "YOUR_REVENUECAT_API_KEY"
+    }
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#13100c",
+    "buildOptions": {
+      "minSdkVersion": 24,
+      "targetSdkVersion": 34
+    }
+  }
+}
