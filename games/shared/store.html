@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CapyWorlds Store</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#13100c;--bg2:#1e1812;--accent:#c8a456;--text:#e8ddd0;--h1:#fff}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px}
+.store-header{text-align:center;margin:12px 0 20px}
+.store-header h1{font-size:22px;color:var(--h1)}
+.store-header p{font-size:13px;opacity:.7;margin-top:4px}
+.balance-bar{background:var(--bg2);border:1px solid rgba(200,164,86,.3);border-radius:12px;padding:12px 20px;display:flex;align-items:center;gap:8px;margin-bottom:20px;min-width:200px}
+.balance-bar .gem{font-size:24px}
+.balance-bar .amount{font-size:22px;font-weight:bold;color:var(--accent)}
+.balance-bar .label{font-size:12px;opacity:.6}
+.products{display:flex;flex-direction:column;gap:12px;width:100%;max-width:400px}
+.product-card{background:var(--bg2);border:1px solid rgba(200,164,86,.15);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s}
+.product-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.product-card:active{transform:scale(.98)}
+.product-card.best{border-color:var(--accent);box-shadow:0 0 12px rgba(200,164,86,.2)}
+.product-card .icon{font-size:28px;width:40px;text-align:center;flex-shrink:0}
+.product-card .info{flex:1}
+.product-card .name{font-size:15px;font-weight:bold;color:var(--h1)}
+.product-card .bonus{font-size:11px;color:#ffd700;margin-top:2px}
+.product-card .price-btn{background:linear-gradient(135deg,#c8a456,#a8843a);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:14px;font-weight:bold;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.product-card.best .price-btn{background:linear-gradient(135deg,#ffd700,#c8a456)}
+.best-tag{background:#ffd700;color:#1a1200;font-size:10px;font-weight:bold;padding:2px 6px;border-radius:4px;margin-left:6px}
+.section-title{font-size:13px;text-transform:uppercase;letter-spacing:1px;opacity:.5;margin:16px 0 8px;width:100%;max-width:400px}
+.history-list{width:100%;max-width:400px;margin-top:8px}
+.history-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+.history-item .status-ok{color:#44dd66}
+.history-item .status-fail{color:#ff4444}
+.loading{text-align:center;padding:40px;opacity:.5}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#44dd66;color:#000;padding:10px 20px;border-radius:8px;font-weight:bold;z-index:9999;display:none;font-size:14px}
+.toast.error{background:#ff4444;color:#fff}
+.back-link{position:fixed;top:12px;left:12px;color:var(--accent);text-decoration:none;font-size:14px;z-index:100}
+</style>
+</head>
+<body>
+<a class="back-link" href="../" id="back-btn">← Back</a>
+<div class="store-header">
+  <h1 id="store-title">💎 Gem Store</h1>
+  <p id="store-sub">Power up your games with gems</p>
+</div>
+<div class="balance-bar">
+  <span class="gem">💎</span>
+  <span class="amount" id="gem-count">--</span>
+  <span class="label" id="bal-label">Your Balance</span>
+</div>
+<div class="products" id="product-list">
+  <div class="loading">Loading products...</div>
+</div>
+<div class="section-title" id="history-title">Recent Purchases</div>
+<div class="history-list" id="history-list"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.location.origin;
+let uid = localStorage.getItem('capyUID') || '';
+let lang = localStorage.getItem('capyStoreLang') || 'en';
+
+const i18n = {
+  en: {
+    title: '💎 Gem Store',
+    sub: 'Power up your games with gems',
+    balance: 'Your Balance',
+    history: 'Recent Purchases',
+    best: 'BEST',
+    bonus: p => `+${p.bonus}% bonus!`,
+    monthly: 'Daily login: 30💎 × 30 days',
+    noads: 'One-time purchase, permanent',
+    buyOk: g => `+${g} 💎 Added!`,
+    buyFail: 'Purchase failed',
+    noPurchases: 'No purchases yet',
+    back: '← Back',
+  },
+  zh: {
+    title: '💎 寶石商店',
+    sub: '用寶石強化你的遊戲體驗',
+    balance: '你的餘額',
+    history: '最近購買紀錄',
+    best: '最超值',
+    bonus: p => `多送 ${p.bonus}%！`,
+    monthly: '每日登入領 30💎 × 30 天',
+    noads: '一次購買，永久生效',
+    buyOk: g => `+${g} 💎 已入帳！`,
+    buyFail: '購買失敗',
+    noPurchases: '尚無購買紀錄',
+    back: '← 返回',
+  }
+};
+
+function t(key, ...args) {
+  const s = i18n[lang] || i18n.en;
+  const v = s[key];
+  return typeof v === 'function' ? v(...args) : v;
+}
+
+function applyLang() {
+  document.getElementById('store-title').textContent = t('title');
+  document.getElementById('store-sub').textContent = t('sub');
+  document.getElementById('bal-label').textContent = t('balance');
+  document.getElementById('history-title').textContent = t('history');
+  document.getElementById('back-btn').textContent = t('back');
+}
+
+function showToast(msg, isError) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast' + (isError ? ' error' : '');
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 2500);
+}
+
+async function initUser() {
+  if (uid) return;
+  let deviceId = localStorage.getItem('capyDeviceId');
+  if (!deviceId) {
+    deviceId = 'web_' + Math.random().toString(36).slice(2, 14) + Date.now().toString(36);
+    localStorage.setItem('capyDeviceId', deviceId);
+  }
+  try {
+    const res = await fetch(API + '/iap/register', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({device_id: deviceId})
+    });
+    const data = await res.json();
+    if (data.user) {
+      uid = data.user.id;
+      localStorage.setItem('capyUID', uid);
+    }
+  } catch(e) {}
+}
+
+async function loadBalance() {
+  if (!uid) return;
+  try {
+    const res = await fetch(API + '/iap/user?uid=' + uid);
+    const data = await res.json();
+    if (data.user) {
+      document.getElementById('gem-count').textContent = data.user.gems.toLocaleString();
+      localStorage.setItem('capyGems', data.user.gems);
+    }
+  } catch(e) {}
+}
+
+async function loadProducts() {
+  try {
+    const res = await fetch(API + '/iap/products');
+    const products = await res.json();
+    const container = document.getElementById('product-list');
+    container.innerHTML = '';
+    products.forEach(p => {
+      const isBest = p.bonus >= 20 && p.bonus < 40;
+      const card = document.createElement('div');
+      card.className = 'product-card' + (isBest ? ' best' : '');
+
+      let subtitle = '';
+      if (p.bonus > 0) subtitle = t('bonus', p);
+      else if (p.type === 'subscription') subtitle = t('monthly');
+      else if (p.type === 'lifetime') subtitle = t('noads');
+
+      const label = lang === 'zh' ? p.label_zh : p.label_en;
+      card.innerHTML = `
+        <div class="icon">${label.split(' ')[0]}</div>
+        <div class="info">
+          <div class="name">${label}${isBest ? '<span class="best-tag">'+t('best')+'</span>' : ''}</div>
+          ${subtitle ? '<div class="bonus">'+subtitle+'</div>' : ''}
+        </div>
+        <button class="price-btn">${p.price}</button>
+      `;
+      card.addEventListener('click', () => purchaseProduct(p));
+      container.appendChild(card);
+    });
+  } catch(e) {
+    document.getElementById('product-list').innerHTML = '<div class="loading">Failed to load</div>';
+  }
+}
+
+async function purchaseProduct(product) {
+  // In a real Android app, this triggers Google Play Billing via Capacitor plugin.
+  // On web, we simulate with a sandbox order for testing.
+  if (!uid) { showToast('Please wait...', true); return; }
+
+  // Check if running inside Capacitor (Android app)
+  if (window.Capacitor && window.CapyStore) {
+    // Native IAP flow — handled by Capacitor plugin
+    try {
+      const result = await window.CapyStore.purchase(product.id);
+      if (result.success) {
+        // Verify with our server
+        const res = await fetch(API + '/iap/verify', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            uid, product_id: product.id,
+            order_id: result.orderId,
+            purchase_token: result.purchaseToken,
+            receipt: result.receipt || ''
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(t('buyOk', data.granted));
+          document.getElementById('gem-count').textContent = data.gems.toLocaleString();
+          localStorage.setItem('capyGems', data.gems);
+          loadHistory();
+        } else {
+          showToast(data.error || t('buyFail'), true);
+        }
+      }
+    } catch(e) { showToast(t('buyFail'), true); }
+  } else {
+    // Web sandbox mode — simulate purchase for testing
+    const orderId = 'sandbox_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    try {
+      const res = await fetch(API + '/iap/verify', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          uid, product_id: product.id,
+          order_id: orderId,
+          purchase_token: '',
+          receipt: 'sandbox'
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast(t('buyOk', data.granted));
+        document.getElementById('gem-count').textContent = data.gems.toLocaleString();
+        localStorage.setItem('capyGems', data.gems);
+        loadHistory();
+      } else {
+        showToast(data.error || t('buyFail'), true);
+      }
+    } catch(e) { showToast(t('buyFail'), true); }
+  }
+}
+
+async function loadHistory() {
+  if (!uid) return;
+  try {
+    const res = await fetch(API + '/iap/history?uid=' + uid);
+    const list = await res.json();
+    const container = document.getElementById('history-list');
+    if (!list.length) {
+      container.innerHTML = '<div class="history-item" style="opacity:.4">' + t('noPurchases') + '</div>';
+      return;
+    }
+    container.innerHTML = list.map(p => {
+      const date = new Date(p.created_at).toLocaleDateString();
+      const statusClass = p.status === 'verified' ? 'status-ok' : 'status-fail';
+      return `<div class="history-item">
+        <span>${p.product_id} (+${p.gems_granted}💎)</span>
+        <span>${date}</span>
+        <span class="${statusClass}">${p.status === 'verified' ? '✓' : '✗'}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+// URL params: ?lang=zh&from=hero
+const params = new URLSearchParams(location.search);
+if (params.get('lang')) lang = params.get('lang');
+if (params.get('from')) {
+  document.getElementById('back-btn').href = '../' + params.get('from') + '/';
+}
+
+(async () => {
+  applyLang();
+  await initUser();
+  loadBalance();
+  loadProducts();
+  loadHistory();
+})();
+</script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+</body>
+</html>
