@@ -40,8 +40,8 @@ canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);touch-a
 <div class="top-bar">
 <a href="../" id="back-link">&larr; Back</a>
 <div class="btn-group">
-<button id="lang-btn" onclick="toggleLang()">Ã§Â¹ÂÃ¤Â¸Â­</button>
-<button id="mute-btn" onclick="toggleMute()">Ã°ÂÂÂ</button>
+<button id="lang-btn" onclick="toggleLang()">繁中</button>
+<button id="mute-btn" onclick="toggleMute()">🔊</button>
 </div>
 </div>
 <div class="game-area">
@@ -57,27 +57,27 @@ canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);touch-a
 <h2 id="go-title">Game Over</h2>
 <div class="score-big" id="go-score">0</div>
 <p id="go-best">Best: 0</p>
-<p id="go-coins" style="color:#ffd700;font-size:18px">+0 Ã°ÂÂªÂ</p>
+<p id="go-coins" style="color:#ffd700;font-size:18px">+0 🪙</p>
 <button class="obtn primary" onclick="startGame()" id="go-restart">&#9654; Play Again</button>
 <button class="obtn secondary" onclick="showShop()" id="go-shop">&#128663; Garage</button>
 </div>
 <!-- Shop -->
 <div class="overlay" id="ov-shop">
 <h2 id="shop-title">&#128663; Garage</h2>
-<p id="shop-coins">Ã°ÂÂªÂ 0</p>
+<p id="shop-coins">🪙 0</p>
 <div class="shop-grid" id="shop-grid"></div>
 <button class="obtn secondary" onclick="hideShop()" id="shop-close">&#10005; Close</button>
 </div>
 <!-- Tutorial -->
 <div class="overlay" id="ov-tut">
-<div class="tut-step"><div class="icon">Ã°ÂÂÂ</div><h3 id="t1h">Right â Drift Right</h3><p id="t1p">Press Right arrow or D to drift right</p></div>
-<div class="tut-step"><div class="icon">Ã¢ÂÂ</div><h3 id="t2h">Left â Drift Left</h3><p id="t2p">Press Left arrow or A to drift left</p></div>
-<div class="tut-step"><div class="icon">Ã°ÂÂÂ£Ã¯Â¸Â</div><h3 id="t3h">Stay on the Road!</h3><p id="t3p">Don't fall off the edge</p></div>
+<div class="tut-step"><div class="icon">👆</div><h3 id="t1h">Right → Drift Right</h3><p id="t1p">Press Right arrow or D to drift right</p></div>
+<div class="tut-step"><div class="icon">✋</div><h3 id="t2h">Left ← Drift Left</h3><p id="t2p">Press Left arrow or A to drift left</p></div>
+<div class="tut-step"><div class="icon">🛣️</div><h3 id="t3h">Stay on the Road!</h3><p id="t3p">Don't fall off the edge</p></div>
 <button class="obtn primary" onclick="closeTut()" id="tut-btn">&#9654; Start</button>
 </div>
 <!-- Start -->
 <div class="overlay active" id="ov-start">
-<h2 style="font-size:42px">Ã°ÂÂÂÃ¯Â¸Â</h2>
+<h2 style="font-size:42px">🏎️</h2>
 <h2 id="s-title">Drift Boss</h2>
 <p id="s-desc" style="margin-bottom:14px;color:#bbb">Left/Right drifting challenge</p>
 <button class="obtn primary" onclick="tryStart()" id="s-btn">&#9654; Play</button>
@@ -86,8 +86,8 @@ canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);touch-a
 <script>
 // === i18n ===
 const I={en:{back:'\u2190 Back',score:'Score',best:'Best',over:'Game Over',again:'\u25b6 Play Again',
-shop:'\ud83d\ude97 Garage',close:'\u2715 Close',hR:'Right â Drift Right',hRd:'Press Right arrow or D to drift right',
-rL:'Left â Drift Left',rLd:'Press Left arrow or A to drift left',stay:'Stay on the Road!',
+shop:'\ud83d\ude97 Garage',close:'\u2715 Close',hR:'Right → Drift Right',hRd:'Press Right arrow or D to drift right',
+rL:'Left ← Drift Left',rLd:'Press Left arrow or A to drift left',stay:'Stay on the Road!',
 stayd:"Don't fall off the edge",play:'\u25b6 Play',title:'Drift Boss',
 desc:'Left/Right drifting challenge',owned:'Owned',buy:'Buy',sel:'Select',seld:'Using'},
 zh:{back:'\u2190 \u8fd4\u56de',score:'\u5206\u6578',best:'\u6700\u4f73',over:'\u904a\u6232\u7d50\u675f',
@@ -357,7 +357,7 @@ if(!audioMuted&&!bgmLoaded)startBGM();}
 function toggleLang(){lang=lang==='en'?'zh':'en';localStorage.setItem('driftLang',lang);applyLang();}
 function applyLang(){
 const $=id=>document.getElementById(id);
-$('lang-btn').textContent=lang==='en'?'Ã§Â¹ÂÃ¤Â¸Â­':'EN';
+$('lang-btn').textContent=lang==='en'?'繁中':'EN';
 $('back-link').textContent=t('back');
 $('go-title').textContent=t('over');$('go-restart').textContent=t('again');
 $('go-shop').textContent=t('shop');$('shop-title').textContent=t('shop');
