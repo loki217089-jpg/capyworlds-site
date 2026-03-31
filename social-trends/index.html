@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>遊戲趨勢雷達 | Game Trends Radar</title>
+<style>
+:root{--bg:#13100c;--bg2:#1e1812;--bg3:#171210;--border:#3d3020;--border2:#2a1e14;--accent:#c8a456;--accent-rgb:200,164,86;--text:#e8ddd0;--text2:#907a60;--text3:#7a6a58;--h1:#fff;--card-shadow:0 2px 12px rgba(0,0,0,0.4)}
+[data-theme="light"]{--bg:#f5f0e8;--bg2:#fff;--bg3:#f0ebe0;--border:#d4c4a0;--border2:#e0d4b8;--accent:#9a6e1e;--accent-rgb:154,110,30;--text:#2a1e0e;--text2:#7a6a50;--text3:#6a5a48;--h1:#1a0e06;--card-shadow:0 2px 12px rgba(0,0,0,0.1)}
+[data-theme="pink"]{--bg:#1a0810;--bg2:#260a18;--bg3:#1a0810;--border:#6a2050;--border2:#4a1038;--accent:#e060a8;--accent-rgb:224,96,168;--text:#f8d8ec;--text2:#c06898;--text3:#a05880;--h1:#fff0f8;--card-shadow:0 2px 12px rgba(224,96,168,0.15)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-left a{color:var(--text2);font-size:14px}
+.header h1{font-size:18px;color:var(--h1);display:flex;align-items:center;gap:8px}
+.hdr-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.bar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2)}
+.bar span.t{color:var(--accent);font-weight:bold}
+.bar button{background:var(--accent);color:#000;border:none;padding:4px 14px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600}
+
+.main{max-width:1200px;margin:0 auto;padding:16px}
+
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg2);padding:6px;border-radius:10px;border:1px solid var(--border)}
+.tab{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .2s;font-weight:500}
+.tab:hover{color:var(--text)}
+.tab.on{background:rgba(var(--accent-rgb),0.2);color:var(--accent);font-weight:700}
+
+.panel{display:none}.panel.on{display:block}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+@media(max-width:740px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform .2s}
+.card:hover{transform:translateY(-2px);box-shadow:var(--card-shadow)}
+.card-h{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2)}
+.card-h .badge{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px}
+.card-h .cnt{font-size:11px;color:var(--text3);background:var(--bg3);padding:2px 8px;border-radius:10px}
+.card-b{padding:12px 14px}
+
+.item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(var(--accent-rgb),0.08)}
+.item:last-child{border-bottom:none}
+.rank{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.rank.top{background:rgba(var(--accent-rgb),0.25);color:var(--accent)}
+.rank.n{background:var(--bg3);color:var(--text3)}
+.info{flex:1;min-width:0}
+.info .tt{font-size:13px;font-weight:600;color:var(--h1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.info .meta{font-size:11px;color:var(--text3);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.heat{font-size:11px;color:var(--accent);font-weight:600;white-space:nowrap;flex-shrink:0}
+
+/* Complaint card */
+.complaint{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.complaint .c-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.complaint .c-src{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;color:#fff}
+.complaint .c-title{font-size:14px;font-weight:700;color:var(--h1);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.complaint .c-body{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px}
+.complaint .c-tags{display:flex;gap:4px;flex-wrap:wrap}
+.complaint .c-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
+
+/* Opportunity card */
+.opp{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.opp-h{padding:12px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+.opp-h .icon{font-size:22px}
+.opp-h .type{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;color:#fff}
+.opp-b{padding:14px}
+.opp-title{font-size:15px;font-weight:700;color:var(--h1);margin-bottom:4px}
+.opp-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+.opp-why{list-style:none;padding:0}
+.opp-why li{font-size:11px;color:var(--text3);padding:2px 0}
+.opp-why li::before{content:'→ ';color:var(--accent)}
+.opp-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.opp-tags span{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(var(--accent-rgb),0.1);color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.2)}
+
+.loading{text-align:center;padding:40px;color:var(--text3)}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;margin-bottom:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.src-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.src-tab{padding:5px 12px;border-radius:16px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:12px;transition:all .2s}
+.src-tab:hover{border-color:var(--accent)}
+.src-tab.on{background:rgba(var(--accent-rgb),0.15);border-color:var(--accent);color:var(--accent);font-weight:600}
+
+.footer{text-align:center;padding:16px;font-size:11px;color:var(--text3);border-top:1px solid var(--border2);margin-top:20px}
+.priv{position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px}
+.priv a{color:#888;text-decoration:none}
+
+@media(max-width:600px){.header h1{font-size:15px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <a href="/" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(200,164,86,0.15);border:1px solid rgba(200,164,86,0.4);color:#c8a456;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;backdrop-filter:blur(8px);transition:background 0.2s;" onmouseover="this.style.background='rgba(200,164,86,0.3)'" onmouseout="this.style.background='rgba(200,164,86,0.15)'">🏠 首頁</a>
+
+<div class="header">
+  <div class="header-left">
+    <a href="/">← 返回</a>
+    <h1>🎯 <span id="title">遊戲趨勢雷達</span></h1>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button class="hdr-btn" id="theme-btn" onclick="cycleTheme()">🌙</button>
+    <button class="hdr-btn" id="lang-btn" onclick="toggleLang()">EN</button>
+  </div>
+</div>
+
+<div class="bar">
+  <div>
+    <span id="lbl-next">下次更新</span>：<span class="t" id="countdown">--:--:--</span>
+  </div>
+  <button onclick="refreshAll()" id="btn-refresh">立即更新</button>
+</div>
+
+<div class="main">
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-p="hot">🔥 熱門遊戲</div>
+    <div class="tab" data-p="pain">😤 玩家痛點</div>
+    <div class="tab" data-p="opp">💡 攻略機會</div>
+  </div>
+
+  <div class="panel on" id="p-hot">
+    <div class="src-tabs" id="hot-srcs"></div>
+    <div class="grid" id="hot-grid"></div>
+  </div>
+
+  <div class="panel" id="p-pain">
+    <div class="src-tabs" id="pain-srcs"></div>
+    <div id="pain-list"></div>
+  </div>
+
+  <div class="panel" id="p-opp">
+    <div id="opp-list"></div>
+  </div>
+
+  <div class="footer" id="footer">資料來源：Steam · 巴哈 · 4Gamers · IGN · Dcard 遊戲板 · 每 4 小時更新</div>
+</div>
+<div class="priv"><a href="/privacy.html" target="_blank">Privacy Policy</a></div>
+
+<script>
+/* ── i18n ── */
+const T = {
+  'zh-TW':{
+    title:'遊戲趨勢雷達',next:'下次更新',refresh:'立即更新',
+    hot:'🔥 熱門遊戲',pain:'😤 玩家痛點',opp:'💡 攻略機會',
+    all:'全部',items:'則',loading:'載入中...',noData:'無資料',
+    footer:'資料來源：Reddit · Steam · SteamSpy · CheapShark · 每 4 小時更新',
+    painTitle:'玩家在抱怨什麼？',painDesc:'從各平台蒐集的負評、抱怨、求助',
+    oppTitle:'可以做什麼幫他們？',oppDesc:'根據痛點分析，建議的攻略/工具方向',
+    guide:'攻略',tool:'工具',video:'影片',
+    complaint:'抱怨',bug:'Bug',balance:'平衡',newbie:'新手卡關',perf:'效能',price:'價格',
+    why:'為什麼值得做',
+  },
+  'en':{
+    title:'Game Trends Radar',next:'Next update',refresh:'Refresh',
+    hot:'🔥 Hot Games',pain:'😤 Pain Points',opp:'💡 Opportunities',
+    all:'All',items:'items',loading:'Loading...',noData:'No data',
+    footer:'Sources: Reddit · Steam · SteamSpy · CheapShark · Updates every 4hrs',
+    painTitle:'What are players complaining about?',painDesc:'Negative reviews, complaints, and help requests across platforms',
+    oppTitle:'What can we build to help?',oppDesc:'Guide/tool opportunities based on pain point analysis',
+    guide:'Guide',tool:'Tool',video:'Video',
+    complaint:'Complaint',bug:'Bug',balance:'Balance',newbie:'Stuck',perf:'Performance',price:'Price',
+    why:'Why it\'s worth doing',
+  }
+};
+let lang=localStorage.getItem('trendLang')||'zh-TW';
+const t=k=>(T[lang]||T['zh-TW'])[k]||k;
+function toggleLang(){
+  lang=lang==='zh-TW'?'en':'zh-TW';
+  localStorage.setItem('trendLang',lang);
+  document.getElementById('lang-btn').textContent=lang==='zh-TW'?'EN':'繁中';
+  applyLang(); renderAll();
+}
+function applyLang(){
+  document.getElementById('title').textContent=t('title');
+  document.getElementById('lbl-next').textContent=t('next');
+  document.getElementById('btn-refresh').textContent=t('refresh');
+  document.getElementById('footer').textContent=t('footer');
+  document.querySelectorAll('.tab').forEach(el=>{ if(T[lang][el.dataset.p]) el.textContent=T[lang][el.dataset.p]; });
+}
+
+/* ── Theme ── */
+const themes=['dark','light','pink'],tIcons={dark:'🌙',light:'☀️',pink:'🌸'};
+let ti=themes.indexOf(localStorage.getItem('theme')||'dark'); if(ti<0)ti=0;
+function applyTheme(){
+  const th=themes[ti];
+  if(th==='dark') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',th);
+  document.getElementById('theme-btn').textContent=tIcons[th];
+  localStorage.setItem('theme',th);
+}
+function cycleTheme(){ti=(ti+1)%3;applyTheme();}
+applyTheme();
+
+/* ── Sources ── */
+const SRCS=[
+  {id:'all',name:{zh:'全部',en:'All'},icon:'🌐',color:'var(--accent)'},
+  {id:'hn-gaming',name:{zh:'HN Gaming',en:'HN Gaming'},icon:'🟠',color:'#ff6600'},
+  {id:'hn-steam',name:{zh:'HN Steam',en:'HN Steam'},icon:'🎮',color:'#1b2838'},
+  {id:'hn-indie',name:{zh:'HN Indie',en:'HN Indie'},icon:'🕹️',color:'#9060ff'},
+  {id:'steam-feat',name:{zh:'Steam 精選',en:'Steam Featured'},icon:'🎯',color:'#1b2838'},
+  {id:'steamspy',name:{zh:'SteamSpy 熱玩',en:'SteamSpy Top'},icon:'📊',color:'#4a90d9'},
+  {id:'deals',name:{zh:'特價情報',en:'Deals'},icon:'💰',color:'#f59e0b'},
+];
+let hotSrc='all', painSrc='all';
+const API=location.hostname==='localhost'||location.hostname==='127.0.0.1'?'':'https://capyworlds.com';
+
+/* ── Tab switching ── */
+document.getElementById('tabs').addEventListener('click',e=>{
+  const tab=e.target.closest('.tab'); if(!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  tab.classList.add('on');
+  document.getElementById('p-'+tab.dataset.p).classList.add('on');
+});
+
+/* ── Helpers ── */
+function fmtNum(n){
+  if(n>=1000000) return (n/1000000).toFixed(1)+'M';
+  if(n>=10000) return (n/10000).toFixed(1)+(lang==='zh-TW'?'萬':'0K');
+  if(n>=1000) return (n/1000).toFixed(1)+'K';
+  return String(n);
+}
+
+/* ── Data ── */
+let allData={}; // {steam:[], gnn:[], ...}
+let lastRefresh=null;
+
+/* ── Detect pain type from title ── */
+function detectPain(text){
+  const t=text.toLowerCase();
+  if(/bug|crash|broken|glitch|error|stuck|freeze|corrupt|not work|can't|won't|issue/.test(t)) return 'bug';
+  if(/nerf|buff|balance|op |overpowered|underpowered|broken meta|unfair|p2w|pay.to.win/.test(t)) return 'balance';
+  if(/help|how to|how do|beginner|new player|noob|tips|guide|advice|recommend|stuck on/.test(t)) return 'newbie';
+  if(/lag|fps|performance|stutter|loading|optimization|frame|slow|ram|vram|cpu|gpu/.test(t)) return 'perf';
+  if(/price|expensive|overpriced|refund|not worth|rip.off|micro|monetiz|dlc|season pass|loot.?box/.test(t)) return 'price';
+  if(/worst|terrible|awful|garbage|trash|waste|disappoint|regret|uninstall|dead game|scam|ruined/.test(t)) return 'complaint';
+  return null;
+}
+
+/* ── Parse HackerNews Algolia JSON ── */
+function parseHN(json, srcId){
+  if(!json?.hits) return [];
+  return json.hits.filter(h=>h.title).map((h,i)=>({
+    title: h.title||'',
+    src: srcId,
+    heat: Math.max((h.points||0)*10 + (h.num_comments||0)*5, Math.max(100-i*3,5)),
+    comments: h.num_comments||0,
+    views: h.points||0,
+    pain: detectPain(h.title+' '+(h.story_text||'')),
+    excerpt: h.story_text ? h.story_text.slice(0,150) : (h.url||''),
+    url: h.url||`https://news.ycombinator.com/item?id=${h.objectID}`,
+    time: h.created_at||''
+  })).slice(0,20);
+}
+
+/* ── Parse Steam Featured ── */
+function parseSteamFeatured(json){
+  const items=[];
+  if(json?.featured_win) json.featured_win.forEach(g=>{
+    items.push({
+      title:g.name||'', src:'steam-feat', heat:g.discount_percent>0?80000:50000,
+      comments:0, views:0, pain:null,
+      excerpt:g.discount_percent>0?`-${g.discount_percent}% → $${(g.final_price/100).toFixed(2)}`:'',
+      time:new Date().toISOString()
+    });
+  });
+  if(json?.large_capsules) json.large_capsules.forEach(g=>{
+    items.push({
+      title:g.name||'', src:'steam-feat', heat:90000,
+      comments:0, views:0, pain:null,
+      excerpt:g.discount_percent>0?`-${g.discount_percent}%`:'Featured',
+      time:new Date().toISOString()
+    });
+  });
+  return items.slice(0,15);
+}
+
+/* ── Parse SteamSpy top ── */
+function parseSteamSpy(json){
+  if(!json||typeof json!=='object') return [];
+  return Object.entries(json).map(([appid,g])=>({
+    title:g.name||'', src:'steamspy',
+    heat:(g.ccu||0)+(g.players_2weeks||0)/100,
+    comments:0, views:g.players_2weeks||0, pain:null,
+    excerpt:`${fmtNum(g.ccu||0)} playing · ${fmtNum(g.players_2weeks||0)} 2wk`,
+    time:new Date().toISOString()
+  })).sort((a,b)=>b.heat-a.heat).slice(0,20);
+}
+
+/* ── Parse CheapShark deals ── */
+function parseDeals(json){
+  if(!Array.isArray(json)) return [];
+  return json.map(d=>({
+    title:d.title||'', src:'deals',
+    heat:Math.round((d.dealRating||0)*10000),
+    comments:0, views:0,
+    pain:parseFloat(d.normalPrice)>30?'price':null,
+    excerpt:`$${d.salePrice} (was $${d.normalPrice}) -${Math.round((1-d.salePrice/d.normalPrice)*100)}%`,
+    time:new Date((d.lastChange||0)*1000).toISOString()
+  })).slice(0,15);
+}
+
+/* ── Fetch all sources ── */
+async function fetchAll(){
+  const sources=[
+    {key:'hn-gaming',  url:API+'/trends/hn-gaming',  handler:j=>parseHN(j,'hn-gaming')},
+    {key:'hn-steam',   url:API+'/trends/hn-steam',   handler:j=>parseHN(j,'hn-steam')},
+    {key:'hn-indie',   url:API+'/trends/hn-indie',   handler:j=>parseHN(j,'hn-indie')},
+    {key:'steam-feat', url:API+'/trends/steam-featured',  handler:parseSteamFeatured},
+    {key:'steamspy',   url:API+'/trends/steamspy-top',    handler:parseSteamSpy},
+    {key:'deals',      url:API+'/trends/deals',           handler:parseDeals},
+  ];
+  const result={};
+  await Promise.all(sources.map(async ({key,url,xml,handler})=>{
+    try{
+      const r=await fetch(url);
+      if(!r.ok) throw new Error(r.status);
+      result[key]=handler(xml ? await r.text() : await r.json());
+    }catch(e){console.warn('fetch fail:',key,e); result[key]=[];}
+  }));
+  return result;
+}
+
+/* ── Countdown ── */
+let cdInterval=null;
+function startCountdown(){
+  if(cdInterval) clearInterval(cdInterval);
+  const next=new Date();
+  const h=next.getHours();
+  next.setHours(Math.ceil((h+1)/4)*4,0,0,0);
+  if(next<=new Date()) next.setTime(next.getTime()+4*3600000);
+  cdInterval=setInterval(()=>{
+    const d=next-new Date();
+    if(d<=0){refreshAll();return;}
+    const hh=Math.floor(d/3600000),mm=Math.floor((d%3600000)/60000),ss=Math.floor((d%60000)/1000);
+    document.getElementById('countdown').textContent=
+      String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+  },1000);
+}
+
+/* ── Render source filter tabs ── */
+function renderSrcTabs(containerId, active, onClick){
+  document.getElementById(containerId).innerHTML=SRCS.map(s=>{
+    const nm=lang==='zh-TW'?s.name.zh:s.name.en;
+    return `<div class="src-tab ${active===s.id?'on':''}" onclick="${onClick}('${s.id}')">${s.icon} ${nm}</div>`;
+  }).join('');
+}
+function setHotSrc(id){hotSrc=id;renderHot();}
+function setPainSrc(id){painSrc=id;renderPain();}
+
+/* ── Get items by source filter ── */
+function getItems(srcFilter){
+  if(srcFilter==='all') return Object.values(allData).flat();
+  return allData[srcFilter]||[];
+}
+
+/* ── Render: Hot Games ── */
+function renderHot(){
+  renderSrcTabs('hot-srcs',hotSrc,'setHotSrc');
+  const items=getItems(hotSrc).sort((a,b)=>b.heat-a.heat);
+  const grid=document.getElementById('hot-grid');
+  if(!items.length){grid.innerHTML=`<div class="loading">${t('noData')}</div>`;return;}
+  // Group by source
+  const groups={};
+  items.forEach(it=>{if(!groups[it.src])groups[it.src]=[];groups[it.src].push(it);});
+  const srcNames={steam:'Steam',gnn:'巴哈 GNN','4gamers':'4Gamers',ign:'IGN',dcard:'Dcard'};
+  if(hotSrc==='all'){
+    grid.innerHTML=Object.entries(groups).map(([sid,list])=>{
+      const s=SRCS.find(x=>x.id===sid);
+      const nm=s?(lang==='zh-TW'?s.name.zh:s.name.en):(srcNames[sid]||sid);
+      const ic=s?s.icon:'📰';
+      return `<div class="card">
+        <div class="card-h"><div class="badge">${ic} ${nm}</div><span class="cnt">${list.length} ${t('items')}</span></div>
+        <div class="card-b">${list.slice(0,8).map((it,i)=>renderItem(it,i)).join('')}</div>
+      </div>`;
+    }).join('');
+  } else {
+    grid.innerHTML=`<div class="card" style="grid-column:1/-1">
+      <div class="card-b">${items.slice(0,15).map((it,i)=>renderItem(it,i)).join('')}</div>
+    </div>`;
+  }
+}
+function renderItem(it,i){
+  const link=it.url?`<a href="${it.url}" target="_blank" style="color:var(--h1)">${it.title}</a>`:it.title;
+  return `<div class="item">
+    <div class="rank ${i<3?'top':'n'}">${i+1}</div>
+    <div class="info">
+      <div class="tt">${link}</div>
+      <div class="meta">
+        ${it.pain?`<span style="color:#f87171">😤 ${t(it.pain)}</span>`:''}
+        ${it.flair?`<span style="color:var(--accent)">[${it.flair}]</span>`:''}
+        ${it.excerpt?`<span>${it.excerpt}</span>`:''}
+        <span>⬆${fmtNum(it.views)} 💬${fmtNum(it.comments)}</span>
+      </div>
+    </div>
+    <div class="heat">🔥 ${fmtNum(it.heat)}</div>
+  </div>`;
+}
+
+/* ── Render: Pain Points ── */
+function renderPain(){
+  renderSrcTabs('pain-srcs',painSrc,'setPainSrc');
+  const items=getItems(painSrc).filter(it=>it.pain).sort((a,b)=>b.heat-a.heat);
+  const container=document.getElementById('pain-list');
+  if(!items.length){
+    container.innerHTML=`<div class="loading">${lang==='zh-TW'?'目前沒有偵測到明顯痛點，稍後再試':'No pain points detected, try again later'}</div>`;
+    return;
+  }
+  // Group by pain type
+  const groups={};
+  items.forEach(it=>{if(!groups[it.pain])groups[it.pain]=[];groups[it.pain].push(it);});
+  const painColors={bug:'#ef4444',balance:'#f59e0b',newbie:'#3b82f6',perf:'#a855f7',price:'#f97316',complaint:'#ef4444'};
+  const painIcons={bug:'🐛',balance:'⚖️',newbie:'🆘',perf:'🐌',price:'💸',complaint:'😡'};
+  container.innerHTML=`
+    <div style="margin-bottom:12px;font-size:13px;color:var(--text2)">
+      ${t('painDesc')} · ${items.length} ${t('items')}
+    </div>
+    ${Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([type,list])=>`
+      <div style="margin-bottom:16px">
+        <div style="font-size:14px;font-weight:700;color:${painColors[type]||'#f87171'};margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          ${painIcons[type]||'😤'} ${t(type)} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${list.length})</span>
+        </div>
+        ${list.slice(0,8).map(it=>{
+          const s=SRCS.find(x=>x.id===it.src);
+          const sn=s?(lang==='zh-TW'?s.name.zh:s.name.en):it.src;
+          const link=it.url?`<a href="${it.url}" target="_blank" style="color:var(--h1)">${it.title}</a>`:it.title;
+          return `<div class="complaint">
+            <div class="c-head">
+              <span class="c-src" style="background:${s?s.color:'#888'}">${sn}</span>
+              <span class="c-title">${link}</span>
+            </div>
+            ${it.excerpt?`<div class="c-body">${it.excerpt}...</div>`:''}
+            <div class="c-tags">
+              <span class="c-tag">⬆${fmtNum(it.views)}</span>
+              <span class="c-tag">💬 ${fmtNum(it.comments)}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `).join('')}
+  `;
+}
+
+/* ── Render: Opportunities ── */
+function renderOpp(){
+  const items=Object.values(allData).flat();
+  const pains=items.filter(it=>it.pain);
+  const container=document.getElementById('opp-list');
+  if(!items.length){container.innerHTML=`<div class="loading">${t('noData')}</div>`;return;}
+
+  // Count pain types
+  const painCount={};
+  pains.forEach(it=>{painCount[it.pain]=(painCount[it.pain]||0)+1;});
+
+  // Count hot keywords
+  const kw={};
+  items.forEach(it=>{
+    it.title.replace(/[^\u4e00-\u9fff\w]/g,' ').split(/\s+/).filter(w=>w.length>=2)
+      .forEach(w=>{kw[w]=(kw[w]||0)+it.heat;});
+  });
+  const topKw=Object.entries(kw).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);
+  const zh=lang==='zh-TW';
+
+  const opps=[];
+
+  if(painCount.newbie>0) opps.push({
+    icon:'📖',type:t('guide'),color:'#3b82f6',
+    title:zh?`新手攻略：${topKw.slice(0,2).join('、')} 相關`:`Beginner Guide: ${topKw.slice(0,2).join(', ')}`,
+    desc:zh?`偵測到 ${painCount.newbie} 則新手求助/卡關內容。這些玩家需要清楚的入門攻略。繁中攻略在 Steam 上很稀缺，大部分只有簡中。`
+      :`Detected ${painCount.newbie} newbie help requests. These players need clear beginner guides. Traditional Chinese guides are rare on Steam.`,
+    why:[zh?'Steam 繁中攻略缺口大，簡中不完全適用台灣玩家':'Trad. Chinese guides are scarce on Steam',
+         zh?'新手攻略搜尋量穩定，長尾 SEO 效果好':'Beginner guide searches are stable, good long-tail SEO',
+         zh?'可做成網頁版，比 Steam 社群指南更好讀':'Web version is more readable than Steam community guides'],
+    tags:[t('guide'),'Steam','SEO',zh?'繁中':'Trad. Chinese']
+  });
+
+  if(painCount.bug>0) opps.push({
+    icon:'🔧',type:t('tool'),color:'#ef4444',
+    title:zh?'Bug 回報追蹤工具 / 已知問題整理':'Bug Tracker / Known Issues Summary',
+    desc:zh?`偵測到 ${painCount.bug} 則 Bug 相關抱怨。玩家找不到官方回應時很挫折，整理已知問題 + 暫時解法會很有幫助。`
+      :`Detected ${painCount.bug} bug-related complaints. Players get frustrated without official response. A known issues + workarounds page helps.`,
+    why:[zh?'玩家第一反應是搜尋「遊戲名 + bug」':'Players first search "game name + bug"',
+         zh?'收集社群回報的暫時解法很有價值':'Community workarounds are valuable',
+         zh?'可用 RSS 自動追蹤更新':'Can auto-track updates via RSS'],
+    tags:[t('tool'),zh?'問題追蹤':'Issue Tracker','Community']
+  });
+
+  if(painCount.balance>0) opps.push({
+    icon:'📊',type:t('guide'),color:'#f59e0b',
+    title:zh?'平衡性分析 / Meta 攻略':'Balance Analysis / Meta Guide',
+    desc:zh?`偵測到 ${painCount.balance} 則平衡性討論。玩家想知道當前 meta、最強角色/裝備/策略。`
+      :`Detected ${painCount.balance} balance discussions. Players want to know current meta, strongest characters/builds.`,
+    why:[zh?'Meta 攻略每次更新都有流量':'Meta guides get traffic every patch',
+         zh?'資料視覺化（tier list）容易分享':'Data viz (tier lists) are highly shareable',
+         zh?'可結合數據做自動更新的 tier list 網頁':'Can build auto-updating tier list pages'],
+    tags:[t('guide'),'Meta','Tier List',zh?'資料分析':'Data Analysis']
+  });
+
+  if(painCount.perf>0) opps.push({
+    icon:'⚡',type:t('guide'),color:'#a855f7',
+    title:zh?'效能優化設定攻略':'Performance Optimization Guide',
+    desc:zh?`偵測到 ${painCount.perf} 則效能問題抱怨（FPS 低、Lag、載入慢）。最佳設定攻略永遠有人找。`
+      :`Detected ${painCount.perf} performance complaints (low FPS, lag, slow loading). Optimal settings guides are always in demand.`,
+    why:[zh?'「遊戲名 + 設定」是高搜尋量關鍵字':'Game name + settings is high search volume',
+         zh?'針對不同硬體等級的推薦設定很實用':'Settings recommendations by hardware tier are practical',
+         zh?'做成互動網頁比文章更有價值':'Interactive web tool > static article'],
+    tags:[t('tool'),'FPS','Settings','Hardware']
+  });
+
+  if(painCount.price>0) opps.push({
+    icon:'💰',type:t('guide'),color:'#f97316',
+    title:zh?'省錢攻略 / 免費替代方案整理':'Money-Saving Guide / Free Alternatives',
+    desc:zh?`偵測到 ${painCount.price} 則價格相關抱怨。整理特價時機、免費替代品、CP 值分析。`
+      :`Detected ${painCount.price} price complaints. Compile sale timing, free alternatives, value analysis.`,
+    why:[zh?'價格比較文章 SEO 效果極好':'Price comparison articles have great SEO',
+         zh?'Steam 特價追蹤有穩定需求':'Steam sale tracking has stable demand',
+         zh?'可做成價格歷史查詢工具':'Can build price history lookup tool'],
+    tags:[t('tool'),zh?'特價':'Sales','F2P',zh?'CP值':'Value']
+  });
+
+  // Always add a trend-based suggestion
+  if(topKw.length>=3) opps.push({
+    icon:'🔮',type:zh?'趨勢':'Trend',color:'var(--accent)',
+    title:zh?`熱門關鍵字攻略機會：${topKw.slice(0,3).join('、')}`:`Trending Keyword Opportunity: ${topKw.slice(0,3).join(', ')}`,
+    desc:zh?'這些關鍵字在過去 4 小時討論量最高。可以針對這些話題快速產出繁中內容搶佔搜尋排名。'
+      :'These keywords have the highest discussion volume in the past 4 hours. Quick Trad. Chinese content can capture search rankings.',
+    why:[zh?'搶先產出繁中內容 = 搜尋第一頁':'First Trad. Chinese content = page 1 search',
+         zh?'趨勢話題自帶流量':'Trending topics bring organic traffic',
+         zh?'可做成部落格文章或攻略頁面':'Can be blog posts or guide pages'],
+    tags:topKw.slice(0,5)
+  });
+
+  container.innerHTML=`
+    <div style="margin-bottom:14px">
+      <div style="font-size:15px;font-weight:700;color:var(--h1);margin-bottom:4px">${t('oppTitle')}</div>
+      <div style="font-size:12px;color:var(--text2)">${t('oppDesc')} · ${pains.length} ${zh?'個痛點偵測到':'pain points detected'}</div>
+    </div>
+    ${opps.map(o=>`
+      <div class="opp">
+        <div class="opp-h">
+          <span class="icon">${o.icon}</span>
+          <span class="type" style="background:${o.color}">${o.type}</span>
+        </div>
+        <div class="opp-b">
+          <div class="opp-title">${o.title}</div>
+          <div class="opp-desc">${o.desc}</div>
+          <div style="font-size:11px;color:var(--accent);margin-bottom:4px;font-weight:600">${t('why')}</div>
+          <ul class="opp-why">${o.why.map(w=>`<li>${w}</li>`).join('')}</ul>
+          <div class="opp-tags">${o.tags.map(tg=>`<span>${tg}</span>`).join('')}</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+/* ── Render all ── */
+function renderAll(){ renderHot(); renderPain(); renderOpp(); }
+
+/* ── Refresh ── */
+async function refreshAll(){
+  document.getElementById('hot-grid').innerHTML=`<div class="loading"><div class="spinner"></div><div>${t('loading')}</div></div>`;
+  try{ allData=await fetchAll(); }catch(e){ allData={}; }
+  lastRefresh=new Date();
+  localStorage.setItem(CACHE_KEY,JSON.stringify(allData));
+  localStorage.setItem(CACHE_TIME_KEY,lastRefresh.toISOString());
+  renderAll(); startCountdown();
+}
+
+/* ── Init ── */
+const CACHE_KEY='trendData4'; const CACHE_TIME_KEY='trendRefresh4';
+async function init(){
+  const cached=localStorage.getItem(CACHE_KEY);
+  const cachedTime=localStorage.getItem(CACHE_TIME_KEY);
+  let needFetch=true;
+  if(cached&&cachedTime){
+    const elapsed=Date.now()-new Date(cachedTime).getTime();
+    if(elapsed<4*3600000){ allData=JSON.parse(cached); lastRefresh=new Date(cachedTime); needFetch=false; }
+  }
+  applyLang();
+  if(needFetch) await refreshAll();
+  else { renderAll(); startCountdown(); }
+}
+init();
+</script>
+</body>
+</html>

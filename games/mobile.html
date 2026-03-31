@@ -157,6 +157,7 @@
   </style>
 </head>
 <body>
+  <a href="/" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(200,164,86,0.15);border:1px solid rgba(200,164,86,0.4);color:#c8a456;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;backdrop-filter:blur(8px);transition:background 0.2s;" onmouseover="this.style.background='rgba(200,164,86,0.3)'" onmouseout="this.style.background='rgba(200,164,86,0.15)'">🏠 首頁</a>
 <div class="page-header">
   <a class="back-btn" href="../">← 回首頁</a>
   <button class="theme-btn" onclick="cycleTheme()">🎨 主題</button>
@@ -245,27 +246,6 @@
       </div>
     </a>
 
-    <!-- 每日一題 RPG -->
-    <a class="game-card" href="daily-quiz-rpg/"
-       style="--card-accent:#00e5ff; --banner-bg:#000d1a; --banner-glow:rgba(0,229,255,0.25);">
-      <div class="card-banner">
-        <div class="game-emoji">📚</div>
-        <div class="badge-new">NEW</div>
-      </div>
-      <div class="card-body">
-        <div class="game-title">每日一題 RPG</div>
-        <div class="game-desc">選職業、答題賺XP、打怪升級！法師/勇士/射手三種玩法，25題知識庫，成就解鎖！</div>
-        <div class="tags">
-          <span class="tag" style="color:#00e5ff;border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.1);">答題</span>
-          <span class="tag" style="color:#00e5ff;border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.1);">RPG</span>
-          <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">益智</span>
-        </div>
-      </div>
-      <div class="card-footer">
-        <span class="play-btn" style="color:#00e5ff;">▶ 開始答題</span>
-        <span class="mobile-badge">📱 觸控優化</span>
-      </div>
-    </a>
 
     <!-- 進化蚊子 -->
     <a class="game-card" href="mosquito/"
@@ -307,6 +287,45 @@
       </div>
     </a>
 
+    <!-- 水豚生態塔防 -->
+    <a class="game-card" href="slash-monsters/"
+       style="--card-accent:#ff6644; --banner-bg:#1a0808; --banner-glow:rgba(255,102,68,0.2);">
+      <span class="new-badge">NEW</span>
+      <div class="card-banner">
+        <div class="game-emoji">⚔️</div>
+      </div>
+      <div class="card-body">
+        <div class="game-title">斬魔忍者</div>
+        <div class="game-desc">滑動斬殺！5 種武器 × RPG 養成</div>
+        <div class="tags">
+          <span class="tag" style="color:#ff6644;border-color:rgba(255,102,68,0.4);background:rgba(255,102,68,0.1);">動作</span>
+          <span class="tag" style="color:#FFD700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">RPG</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="play-btn" style="color:#ff6644;">▶ 開始遊戲</span>
+      </div>
+    </a>
+
+    <a class="game-card" href="eco-defense/"
+       style="--card-accent:#44ee88; --banner-bg:#0a2a12; --banner-glow:rgba(68,238,136,0.2);">
+      <div class="card-banner">
+        <div class="game-emoji">🌿</div>
+      </div>
+      <div class="card-body">
+        <div class="game-title">水豚生態塔防</div>
+        <div class="game-desc">種植物養動物，用生態系統防禦污染！觸控放置 + Roguelike 升級。</div>
+        <div class="tags">
+          <span class="tag" style="color:#44ee88;border-color:rgba(68,238,136,0.4);background:rgba(68,238,136,0.1);">塔防</span>
+          <span class="tag" style="color:#88cc66;border-color:rgba(136,204,102,0.4);background:rgba(136,204,102,0.1);">生態</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="play-btn" style="color:#44ee88;">▶ 守護生態</span>
+        <span class="mobile-badge">📱 觸控優化</span>
+      </div>
+    </a>
+
     <!-- 水豚小村 -->
     <a class="game-card" href="village/"
        style="--card-accent:#7ec850; --banner-bg:#0a1a00; --banner-glow:rgba(126,200,80,0.22);">
@@ -344,6 +363,26 @@
       <div class="card-footer">
         <span class="play-btn" style="color:#a060ff;">▶ 開始冒險</span>
         <span class="mobile-badge">📱 觸控優化</span>
+      </div>
+    </a>
+
+    <a class="game-card" href="merge-drop/"
+       style="--card-accent:#ff8c00; --banner-bg:#1a0e00; --banner-glow:rgba(255,140,0,0.28);">
+      <div class="card-banner">
+        <div class="game-emoji">🫧</div>
+        <div class="badge-new">NEW</div>
+      </div>
+      <div class="card-body">
+        <div class="game-title">Merge Drop</div>
+        <div class="game-desc">Drop & merge same-number circles! Chain combos for huge scores. Simple but impossibly addictive.</div>
+        <div class="tags">
+          <span class="tag" style="color:#ff8c00;border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.1);">Puzzle</span>
+          <span class="tag" style="color:#ff8c00;border-color:rgba(255,140,0,0.4);background:rgba(255,140,0,0.1);">Merge</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="play-btn" style="color:#ff8c00;">▶ Play Now</span>
+        <span class="mobile-badge">📱 Touch</span>
       </div>
     </a>
 
@@ -403,5 +442,6 @@
   }
   function cycleTheme() { ti = (ti+1)%themes.length; applyTheme(themes[ti]); }
 </script>
+<script>(function(){var sid=localStorage.getItem("_cw_sid");if(!sid){sid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("_cw_sid",sid);}var d={p:location.pathname,r:document.referrer,l:navigator.language,s:screen.width+"x"+screen.height,sid:sid};fetch("/t",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d),keepalive:true});})();</script>
 </body>
 </html>

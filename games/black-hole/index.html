@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>黑洞收割者 Black Hole Harvester</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #000;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#canvas {
+  display: block;
+  position: absolute;
+  touch-action: none;
+  cursor: none;
+}
+#hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  pointer-events: none;
+  z-index: 10;
+}
+#hud-left { display: flex; flex-direction: column; gap: 2px; }
+#hud-mass { font-size: 22px; font-weight: bold; color: #a78bfa; }
+#hud-level { font-size: 13px; color: #7c6fa0; }
+#hud-timer { font-size: 28px; font-weight: bold; color: #f9a8d4; font-variant-numeric: tabular-nums; }
+#hud-progress {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 6px; background: #1a1a2e; z-index: 10; pointer-events: none;
+}
+#hud-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #db2777);
+  transition: width 0.2s; width: 0%;
+}
+#overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px; z-index: 20;
+  padding: 24px;
+}
+#overlay h1 { font-size: clamp(28px,6vw,48px); color: #a78bfa; text-align: center; }
+#overlay p  { font-size: clamp(13px,3vw,16px); color: #c4b5fd; text-align: center; max-width: 380px; line-height: 1.6; }
+.btn {
+  padding: 14px 36px;
+  background: linear-gradient(135deg, #7c3aed, #db2777);
+  border: none; border-radius: 50px;
+  color: #fff; font-size: 18px; font-weight: bold;
+  cursor: pointer; pointer-events: all;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.btn:hover { transform: scale(1.05); }
+.btn:active { transform: scale(0.97); opacity: 0.85; }
+#level-badge { font-size: clamp(40px,12vw,80px); animation: pop 0.5s ease-out; }
+@keyframes pop {
+  0%   { transform: scale(0.3); opacity: 0; }
+  70%  { transform: scale(1.15); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+#mute-btn {
+  position: fixed; top: 8px; right: 56px;
+  font-size: 20px; background: none; border: none;
+  color: #7c6fa0; cursor: pointer; z-index: 30;
+  pointer-events: all;
+}
+#back-btn {
+  position: fixed; top: 8px; right: 14px;
+  font-size: 18px; background: none; border: none;
+  color: #7c6fa0; cursor: pointer; z-index: 30;
+  pointer-events: all; text-decoration: none;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="hud">
+  <div id="hud-left">
+    <div id="hud-mass">● 0</div>
+    <div id="hud-level">Level 1 — 目標: <span id="hud-goal">50</span></div>
+  </div>
+  <div id="hud-timer">60</div>
+</div>
+<div id="hud-progress"><div id="hud-bar"></div></div>
+<button id="mute-btn" onclick="toggleMute()">🔊</button>
+<a id="back-btn" href="../">✕</a>
+<div id="overlay">
+  <div id="level-badge">🕳️</div>
+  <h1 id="overlay-title">黑洞收割者</h1>
+  <p id="overlay-desc">拖曳黑洞吸收周圍的物體<br>從小石頭吃到大陸<br>在時間結束前達成目標質量！</p>
+  <button class="btn" id="overlay-btn" onclick="startGame()">開始遊戲</button>
+</div>
+<script>
+// ── Constants ──────────────────────────────────────────────
+const GW = 480, GH = 800;
+const LEVELS = [
+  { goal:50,    time:60, label:'石頭世界',  emoji:'🪨' },
+  { goal:150,   time:60, label:'汽車城市',  emoji:'🚗' },
+  { goal:400,   time:70, label:'大樓叢林',  emoji:'🏢' },
+  { goal:900,   time:70, label:'摩天之巔',  emoji:'🏙️' },
+  { goal:2000,  time:80, label:'山岳震動',  emoji:'⛰️' },
+  { goal:4000,  time:80, label:'島嶼崩解',  emoji:'🌏' },
+  { goal:8000,  time:90, label:'大陸吞噬',  emoji:'🌍' },
+  { goal:16000, time:90, label:'終焉之洞',  emoji:'🌌' },
+];
+const OBJ_TYPES = [
+  { type:'pebble',    emoji:'🪨', mass:1,    r:8,   color:'#9ca3af', minHoleR:10 },
+  { type:'rock',      emoji:'⛏',  mass:4,    r:13,  color:'#6b7280', minHoleR:14 },
+  { type:'barrel',    emoji:'🛢',  mass:10,   r:16,  color:'#92400e', minHoleR:20 },
+  { type:'car',       emoji:'🚗',  mass:25,   r:22,  color:'#1d4ed8', minHoleR:26 },
+  { type:'truck',     emoji:'🚛',  mass:60,   r:30,  color:'#065f46', minHoleR:32 },
+  { type:'building',  emoji:'🏢',  mass:150,  r:42,  color:'#1e3a5f', minHoleR:44 },
+  { type:'tower',     emoji:'🗼',  mass:350,  r:58,  color:'#312e81', minHoleR:60 },
+  { type:'mountain',  emoji:'🏔',  mass:800,  r:78,  color:'#166534', minHoleR:80 },
+  { type:'island',    emoji:'🏝',  mass:1800, r:100, color:'#065f46', minHoleR:102 },
+  { type:'continent', emoji:'🌍',  mass:4000, r:130, color:'#14532d', minHoleR:132 },
+];
+
+// ── Audio ──────────────────────────────────────────────────
+const AUDIO_CTX = new (window.AudioContext || window.webkitAudioContext)();
+let audioMuted = (localStorage.getItem('blackholeMuted') === '1');
+if (audioMuted) document.getElementById('mute-btn').textContent = '🔇';
+
+function playTone(freq, type='sine', vol=0.15, dur=0.12) {
+  if (audioMuted) return;
+  if (AUDIO_CTX.state === 'suspended') AUDIO_CTX.resume();
+  const osc = AUDIO_CTX.createOscillator();
+  const gain = AUDIO_CTX.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol, AUDIO_CTX.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, AUDIO_CTX.currentTime + dur);
+  osc.connect(gain); gain.connect(AUDIO_CTX.destination);
+  osc.start(); osc.stop(AUDIO_CTX.currentTime + dur);
+}
+function sndAbsorb(mass) { playTone(80 + Math.min(mass * 2, 400), 'sawtooth', 0.18, 0.15); }
+function sndLevelUp()    { [300,400,600].forEach((f,i) => setTimeout(() => playTone(f,'square',0.15,0.2), i*120)); }
+function sndGameOver()   { [200,150,100].forEach((f,i) => setTimeout(() => playTone(f,'sawtooth',0.2,0.3), i*150)); }
+function toggleMute() {
+  audioMuted = !audioMuted;
+  document.getElementById('mute-btn').textContent = audioMuted ? '🔇' : '🔊';
+  localStorage.setItem('blackholeMuted', audioMuted ? '1' : '0');
+}
+
+// ── Canvas ─────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = GW; canvas.height = GH;
+
+function resizeAll() {
+  const scale = Math.min(window.innerWidth / GW, window.innerHeight / GH);
+  canvas.style.width  = GW * scale + 'px';
+  canvas.style.height = GH * scale + 'px';
+  canvas.style.left   = (window.innerWidth  - GW * scale) / 2 + 'px';
+  canvas.style.top    = (window.innerHeight - GH * scale) / 2 + 'px';
+}
+window.addEventListener('resize', resizeAll);
+resizeAll();
+
+// ── State ──────────────────────────────────────────────────
+let state = 'idle';
+let hole, objects, particles, floatTexts;
+let totalMass, levelIdx, timeLeft, timerInterval;
+let mouseX = GW / 2, mouseY = GH / 2;
+</script>
+<script>
+// ── Spawn ──────────────────────────────────────────────────
+function dist(ax,ay,bx,by){ const d=ax-bx, e=ay-by; return Math.sqrt(d*d+e*e); }
+
+function spawnObjects() {
+  objects = [];
+  const maxTypeIdx = Math.min(levelIdx + 2, OBJ_TYPES.length - 1);
+  const count = 18 + levelIdx * 4;
+  for (let i = 0; i < count; i++) {
+    const typeIdx = Math.floor(Math.random() * (maxTypeIdx + 1));
+    const t = OBJ_TYPES[typeIdx];
+    let x, y, tries = 0;
+    do {
+      x = t.r + Math.random() * (GW - t.r * 2);
+      y = t.r + 80 + Math.random() * (GH - t.r * 2 - 100);
+      tries++;
+    } while (tries < 20 && objects.some(o => dist(o.x, o.y, x, y) < o.r + t.r + 6));
+    objects.push({ ...t, x, y, vx:(Math.random()-0.5)*0.4, vy:(Math.random()-0.5)*0.4,
+      absorbing:false, absorbProgress:0, scale:1, opacity:1 });
+  }
+}
+
+function spawnParticles(x, y, color) {
+  for (let i = 0; i < 7; i++) {
+    const a = Math.random() * Math.PI * 2, spd = 1.5 + Math.random() * 3;
+    particles.push({ x, y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+      r:2+Math.random()*3, color, life:1.0 });
+  }
+}
+
+function addFloat(x, y, text) {
+  floatTexts.push({ x, y, text, life:1.0, vy:-1.5 });
+}
+
+// ── Physics ────────────────────────────────────────────────
+function updateObjects() {
+  for (const o of objects) {
+    if (o.absorbing) {
+      o.absorbProgress += 0.07;
+      o.scale   = 1 - o.absorbProgress;
+      o.opacity = 1 - o.absorbProgress;
+      if (o.absorbProgress >= 1) {
+        o.done = true;
+        hole.mass += o.mass;
+        hole.r = Math.max(hole.r, Math.sqrt(hole.mass) * 1.4);
+        totalMass += o.mass;
+        sndAbsorb(o.mass);
+        spawnParticles(o.x, o.y, o.color);
+        addFloat(o.x, o.y - o.r, '+' + o.mass);
+      }
+      continue;
+    }
+    const dx = hole.x - o.x, dy = hole.y - o.y;
+    const d  = Math.sqrt(dx*dx + dy*dy) || 1;
+    const gravRange = hole.r * 3.2;
+    if (d < hole.r * 0.85 && hole.r >= o.minHoleR) { o.absorbing = true; continue; }
+    if (d < gravRange && hole.r >= o.minHoleR) {
+      const f = 0.08 * (1 - d / gravRange);
+      o.vx += (dx/d) * f;
+      o.vy += (dy/d) * f;
+    }
+    o.vx *= 0.98; o.vy *= 0.98;
+    o.x  += o.vx; o.y  += o.vy;
+    if (o.x - o.r < 0)     { o.x = o.r;         o.vx *= -0.5; }
+    if (o.x + o.r > GW)    { o.x = GW - o.r;    o.vx *= -0.5; }
+    if (o.y - o.r < 60)    { o.y = 60 + o.r;    o.vy *= -0.5; }
+    if (o.y + o.r > GH-10) { o.y = GH - 10 - o.r; o.vy *= -0.5; }
+  }
+  for (let i = objects.length - 1; i >= 0; i--) { if (objects[i].done) objects.splice(i,1); }
+}
+
+function updateParticles() {
+  for (const p of particles) {
+    p.x += p.vx; p.y += p.vy; p.vx *= 0.92; p.vy *= 0.92; p.life -= 0.04;
+  }
+  for (let i = particles.length-1; i >= 0; i--) { if (particles[i].life <= 0) particles.splice(i,1); }
+}
+
+function updateFloats() {
+  for (const f of floatTexts) { f.y += f.vy; f.life -= 0.025; }
+  for (let i = floatTexts.length-1; i >= 0; i--) { if (floatTexts[i].life <= 0) floatTexts.splice(i,1); }
+}
+
+// ── Input ──────────────────────────────────────────────────
+function toGame(cx, cy) {
+  const rect = canvas.getBoundingClientRect();
+  return { x:(cx-rect.left)*(GW/rect.width), y:(cy-rect.top)*(GH/rect.height) };
+}
+canvas.addEventListener('mousemove', e => { const p=toGame(e.clientX,e.clientY); mouseX=p.x; mouseY=p.y; });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t=e.touches[0], p=toGame(t.clientX,t.clientY); mouseX=p.x; mouseY=p.y;
+}, { passive:false });
+canvas.addEventListener('touchstart', e => {
+  if (AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+  const t=e.touches[0], p=toGame(t.clientX,t.clientY); mouseX=p.x; mouseY=p.y;
+}, { passive:true });
+</script>
+<script>
+// ── Render ─────────────────────────────────────────────────
+function drawStarfield() {
+  ctx.fillStyle = '#0a0010';
+  ctx.fillRect(0, 0, GW, GH);
+  // static stars (seeded by index to stay fixed)
+  for (let i = 0; i < 120; i++) {
+    const sx = ((i * 137.5) % GW);
+    const sy = ((i * 97.3 + 33) % GH);
+    const sr = 0.5 + (i % 3) * 0.5;
+    ctx.globalAlpha = 0.3 + (i % 5) * 0.12;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawObjects() {
+  for (const o of objects) {
+    ctx.save();
+    ctx.globalAlpha = o.opacity;
+    ctx.translate(o.x, o.y);
+    ctx.scale(o.scale, o.scale);
+    // glow
+    const grd = ctx.createRadialGradient(0,0,o.r*0.3, 0,0,o.r*1.1);
+    grd.addColorStop(0, o.color + 'aa');
+    grd.addColorStop(1, o.color + '00');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(0, 0, o.r*1.1, 0, Math.PI*2); ctx.fill();
+    // emoji
+    ctx.font = `${o.r * 1.5}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(o.emoji, 0, 2);
+    // pull indicator (small ring if in range)
+    if (hole && dist(hole.x, hole.y, o.x, o.y) < hole.r * 3.2 && hole.r >= o.minHoleR) {
+      ctx.strokeStyle = '#a78bfa44';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(0, 0, o.r + 4, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+function drawHole() {
+  if (!hole) return;
+  const x = hole.x, y = hole.y, r = hole.r;
+  // outer glow
+  const grd = ctx.createRadialGradient(x,y,r*0.6, x,y,r*2.5);
+  grd.addColorStop(0, 'rgba(120,50,220,0.5)');
+  grd.addColorStop(0.5,'rgba(80,20,160,0.2)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(x, y, r*2.5, 0, Math.PI*2); ctx.fill();
+  // void core
+  ctx.fillStyle = '#000000';
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  // ring
+  ctx.strokeStyle = '#7c3aed';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(x, y, r + 3, 0, Math.PI*2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(167,139,250,0.4)';
+  ctx.lineWidth = 8;
+  ctx.beginPath(); ctx.arc(x, y, r + 8, 0, Math.PI*2); ctx.stroke();
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawFloats() {
+  for (const f of floatTexts) {
+    ctx.globalAlpha = f.life;
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ── HUD Update ─────────────────────────────────────────────
+function updateHUD() {
+  const lv = LEVELS[levelIdx];
+  document.getElementById('hud-mass').textContent  = '● ' + totalMass;
+  document.getElementById('hud-timer').textContent = Math.max(0, timeLeft);
+  document.getElementById('hud-goal').textContent  = lv.goal;
+  const pct = Math.min(100, (totalMass / lv.goal) * 100);
+  document.getElementById('hud-bar').style.width   = pct + '%';
+  document.getElementById('hud-level').textContent =
+    'Level ' + (levelIdx+1) + ' — ' + lv.label + ' 目標: ' + lv.goal;
+}
+
+// ── Show Overlay ───────────────────────────────────────────
+function showOverlay(emoji, title, desc, btnText, btnAction) {
+  const ov = document.getElementById('overlay');
+  document.getElementById('level-badge').textContent    = emoji;
+  document.getElementById('overlay-title').textContent  = title;
+  document.getElementById('overlay-desc').innerHTML     = desc;
+  document.getElementById('overlay-btn').textContent    = btnText;
+  document.getElementById('overlay-btn').onclick        = btnAction;
+  ov.style.display = 'flex';
+}
+
+// ── Game Flow ──────────────────────────────────────────────
+function startGame() {
+  if (AUDIO_CTX.state === 'suspended') AUDIO_CTX.resume();
+  levelIdx  = 0;
+  totalMass = 0;
+  startLevel();
+}
+
+function startLevel() {
+  clearInterval(timerInterval);
+  const lv  = LEVELS[levelIdx];
+  timeLeft   = lv.time;
+  hole       = { x: GW/2, y: GH/2, r: 22, mass: 22*22/1.96 };
+  objects    = []; particles = []; floatTexts = [];
+  mouseX     = GW/2; mouseY = GH/2;
+  spawnObjects();
+  state      = 'playing';
+  document.getElementById('overlay').style.display = 'none';
+  updateHUD();
+  timerInterval = setInterval(() => {
+    if (state !== 'playing') return;
+    timeLeft--;
+    if (timeLeft <= 0) { timeUp(); }
+  }, 1000);
+}
+
+function timeUp() {
+  clearInterval(timerInterval);
+  if (totalMass >= LEVELS[levelIdx].goal) {
+    levelClear();
+  } else {
+    state = 'dead';
+    sndGameOver();
+    showOverlay('💀', '時間到！',
+      `質量 ${totalMass} / 目標 ${LEVELS[levelIdx].goal}<br>差一點就成功了！`,
+      '再試一次', () => { totalMass = 0; levelIdx = 0; startLevel(); });
+  }
+}
+
+function levelClear() {
+  if (levelIdx >= LEVELS.length - 1) {
+    state = 'win';
+    sndLevelUp();
+    showOverlay('🌌', '宇宙終結！',
+      `你已吞噬一切<br>總質量：${totalMass}<br>恭喜通關所有 ${LEVELS.length} 個關卡！`,
+      '重新開始', () => { totalMass = 0; levelIdx = 0; startLevel(); });
+    return;
+  }
+  state = 'levelup';
+  sndLevelUp();
+  levelIdx++;
+  const next = LEVELS[levelIdx];
+  showOverlay(next.emoji, `關卡 ${levelIdx + 1}：${next.label}`,
+    `目標質量：${next.goal}<br>時間：${next.time} 秒`,
+    '繼續', () => startLevel());
+}
+
+// ── Main Loop ──────────────────────────────────────────────
+function loop() {
+  requestAnimationFrame(loop);
+  drawStarfield();
+  if (state === 'playing') {
+    hole.x += (mouseX - hole.x) * 0.12;
+    hole.y += (mouseY - hole.y) * 0.12;
+    updateObjects();
+    updateParticles();
+    updateFloats();
+    // check level clear mid-play
+    if (state === 'playing' && totalMass >= LEVELS[levelIdx].goal) {
+      clearInterval(timerInterval);
+      levelClear();
+    }
+  }
+  drawObjects();
+  drawHole();
+  drawParticles();
+  drawFloats();
+  if (state === 'playing') updateHUD();
+}
+
+loop();
+</script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+<script>(function(){var sid=localStorage.getItem("_cw_sid");if(!sid){sid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("_cw_sid",sid);}var d={p:location.pathname,r:document.referrer,l:navigator.language,s:screen.width+"x"+screen.height,sid:sid};fetch("/t",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d),keepalive:true});})();</script>
+</body>
+</html>

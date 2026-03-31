@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>詐騙話術辨識器 — CapyWorlds</title>
+<style>
+:root {
+  --bg: #0c0f0a;
+  --bg2: #141a11;
+  --bg3: #1c2418;
+  --accent: #4ade80;
+  --warn: #f87171;
+  --warn2: #fbbf24;
+  --safe: #60a5fa;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --border: #2a3a25;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  min-height: 100vh;
+  line-height: 1.7;
+}
+
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 10;
+}
+.back-link { color: var(--text2); font-size: 14px; text-decoration: none; }
+.back-link:hover { color: var(--text); }
+header h1 { font-size: clamp(16px,4vw,22px); color: var(--accent); flex: 1; }
+
+.container { max-width: 760px; margin: 0 auto; padding: 28px 16px; }
+
+/* Input Area */
+.input-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.input-card h2 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+.input-card p  { font-size: 13px; color: var(--text2); margin-bottom: 14px; }
+textarea {
+  width: 100%;
+  min-height: 130px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  padding: 14px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+  transition: border-color 0.2s;
+}
+textarea:focus { outline: none; border-color: var(--accent); }
+textarea::placeholder { color: var(--text2); font-size: 13px; }
+.analyze-btn {
+  margin-top: 14px;
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  border: none; border-radius: 8px;
+  color: #000; font-size: 16px; font-weight: bold;
+  cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+}
+.analyze-btn:hover  { opacity: 0.88; }
+.analyze-btn:active { transform: scale(0.98); }
+.analyze-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Result */
+#result { display: none; }
+.verdict-card {
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex; align-items: flex-start; gap: 16px;
+}
+.verdict-icon { font-size: 40px; flex-shrink: 0; }
+.verdict-title { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+.verdict-sub   { font-size: 14px; opacity: 0.85; }
+.risk-high   { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.4); }
+.risk-medium { background: rgba(251,191,36,0.10);  border: 1px solid rgba(251,191,36,0.35); }
+.risk-low    { background: rgba(96,165,250,0.10);   border: 1px solid rgba(96,165,250,0.3);  }
+.risk-high   .verdict-title { color: var(--warn);  }
+.risk-medium .verdict-title { color: var(--warn2); }
+.risk-low    .verdict-title { color: var(--safe);  }
+
+/* Flags */
+.flags-section { margin-bottom: 20px; }
+.flags-title {
+  font-size: 13px; font-weight: bold; letter-spacing: 0.06em;
+  color: var(--text2); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.flags-title::after { content:''; flex:1; height:1px; background: var(--border); }
+.flag-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 14px;
+}
+.flag-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 5px;
+}
+.flag-dot.red    { background: var(--warn); }
+.flag-dot.yellow { background: var(--warn2); }
+.flag-desc { flex: 1; }
+.flag-matched {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 4px;
+  font-style: italic;
+  word-break: break-all;
+}
+
+/* Report */
+.report-section { margin-bottom: 20px; }
+.report-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.report-link {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 16px;
+  font-size: 13px; text-decoration: none; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+  transition: border-color 0.15s;
+}
+.report-link:hover { border-color: var(--accent); }
+.report-link span { color: var(--text2); font-size: 12px; }
+
+/* No flags */
+.no-flags {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px;
+  font-size: 14px; color: var(--text2); text-align: center;
+}
+
+/* Examples */
+.examples { margin-bottom: 24px; }
+.examples-title { font-size: 14px; color: var(--text2); margin-bottom: 10px; }
+.example-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.example-chip {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 6px 14px;
+  font-size: 12px; cursor: pointer; color: var(--text2);
+  transition: border-color 0.15s, color 0.15s;
+}
+.example-chip:hover { border-color: var(--accent); color: var(--text); }
+
+.disclaimer {
+  background: rgba(148,163,184,0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 16px;
+  font-size: 12px; color: var(--text2); margin-top: 20px;
+}
+</style>
+</head>
+<body>
+  <a href="/" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(200,164,86,0.15);border:1px solid rgba(200,164,86,0.4);color:#c8a456;text-decoration:none;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:600;backdrop-filter:blur(8px);transition:background 0.2s;" onmouseover="this.style.background='rgba(200,164,86,0.3)'" onmouseout="this.style.background='rgba(200,164,86,0.15)'">🏠 首頁</a>
+
+<header>
+  <a class="back-link" href="../">← 回首頁</a>
+  <h1>🔍 詐騙話術辨識器</h1>
+</header>
+
+<div class="container">
+
+  <div class="input-card">
+    <h2>貼上可疑訊息，立即分析</h2>
+    <p>支援 LINE 訊息、簡訊、電話話術、網頁廣告文字。適合轉給長輩確認。</p>
+    <textarea id="msg-input" placeholder="把可疑的訊息貼在這裡…
+
+例如：
+「您的包裹因地址不詳無法送達，請點擊連結更新資料...」
+「刑事局通知：您的帳戶涉及洗錢，請配合轉帳至安全帳戶...」"></textarea>
+    <button class="analyze-btn" onclick="analyze()" id="analyze-btn">🔍 立即分析</button>
+  </div>
+
+  <div class="examples">
+    <div class="examples-title">快速測試範例（點擊填入）：</div>
+    <div class="example-chips">
+      <div class="example-chip" onclick="fillExample(0)">📦 包裹詐騙</div>
+      <div class="example-chip" onclick="fillExample(1)">🏛 假冒政府機關</div>
+      <div class="example-chip" onclick="fillExample(2)">💰 投資詐騙</div>
+      <div class="example-chip" onclick="fillExample(3)">🏦 銀行釣魚</div>
+      <div class="example-chip" onclick="fillExample(4)">❤️ 交友詐騙</div>
+    </div>
+  </div>
+
+  <div id="result">
+    <div id="verdict-card" class="verdict-card">
+      <div class="verdict-icon" id="verdict-icon">🔍</div>
+      <div>
+        <div class="verdict-title" id="verdict-title">分析中…</div>
+        <div class="verdict-sub"  id="verdict-sub"></div>
+      </div>
+    </div>
+
+    <div class="flags-section" id="red-flags-section">
+      <div class="flags-title">🚩 偵測到的紅旗警告</div>
+      <div id="red-flags-list"></div>
+    </div>
+
+    <div class="flags-section" id="yellow-flags-section">
+      <div class="flags-title">⚠️ 值得注意的黃旗</div>
+      <div id="yellow-flags-list"></div>
+    </div>
+
+    <div class="report-section">
+      <div class="flags-title">📞 檢舉管道</div>
+      <div class="report-links">
+        <a class="report-link" href="tel:165">📞 165 反詐騙專線<span>24 小時免費</span></a>
+        <a class="report-link" href="https://www.cib.gov.tw" target="_blank" rel="noopener">🏛 刑事局反詐騙<span>線上檢舉</span></a>
+        <a class="report-link" href="https://linereport.tw" target="_blank" rel="noopener">💬 LINE 檢舉詐騙<span>回報可疑帳號</span></a>
+        <a class="report-link" href="tel:110">🚔 110 報警<span>遭受詐騙請立即撥打</span></a>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      ⚠️ 本工具使用關鍵字比對，僅供參考，無法百分百識別所有詐騙手法。
+      若有疑慮請撥打 165 確認，不要匯款或提供個人資料。
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAMPLES = [
+  '您好，您的包裹因地址資訊不完整無法配送，請點擊以下連結在24小時內更新您的收件資訊，否則包裹將被退回：http://tw-parcel-update.xyz/claim',
+  '刑事局第七分局通知：您的銀行帳號涉嫌洗錢案件，需配合司法調查，請勿告知他人，立即撥打本局專員電話02-2777-8888，否則將被凍結帳戶。',
+  '投資好機會！台灣某上市公司內部消息，保證獲利，月報酬30%，已有5000人加入，現在加入VIP群組名額有限，LINE ID: invest_tw_vip',
+  '親愛的客戶您好，我們偵測到您的帳戶有異常登入，請立即點擊連結驗證身份，否則帳戶將在24小時後停用：http://cathaybank-secure.xyz',
+  '我是在交友軟體認識你的，感覺你很特別，我在澳洲工作，有個很棒的加密貨幣投資平台想介紹給你，先從小額開始，我可以帶你操作...',
+];
+
+// ── Detection Rules ────────────────────────────────────────
+const RED_FLAGS = [
+  { id: 'impersonate_gov',   level: 'red',
+    label: '假冒政府或執法機關',
+    desc: '詐騙集團常假冒刑警、法院、健保署、國稅局等機關增加可信度',
+    patterns: ['刑事局','法院','警察','檢察','調查局','健保署','國稅局','司法','偵查','案件','凍結帳戶','配合調查','不得告知'] },
+  { id: 'urgent_transfer',   level: 'red',
+    label: '要求轉帳或匯款',
+    desc: '任何要求匯款到「安全帳戶」或私人帳號都是詐騙',
+    patterns: ['安全帳戶','轉帳','匯款','ATM','提款','存入','匯入','現金','虛擬帳號'] },
+  { id: 'suspicious_link',   level: 'red',
+    label: '可疑連結（非官方網域）',
+    desc: '使用奇怪的網址冒充銀行、政府、物流公司',
+    patterns: ['http://','https://'] },
+  { id: 'secrecy',           level: 'red',
+    label: '要求保密，不可告訴他人',
+    desc: '詐騙常用「保密」阻止受害者向家人求助',
+    patterns: ['勿告知','不得告知','保密','不要告訴','不能說','不告訴家人','只能告訴我','秘密'] },
+  { id: 'fake_invest',       level: 'red',
+    label: '保證獲利 / 高報酬投資',
+    desc: '合法投資不保證獲利，任何「保證」都是詐騙訊號',
+    patterns: ['保證獲利','保證賺','月報酬','月收益','穩定獲利','絕對賺','內部消息','加密貨幣平台','VIP群','操盤'] },
+  { id: 'package_scam',      level: 'red',
+    label: '包裹 / 快遞詐騙',
+    desc: '以包裹無法派送為由，誘使點擊釣魚連結',
+    patterns: ['包裹','地址不詳','無法配送','更新地址','快遞','物流','超商取件','重新安排'] },
+];
+
+const YELLOW_FLAGS = [
+  { id: 'time_pressure',  level: 'yellow',
+    label: '製造緊迫感（限時威脅）',
+    desc: '「24小時內」「立即」「否則」等字眼是常見操縱手法',
+    patterns: ['24小時','48小時','立即','馬上','緊急','否則','即將','今天內','今日內','限時'] },
+  { id: 'personal_info',  level: 'yellow',
+    label: '要求提供個人資料',
+    desc: '身分證、銀行帳號、密碼等敏感資料不應透過訊息提供',
+    patterns: ['身分證','帳號密碼','信用卡','卡號','銀行帳號','驗證碼','OTP','個人資料'] },
+  { id: 'too_good',       level: 'yellow',
+    label: '好到不像真的好處',
+    desc: '免費禮品、抽獎中獎、政府補助金等',
+    patterns: ['恭喜您中獎','獲得補助','免費領取','抽中','獎金','返稅','退稅','獲贈'] },
+  { id: 'romance_scam',   level: 'yellow',
+    label: '交友引導投資（殺豬盤前兆）',
+    desc: '交友軟體認識後快速拉近關係，繼而推薦投資平台',
+    patterns: ['交友','澳洲','海外工作','教你投資','帶你操作','LINE ID','加我Line','加我微信'] },
+];
+
+function findMatches(text, patterns) {
+  const lower = text.toLowerCase();
+  return patterns.filter(p => lower.includes(p.toLowerCase()));
+}
+
+function analyze() {
+  const text = document.getElementById('msg-input').value.trim();
+  if (!text) { alert('請先貼上要分析的訊息！'); return; }
+
+  const redHits    = [];
+  const yellowHits = [];
+
+  for (const rule of RED_FLAGS) {
+    const matched = findMatches(text, rule.patterns);
+    if (matched.length > 0) redHits.push({ ...rule, matched });
+  }
+
+  // Extra: suspicious URL check (not official .gov.tw)
+  const urlMatch = text.match(/https?:\/\/[^\s]+/g) || [];
+  const suspiciousUrls = urlMatch.filter(u => !u.includes('.gov.tw') && !u.includes('165.npa'));
+  if (suspiciousUrls.length > 0 && !redHits.find(r => r.id === 'suspicious_link')) {
+    redHits.push({ ...RED_FLAGS.find(r=>r.id==='suspicious_link'), matched: suspiciousUrls });
+  }
+
+  for (const rule of YELLOW_FLAGS) {
+    const matched = findMatches(text, rule.patterns);
+    if (matched.length > 0) yellowHits.push({ ...rule, matched });
+  }
+
+  showResult(text, redHits, yellowHits);
+}
+
+function showResult(text, redHits, yellowHits) {
+  const vc = document.getElementById('verdict-card');
+  const icon  = document.getElementById('verdict-icon');
+  const title = document.getElementById('verdict-title');
+  const sub   = document.getElementById('verdict-sub');
+
+  if (redHits.length >= 2) {
+    vc.className = 'verdict-card risk-high';
+    icon.textContent  = '🚨';
+    title.textContent = '高風險！極可能是詐騙';
+    sub.textContent   = `偵測到 ${redHits.length} 個紅旗警告。請勿點擊連結、匯款或提供任何個人資料。`;
+  } else if (redHits.length === 1) {
+    vc.className = 'verdict-card risk-high';
+    icon.textContent  = '⛔';
+    title.textContent = '警告！發現詐騙特徵';
+    sub.textContent   = '發現 1 個高危紅旗。請小心確認，若有疑慮直接撥 165 查詢。';
+  } else if (yellowHits.length >= 2) {
+    vc.className = 'verdict-card risk-medium';
+    icon.textContent  = '⚠️';
+    title.textContent = '可疑！建議謹慎確認';
+    sub.textContent   = `偵測到 ${yellowHits.length} 個值得注意的特徵。建議向官方管道確認後再行動。`;
+  } else if (yellowHits.length === 1) {
+    vc.className = 'verdict-card risk-medium';
+    icon.textContent  = '🟡';
+    title.textContent = '有些可疑，請確認';
+    sub.textContent   = '有 1 個值得注意的特徵，請向當事機構官方管道查詢。';
+  } else {
+    vc.className = 'verdict-card risk-low';
+    icon.textContent  = '✅';
+    title.textContent = '未發現明顯詐騙特徵';
+    sub.textContent   = '這則訊息暫未符合常見詐騙話術，但仍請保持警覺。';
+  }
+
+  // Red flags
+  const redEl = document.getElementById('red-flags-list');
+  document.getElementById('red-flags-section').style.display = redHits.length ? 'block' : 'none';
+  redEl.innerHTML = redHits.map(f => `
+    <div class="flag-item">
+      <div class="flag-dot red"></div>
+      <div class="flag-desc">
+        <strong>${f.label}</strong><br>
+        <span style="color:var(--text2);font-size:13px">${f.desc}</span>
+        <div class="flag-matched">符合關鍵字：${f.matched.slice(0,4).join('、')}</div>
+      </div>
+    </div>`).join('');
+
+  // Yellow flags
+  const yellEl = document.getElementById('yellow-flags-list');
+  document.getElementById('yellow-flags-section').style.display = yellowHits.length ? 'block' : 'none';
+  yellEl.innerHTML = yellowHits.map(f => `
+    <div class="flag-item">
+      <div class="flag-dot yellow"></div>
+      <div class="flag-desc">
+        <strong>${f.label}</strong><br>
+        <span style="color:var(--text2);font-size:13px">${f.desc}</span>
+        <div class="flag-matched">符合關鍵字：${f.matched.slice(0,4).join('、')}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function fillExample(idx) {
+  document.getElementById('msg-input').value = EXAMPLES[idx];
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('msg-input').focus();
+}
+</script>
+<script>(function(){var sid=localStorage.getItem("_cw_sid");if(!sid){sid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("_cw_sid",sid);}var d={p:location.pathname,r:document.referrer,l:navigator.language,s:screen.width+"x"+screen.height,sid:sid};fetch("/t",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d),keepalive:true});})();</script>
+</body>
+</html>

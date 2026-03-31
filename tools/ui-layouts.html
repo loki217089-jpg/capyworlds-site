@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>手遊 UI 佈局展示</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:#0a0a12;color:#eee;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+.mode-tabs{display:flex;flex-shrink:0;background:#14141e;border-bottom:2px solid #222;z-index:999;}
+.mode-tab{flex:1;padding:10px 4px;text-align:center;font-size:12px;font-weight:bold;color:#888;border:none;background:none;cursor:pointer;transition:.2s;}
+.mode-tab.active{color:#FFD700;border-bottom:2px solid #FFD700;}
+.layout{display:none;flex:1;flex-direction:column;min-height:0;overflow:hidden;}
+.layout.active{display:flex;}
+/* == L1: RPG == */
+.rpg-hud{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:linear-gradient(180deg,rgba(10,10,20,.95),rgba(10,10,20,.7));z-index:200;}
+.rpg-player{display:flex;align-items:center;gap:8px;}
+.rpg-avatar{width:40px;height:40px;border-radius:8px;background:#2a2a3a;border:2px solid #FFD700;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative;}
+.rpg-avatar .lv{position:absolute;bottom:-4px;right:-4px;background:#FFD700;color:#000;font-size:9px;font-weight:bold;padding:1px 3px;border-radius:4px;}
+.rpg-pname{font-size:14px;font-weight:bold;}
+.rpg-power{font-size:11px;color:#aaa;}
+.rpg-resources{display:flex;gap:6px;}
+.rpg-res{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:bold;background:rgba(255,255,255,.08);padding:3px 6px;border-radius:10px;}
+.rpg-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;background:radial-gradient(ellipse at 50% 40%,rgba(60,80,40,.3),transparent 70%),linear-gradient(180deg,#0c1018,#0a0e16);}
+.rpg-wave{background:#cc6600;color:#fff;padding:4px 16px;border-radius:12px;font-size:12px;font-weight:bold;margin-bottom:6px;}
+.rpg-stage{font-size:22px;font-weight:bold;margin-bottom:16px;}
+.rpg-monster{width:140px;height:140px;background:radial-gradient(circle,rgba(100,200,80,.15),transparent 70%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:80px;position:relative;}
+.rpg-spotlight{position:absolute;top:-60px;width:120px;height:80px;background:linear-gradient(180deg,rgba(255,255,200,.12),transparent);clip-path:polygon(30% 0%,70% 0%,100% 100%,0% 100%);}
+.rpg-arrows{display:flex;width:100%;justify-content:space-between;padding:0 24px;margin-top:-20px;}
+.rpg-arrow{font-size:36px;color:rgba(255,255,255,.5);cursor:pointer;user-select:none;}
+.rpg-loot{display:flex;gap:12px;margin-top:12px;}
+.rpg-loot-item{width:44px;height:44px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,.15);}
+.rpg-info{flex-shrink:0;background:rgba(20,20,30,.9);padding:10px 16px;display:flex;align-items:center;gap:10px;}
+.rpg-info-icon{width:36px;height:36px;background:rgba(150,100,200,.25);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.rpg-cta-wrap{flex-shrink:0;padding:8px 16px 10px;background:rgba(15,15,25,.95);}
+.rpg-cta{width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#FFD700,#FFA500);color:#1a1000;font-size:18px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(255,200,0,.3);transition:transform .1s;}
+.rpg-cta:active{transform:scale(.96);}
+.rpg-cta .cost{background:rgba(0,0,0,.2);padding:2px 8px;border-radius:8px;font-size:14px;}
+.rpg-tabs{flex-shrink:0;display:flex;background:#0e0e18;border-top:1px solid #222;z-index:200;}
+.rpg-tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:6px 0 8px;gap:2px;cursor:pointer;position:relative;}
+.rpg-tab.cur{color:#FFD700;}
+.rpg-tab .ti{font-size:20px;}
+.rpg-tab .tt{font-size:10px;color:#888;}
+.rpg-tab.cur .tt{color:#FFD700;}
+.rpg-tab .notif{position:absolute;top:4px;right:calc(50% - 16px);width:8px;height:8px;background:#f33;border-radius:50%;}
+/* == L2: Idle == */
+.idle-hud{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:linear-gradient(180deg,rgba(8,20,12,.95),rgba(8,20,12,.7));border-bottom:1px solid rgba(68,238,136,.2);z-index:200;}
+.idle-res-row{display:flex;gap:6px;flex-wrap:wrap;}
+.idle-res{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:bold;padding:3px 8px;border-radius:10px;background:rgba(68,238,136,.08);border:1px solid rgba(68,238,136,.15);}
+.idle-btn{width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;}
+.idle-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;background:radial-gradient(ellipse at 50% 50%,rgba(68,238,136,.06),transparent 60%),#0a100c;position:relative;}
+.idle-core{width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(68,238,136,.2),transparent 70%);display:flex;align-items:center;justify-content:center;font-size:72px;border:2px solid rgba(68,238,136,.25);animation:pulse-idle 2s ease-in-out infinite;}
+@keyframes pulse-idle{0%,100%{box-shadow:0 0 20px rgba(68,238,136,.1)}50%{box-shadow:0 0 40px rgba(68,238,136,.25)}}
+.idle-rate{margin-top:12px;font-size:16px;color:#44ee88;font-weight:bold;}
+.idle-rate-sub{font-size:12px;color:#888;margin-top:2px;}
+.idle-multi{position:absolute;top:12px;right:12px;background:rgba(68,238,136,.15);border:1px solid rgba(68,238,136,.3);padding:4px 10px;border-radius:8px;font-size:12px;color:#44ee88;font-weight:bold;}
+.idle-panels{flex-shrink:0;display:flex;gap:8px;padding:8px 12px;overflow-x:auto;background:rgba(10,16,12,.95);border-top:1px solid rgba(68,238,136,.15);z-index:200;-webkit-overflow-scrolling:touch;}
+.idle-panels::-webkit-scrollbar{display:none;}
+.idle-panel{min-width:130px;background:rgba(68,238,136,.06);border:1px solid rgba(68,238,136,.15);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;}
+.idle-pt{font-size:11px;color:#888;font-weight:bold;letter-spacing:1px;}
+.idle-pv{font-size:18px;font-weight:bold;}
+.idle-bar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;}
+.idle-fill{height:100%;border-radius:3px;}
+.idle-pbtn{border:none;padding:8px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;}
+.idle-pbtn:active{transform:scale(.95);}
+.idle-boost{flex-shrink:0;display:flex;gap:8px;padding:6px 12px 10px;background:rgba(10,16,12,.95);z-index:200;}
+.idle-bbtn{flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.idle-bbtn:active{transform:scale(.96);}
+/* == L3: Action == */
+.act-screen{flex:1;position:relative;background:linear-gradient(180deg,#0a0808,#1a1210);display:flex;align-items:center;justify-content:center;min-height:0;}
+.act-canvas{width:90%;max-width:400px;aspect-ratio:9/14;background:#111;border-radius:8px;border:1px solid #333;position:relative;overflow:hidden;}
+.act-ground{position:absolute;bottom:0;width:100%;height:30%;background:linear-gradient(180deg,#2a3020,#1a2010);}
+.act-player{position:absolute;bottom:30%;left:50%;transform:translateX(-50%);font-size:48px;}
+.act-enemies{position:absolute;top:20%;width:100%;display:flex;justify-content:space-around;padding:0 16px;}
+.act-enemy{font-size:32px;animation:bob .8s ease-in-out infinite alternate;}
+@keyframes bob{0%{transform:translateY(0)}100%{transform:translateY(-6px)}}
+.act-hud-top{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-start;}
+.act-hp{display:flex;align-items:center;gap:4px;}
+.act-hp-bar{width:80px;height:8px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden;}
+.act-hp-fill{height:100%;background:linear-gradient(90deg,#ff4444,#ff6644);border-radius:4px;width:72%;}
+.act-hp-txt{font-size:10px;color:#ff8888;}
+.act-score{font-size:14px;font-weight:bold;color:#FFD700;}
+.act-ammo{position:absolute;bottom:12px;right:12px;font-size:12px;color:#aaa;}
+.act-wave-tag{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-size:20px;font-weight:bold;color:rgba(255,255,255,.15);letter-spacing:4px;}
+.act-pause{position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;z-index:10;}
+.act-mute{position:absolute;top:8px;right:44px;width:28px;height:28px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;z-index:10;}
+.act-joystick{position:absolute;bottom:40px;left:40px;width:80px;height:80px;border-radius:50%;border:2px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;}
+.act-joy-knob{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);}
+.act-fire{position:absolute;bottom:48px;right:32px;width:64px;height:64px;border-radius:50%;background:rgba(255,68,68,.25);border:2px solid rgba(255,68,68,.4);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;}
+.act-label{text-align:center;padding:10px;font-size:12px;color:#666;flex-shrink:0;background:#0a0a12;}
+/* == L4: Lobby == */
+.lob-hud{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:linear-gradient(180deg,rgba(15,10,25,.95),rgba(15,10,25,.7));border-bottom:1px solid rgba(160,96,255,.2);z-index:200;}
+.lob-player{display:flex;align-items:center;gap:8px;}
+.lob-avatar{width:40px;height:40px;border-radius:50%;background:#2a1a3a;border:2px solid #a060ff;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.lob-res{display:flex;gap:6px;}
+.lob-r{font-size:11px;font-weight:bold;padding:3px 6px;border-radius:10px;background:rgba(160,96,255,.08);}
+.lob-main{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;background:radial-gradient(ellipse at 50% 55%,rgba(160,96,255,.08),transparent 60%),#0c0818;position:relative;}
+.lob-char{font-size:100px;filter:drop-shadow(0 0 20px rgba(160,96,255,.3));}
+.lob-ring{position:absolute;width:220px;height:220px;border-radius:50%;border:1px dashed rgba(160,96,255,.2);animation:spin 20s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lob-node{position:absolute;width:52px;height:52px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:transform .15s;background:rgba(160,96,255,.12);border:1px solid rgba(160,96,255,.25);}
+.lob-node:active{transform:scale(.92);}
+.lob-node .ni{font-size:22px;}
+.lob-node .nt{font-size:9px;color:#c8b0ff;font-weight:bold;}
+.lob-node .nn{position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:#f33;border-radius:50%;}
+.lob-welcome{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-size:13px;color:rgba(200,176,255,.5);font-weight:bold;}
+.lob-tabs{flex-shrink:0;display:flex;background:#0c0818;border-top:1px solid rgba(160,96,255,.15);z-index:200;}
+.lob-tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:6px 0 8px;gap:2px;cursor:pointer;}
+.lob-tab.cur{color:#a060ff;}
+.lob-tab .ti{font-size:20px;}
+.lob-tab .tt{font-size:10px;color:#666;}
+.lob-tab.cur .tt{color:#a060ff;}
+/* == L5: Lobby B - Town Map == */
+.town-main{flex:1;min-height:0;background:#0c1018;position:relative;overflow:hidden;}
+.town-map{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:12px;padding:16px;}
+.town-building{width:calc(45% - 6px);aspect-ratio:1;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:transform .15s;position:relative;}
+.town-building:active{transform:scale(.94);}
+.town-building .bi{font-size:40px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5));}
+.town-building .bn{font-size:13px;font-weight:bold;}
+.town-building .bd{font-size:10px;color:rgba(255,255,255,.5);}
+.town-building .bb{position:absolute;top:6px;right:6px;width:8px;height:8px;background:#f33;border-radius:50%;}
+.town-path{position:absolute;border:1px dashed rgba(255,255,255,.08);}
+/* == L6: Lobby C - Vertical Cards == */
+.vc-hero{flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 80%,rgba(255,120,60,.1),transparent 60%),#0c0a10;position:relative;}
+.vc-char{font-size:72px;filter:drop-shadow(0 0 16px rgba(255,120,60,.3));}
+.vc-info{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);text-align:center;}
+.vc-name{font-size:16px;font-weight:bold;}
+.vc-sub{font-size:11px;color:#aa8866;}
+.vc-scroll{flex:1;overflow-y:auto;min-height:0;padding:8px 12px;display:flex;flex-direction:column;gap:8px;background:#0a0810;-webkit-overflow-scrolling:touch;}
+.vc-scroll::-webkit-scrollbar{width:3px;}
+.vc-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
+.vc-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;cursor:pointer;transition:transform .12s;}
+.vc-card:active{transform:scale(.97);}
+.vc-card-icon{font-size:28px;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.vc-card-body{flex:1;}
+.vc-card-title{font-size:14px;font-weight:bold;}
+.vc-card-desc{font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;}
+.vc-card-arrow{font-size:18px;color:rgba(255,255,255,.25);}
+.vc-card-notif{width:8px;height:8px;background:#f33;border-radius:50%;position:absolute;top:10px;right:10px;}
+</style>
+</head>
+<body>
+
+<div class="mode-tabs">
+  <button class="mode-tab active" onclick="showLayout(0)">RPG 標準</button>
+  <button class="mode-tab" onclick="showLayout(1)">Idle 儀表板</button>
+  <button class="mode-tab" onclick="showLayout(2)">動作全螢幕</button>
+  <button class="mode-tab" onclick="showLayout(3)">大廳 A</button>
+  <button class="mode-tab" onclick="showLayout(4)">大廳 B</button>
+  <button class="mode-tab" onclick="showLayout(5)">大廳 C</button>
+</div>
+
+<!-- L1: RPG Standard -->
+<div class="layout active" id="lay0">
+  <div class="rpg-hud">
+    <div class="rpg-player">
+      <div class="rpg-avatar">🧙<span class="lv">Lv5</span></div>
+      <div><div class="rpg-pname">Tholas</div><div class="rpg-power">⚔ 46,032</div></div>
+    </div>
+    <div class="rpg-resources">
+      <div class="rpg-res"><span style="color:#6f6">⚡30</span></div>
+      <div class="rpg-res"><span style="color:#fd0">💰31K</span></div>
+      <div class="rpg-res"><span style="color:#a8f">💎80</span></div>
+    </div>
+  </div>
+  <div class="rpg-main">
+    <div class="rpg-wave">WAVE 0</div>
+    <div class="rpg-stage">2. 起始之森 II</div>
+    <div class="rpg-monster"><div class="rpg-spotlight"></div>🌿</div>
+    <div class="rpg-arrows"><span class="rpg-arrow">‹</span><span class="rpg-arrow">›</span></div>
+    <div class="rpg-loot"><div class="rpg-loot-item">📦</div><div class="rpg-loot-item">💰</div></div>
+  </div>
+  <div class="rpg-info">
+    <div class="rpg-info-icon">💎</div>
+    <div style="font-size:14px;color:#ccc">通關關卡 2 → <b style="color:#a8f">×50</b></div>
+  </div>
+  <div class="rpg-cta-wrap"><button class="rpg-cta"><span class="cost">⚡5</span> 開始冒險</button></div>
+  <div class="rpg-tabs">
+    <div class="rpg-tab"><span class="ti">✨</span><span class="tt">技能</span><span class="notif"></span></div>
+    <div class="rpg-tab"><span class="ti">🏛</span><span class="tt">裝備</span></div>
+    <div class="rpg-tab cur"><span class="ti">⚔️</span><span class="tt">戰鬥</span></div>
+    <div class="rpg-tab"><span class="ti">🎲</span><span class="tt">抽卡</span></div>
+    <div class="rpg-tab"><span class="ti">🏪</span><span class="tt">商店</span></div>
+  </div>
+</div>
+
+<!-- L2: Idle Dashboard -->
+<div class="layout" id="lay1">
+  <div class="idle-hud">
+    <div class="idle-res-row">
+      <div class="idle-res"><span style="color:#44ee88">🧬</span><span style="color:#44ee88">2.4M</span></div>
+      <div class="idle-res"><span style="color:#fd0">💰</span><span style="color:#fd0">89K</span></div>
+      <div class="idle-res"><span style="color:#a8f">💎</span><span style="color:#a8f">35</span></div>
+    </div>
+    <div style="display:flex;gap:6px"><div class="idle-btn">⚙</div><div class="idle-btn">🔊</div></div>
+  </div>
+  <div class="idle-main">
+    <div class="idle-multi">×2.5 加速中</div>
+    <div class="idle-core">🧟</div>
+    <div class="idle-rate">+12,450 / 秒</div>
+    <div class="idle-rate-sub">點擊加速 ×3</div>
+  </div>
+  <div class="idle-panels">
+    <div class="idle-panel">
+      <div class="idle-pt">🦠 感染力</div><div class="idle-pv">Lv.14</div>
+      <div class="idle-bar"><div class="idle-fill" style="width:65%;background:linear-gradient(90deg,#44ee88,#22cc66)"></div></div>
+      <button class="idle-pbtn" style="background:rgba(68,238,136,.2);color:#44ee88">升級 💰800</button>
+    </div>
+    <div class="idle-panel">
+      <div class="idle-pt">💀 變異</div><div class="idle-pv">Lv.8</div>
+      <div class="idle-bar"><div class="idle-fill" style="width:40%;background:linear-gradient(90deg,#ff6644,#cc3322)"></div></div>
+      <button class="idle-pbtn" style="background:rgba(255,100,68,.2);color:#ff6644">升級 💰2.1K</button>
+    </div>
+    <div class="idle-panel">
+      <div class="idle-pt">🧪 研究</div><div class="idle-pv">Lv.5</div>
+      <div class="idle-bar"><div class="idle-fill" style="width:25%;background:linear-gradient(90deg,#4488ff,#2266dd)"></div></div>
+      <button class="idle-pbtn" style="background:rgba(68,136,255,.2);color:#4488ff">升級 💰5K</button>
+    </div>
+    <div class="idle-panel">
+      <div class="idle-pt">⚡ 速度</div><div class="idle-pv">Lv.11</div>
+      <div class="idle-bar"><div class="idle-fill" style="width:55%;background:linear-gradient(90deg,#FFD700,#FFA500)"></div></div>
+      <button class="idle-pbtn" style="background:rgba(255,215,0,.2);color:#FFD700">升級 💰1.5K</button>
+    </div>
+  </div>
+  <div class="idle-boost">
+    <button class="idle-bbtn" style="background:linear-gradient(135deg,#44ee88,#22aa55);color:#000">🧬 Prestige</button>
+    <button class="idle-bbtn" style="background:linear-gradient(135deg,#FFD700,#FFA500);color:#000">⚡ 離線收益</button>
+  </div>
+</div>
+
+<!-- L3: Action Full-screen -->
+<div class="layout" id="lay2">
+  <div class="act-screen">
+    <div class="act-canvas">
+      <div class="act-ground"></div>
+      <div class="act-player">🔫</div>
+      <div class="act-enemies"><span class="act-enemy">🧟</span><span class="act-enemy" style="animation-delay:.3s">🧟</span><span class="act-enemy" style="animation-delay:.6s">💀</span></div>
+      <div class="act-hud-top">
+        <div class="act-hp"><div class="act-hp-bar"><div class="act-hp-fill"></div></div><span class="act-hp-txt">72%</span></div>
+        <div class="act-score">⭐ 2,450</div>
+      </div>
+      <div class="act-wave-tag">WAVE 5</div>
+      <div class="act-ammo">🔫 24/90</div>
+      <div class="act-mute">🔊</div>
+      <div class="act-pause">⏸</div>
+      <div class="act-joystick"><div class="act-joy-knob"></div></div>
+      <div class="act-fire">🎯</div>
+    </div>
+  </div>
+  <div class="act-label">全螢幕模式：HUD 全在 Canvas 內繪製，只有暫停/靜音浮動按鈕</div>
+</div>
+
+<!-- L4: Lobby Hub -->
+<div class="layout" id="lay3">
+  <div class="lob-hud">
+    <div class="lob-player">
+      <div class="lob-avatar">⚔️</div>
+      <div><div style="font-size:14px;font-weight:bold">勇者 Lv.32</div><div style="font-size:11px;color:#a088cc">戰力 128,400</div></div>
+    </div>
+    <div class="lob-res">
+      <div class="lob-r" style="color:#fd0">💰 52K</div>
+      <div class="lob-r" style="color:#a8f">💎 120</div>
+    </div>
+  </div>
+  <div class="lob-main">
+    <div class="lob-welcome">— 歡迎回來，勇者 —</div>
+    <div class="lob-ring"></div>
+    <div class="lob-char">⚔️</div>
+    <!-- Nodes around character -->
+    <div class="lob-node" style="top:15%;left:12%"><span class="ni">📜</span><span class="nt">任務</span><span class="nn"></span></div>
+    <div class="lob-node" style="top:15%;right:12%"><span class="ni">🏰</span><span class="nt">地城</span></div>
+    <div class="lob-node" style="top:45%;left:6%"><span class="ni">⚒️</span><span class="nt">鍛造</span></div>
+    <div class="lob-node" style="top:45%;right:6%"><span class="ni">🧪</span><span class="nt">煉金</span></div>
+    <div class="lob-node" style="bottom:20%;left:12%"><span class="ni">👥</span><span class="nt">公會</span></div>
+    <div class="lob-node" style="bottom:20%;right:12%"><span class="ni">🏆</span><span class="nt">排行</span></div>
+  </div>
+  <div class="lob-tabs">
+    <div class="lob-tab"><span class="ti">🏠</span><span class="tt">主頁</span></div>
+    <div class="lob-tab cur"><span class="ti">⚔️</span><span class="tt">冒險</span></div>
+    <div class="lob-tab"><span class="ti">🎒</span><span class="tt">背包</span></div>
+    <div class="lob-tab"><span class="ti">🎲</span><span class="tt">召喚</span></div>
+    <div class="lob-tab"><span class="ti">⚙</span><span class="tt">設定</span></div>
+  </div>
+</div>
+
+<!-- L5: Lobby B - Town Map -->
+<div class="layout" id="lay4">
+  <div class="lob-hud">
+    <div class="lob-player">
+      <div class="lob-avatar" style="border-color:#44aaff">🏠</div>
+      <div><div style="font-size:14px;font-weight:bold">我的小鎮</div><div style="font-size:11px;color:#88aacc">人口 247</div></div>
+    </div>
+    <div class="lob-res">
+      <div class="lob-r" style="color:#fd0">💰 18K</div>
+      <div class="lob-r" style="color:#88ddff">🔮 45</div>
+    </div>
+  </div>
+  <div class="town-main">
+    <div class="town-map">
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(255,200,60,.15),rgba(200,150,40,.08));border:1px solid rgba(255,200,60,.2)">
+        <span class="bi">⚔️</span><span class="bn" style="color:#FFD700">競技場</span><span class="bd">排名 #42</span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(100,200,255,.15),rgba(60,150,220,.08));border:1px solid rgba(100,200,255,.2)">
+        <span class="bi">🏪</span><span class="bn" style="color:#88ddff">商店</span><span class="bd">3 件新品</span><span class="bb"></span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(160,96,255,.15),rgba(120,60,200,.08));border:1px solid rgba(160,96,255,.2)">
+        <span class="bi">🔮</span><span class="bn" style="color:#c088ff">魔法塔</span><span class="bd">研究中...</span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(68,238,136,.15),rgba(40,180,100,.08));border:1px solid rgba(68,238,136,.2)">
+        <span class="bi">🌳</span><span class="bn" style="color:#44ee88">農場</span><span class="bd">收穫可領</span><span class="bb"></span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(255,100,100,.15),rgba(200,60,60,.08));border:1px solid rgba(255,100,100,.2)">
+        <span class="bi">🏰</span><span class="bn" style="color:#ff8888">城堡</span><span class="bd">防禦 Lv.5</span>
+      </div>
+      <div class="town-building" style="background:linear-gradient(135deg,rgba(255,180,60,.15),rgba(200,140,40,.08));border:1px solid rgba(255,180,60,.2)">
+        <span class="bi">⚒️</span><span class="bn" style="color:#ffbb44">鍛造坊</span><span class="bd">鍛造完成</span><span class="bb"></span>
+      </div>
+    </div>
+  </div>
+  <div class="lob-tabs">
+    <div class="lob-tab cur" style="color:#44aaff"><span class="ti">🏠</span><span class="tt" style="color:#44aaff">城鎮</span></div>
+    <div class="lob-tab"><span class="ti">🗺️</span><span class="tt">世界</span></div>
+    <div class="lob-tab"><span class="ti">🎒</span><span class="tt">背包</span></div>
+    <div class="lob-tab"><span class="ti">👤</span><span class="tt">角色</span></div>
+    <div class="lob-tab"><span class="ti">⚙</span><span class="tt">設定</span></div>
+  </div>
+</div>
+
+<!-- L6: Lobby C - Vertical Cards -->
+<div class="layout" id="lay5">
+  <div class="lob-hud" style="border-color:rgba(255,120,60,.2)">
+    <div class="lob-player">
+      <div class="lob-avatar" style="border-color:#ff7844;background:#2a1510">🔥</div>
+      <div><div style="font-size:14px;font-weight:bold">焰刃 Lv.48</div><div style="font-size:11px;color:#cc8860">戰力 256,800</div></div>
+    </div>
+    <div class="lob-res">
+      <div class="lob-r" style="color:#fd0">💰 120K</div>
+      <div class="lob-r" style="color:#ff7844">🔥 88</div>
+    </div>
+  </div>
+  <div class="vc-hero">
+    <div class="vc-char">🗡️</div>
+    <div class="vc-info"><div class="vc-name">焰刃戰士</div><div class="vc-sub">SSR · 覺醒 ★★★☆☆</div></div>
+  </div>
+  <div class="vc-scroll">
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(255,68,68,.12),rgba(200,40,40,.06));border:1px solid rgba(255,68,68,.2);position:relative">
+      <div class="vc-card-icon" style="background:rgba(255,68,68,.15)">⚔️</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#ff6666">主線戰役</div><div class="vc-card-desc">第 12 章 · 火焰之門</div></div>
+      <span class="vc-card-arrow">›</span>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(160,96,255,.12),rgba(120,60,200,.06));border:1px solid rgba(160,96,255,.2);position:relative">
+      <div class="vc-card-icon" style="background:rgba(160,96,255,.15)">🏰</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#c088ff">地城探索</div><div class="vc-card-desc">深淵 B7 · 今日 3/5 次</div></div>
+      <span class="vc-card-arrow">›</span>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(255,200,60,.12),rgba(200,150,40,.06));border:1px solid rgba(255,200,60,.2);position:relative">
+      <div class="vc-card-icon" style="background:rgba(255,200,60,.15)">🏆</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#FFD700">競技場</div><div class="vc-card-desc">排名 #128 · 獎勵可領</div></div>
+      <span class="vc-card-arrow">›</span>
+      <div class="vc-card-notif"></div>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(68,238,136,.12),rgba(40,180,100,.06));border:1px solid rgba(68,238,136,.2)">
+      <div class="vc-card-icon" style="background:rgba(68,238,136,.15)">👥</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#44ee88">公會戰</div><div class="vc-card-desc">週六 20:00 開戰</div></div>
+      <span class="vc-card-arrow">›</span>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(100,200,255,.12),rgba(60,150,220,.06));border:1px solid rgba(100,200,255,.2);position:relative">
+      <div class="vc-card-icon" style="background:rgba(100,200,255,.15)">🎲</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#88ddff">每日任務</div><div class="vc-card-desc">4/6 完成</div></div>
+      <span class="vc-card-arrow">›</span>
+      <div class="vc-card-notif"></div>
+    </div>
+    <div class="vc-card" style="background:linear-gradient(135deg,rgba(255,120,60,.12),rgba(200,80,30,.06));border:1px solid rgba(255,120,60,.2)">
+      <div class="vc-card-icon" style="background:rgba(255,120,60,.15)">⚒️</div>
+      <div class="vc-card-body"><div class="vc-card-title" style="color:#ff7844">裝備鍛造</div><div class="vc-card-desc">傳說大劍 鍛造中 02:15:30</div></div>
+      <span class="vc-card-arrow">›</span>
+    </div>
+  </div>
+  <div class="lob-tabs" style="border-color:rgba(255,120,60,.15)">
+    <div class="lob-tab"><span class="ti">🏠</span><span class="tt">主頁</span></div>
+    <div class="lob-tab cur" style="color:#ff7844"><span class="ti">⚔️</span><span class="tt" style="color:#ff7844">冒險</span></div>
+    <div class="lob-tab"><span class="ti">🎒</span><span class="tt">背包</span></div>
+    <div class="lob-tab"><span class="ti">🎲</span><span class="tt">召喚</span></div>
+    <div class="lob-tab"><span class="ti">⚙</span><span class="tt">設定</span></div>
+  </div>
+</div>
+
+<script>
+function showLayout(i){
+  document.querySelectorAll('.layout').forEach((el,j)=>{el.classList.toggle('active',j===i);});
+  document.querySelectorAll('.mode-tab').forEach((el,j)=>{el.classList.toggle('active',j===i);});
+}
+</script>
+</body>
+</html>

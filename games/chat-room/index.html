@@ -53,26 +53,30 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
 .opp-avatar.female{background:rgba(255,128,192,.18);}
 .opp-name{font-size:15px;font-weight:600;}
 .scenario-badge{font-size:11px;color:var(--text2);}
+.room-code{font-size:10px;color:var(--text2);opacity:.6;margin-top:1px;letter-spacing:.5px;}
 .timer{font-size:22px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;min-width:60px;text-align:right;}
 .timer.urgent{color:#ff4444;animation:blink .6s step-end infinite;}
 @keyframes blink{50%{opacity:.3;}}
-.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}
-.msg-row{display:flex;gap:8px;align-items:flex-end;}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;transition:background .8s ease;}
+.scene-particle{position:absolute;opacity:.15;font-size:20px;animation:sceneDrift linear infinite;pointer-events:none;}
+@keyframes sceneDrift{0%{transform:translateY(0) rotate(0deg);opacity:.15;}50%{opacity:.2;}100%{transform:translateY(-100vh) rotate(180deg);opacity:0;}}
+.msg-row{display:flex;gap:8px;align-items:flex-end;position:relative;z-index:1;}
 .msg-row.me{flex-direction:row-reverse;}
-.bubble{max-width:72%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;}
+.bubble{max-width:72%;min-width:120px;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;}
 .msg-row.other .bubble{background:var(--bg3);border-bottom-left-radius:4px;}
 .msg-row.me .bubble{background:var(--accent);color:#1a1000;border-bottom-right-radius:4px;}
 .sticker-bubble{background:transparent!important;font-size:48px;padding:4px 0!important;}
 .msg-name{font-size:11px;color:var(--text2);margin-bottom:2px;}
 .msg-row.me .msg-name{text-align:right;}
 .msg-time{font-size:10px;color:var(--text2);margin:0 4px;flex-shrink:0;}
-.system-msg{text-align:center;font-size:12px;color:var(--text2);padding:4px 0;}
+.system-msg{text-align:center;font-size:12px;color:var(--text2);padding:4px 0;position:relative;z-index:1;}
 
 /* ── Chat Input ── */
 .chat-input-area{border-top:1px solid var(--border);background:var(--bg2);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;}
 .input-actions{display:flex;gap:6px;}
 .ico-btn{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .ico-btn:hover{border-color:var(--accent);color:var(--accent);}
+.leave-btn:hover{border-color:#ff5252!important;color:#ff5252!important;}
 .msg-text{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:14px;resize:none;outline:none;max-height:80px;font-family:inherit;}
 .msg-text:focus{border-color:var(--accent);}
 .send-btn{background:var(--accent);color:#1a1000;border:none;border-radius:10px;width:38px;height:38px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;}
@@ -159,14 +163,20 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
       <div>
         <div class="opp-name" id="oppName">---</div>
         <div class="scenario-badge" id="scenarioBadge"></div>
+        <div class="room-code" id="roomCodeBadge"></div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="ico-btn" onclick="openScenePanel()" title="調情境">🎭</button>
+      <button class="ico-btn" onclick="leaveChat()" title="離開聊天室" style="font-size:14px;color:#ff7070;border-color:rgba(255,80,80,.3)">✕</button>
       <div class="timer" id="timer">5:00</div>
+      <button class="ico-btn leave-btn" onclick="confirmLeave()" title="離開聊天室">✕</button>
     </div>
   </div>
-  <div class="chat-msgs" id="chatMsgs"></div>
+  <div id="oppOfflineBar" style="display:none;background:rgba(255,80,80,.15);border-bottom:1px solid rgba(255,80,80,.3);padding:6px 16px;font-size:12px;color:#ff8080;text-align:center;">⚠️ 對方可能已離線或沒在看</div>
+  <div class="chat-msgs" id="chatMsgs" style="position:relative;">
+    <div id="sceneAmbience" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;"></div>
+  </div>
   <div class="sticker-panel" id="stickerPanel"></div>
   <div class="chat-input-area">
     <button class="ico-btn" id="stickerBtn" onclick="toggleStickers()">😊</button>
@@ -221,13 +231,13 @@ const API = 'https://capyworlds.loki217089.workers.dev';
 const CHAT_MS = 300000; // 5 min
 
 const SCENES = [
-  {id:0, emoji:'🌿', name:'無情境', desc:'自由聊天模式'},
-  {id:1, emoji:'🌙', name:'深夜告白', desc:'夜深了，兩個人獨處，想說些什麼...'},
-  {id:2, emoji:'☕', name:'咖啡廳偶遇', desc:'偶然坐在同一張桌子旁，相談甚歡'},
-  {id:3, emoji:'🎮', name:'遊戲隊友', desc:'剛一起打完遊戲，情緒高漲'},
-  {id:4, emoji:'🌸', name:'校園春天', desc:'春天的校園裡，路上偶遇'},
-  {id:5, emoji:'🌊', name:'海邊散步', desc:'傍晚一起在海邊漫步'},
-  {id:6, emoji:'🌃', name:'城市夜景', desc:'站在高處，一起看城市的燈光'},
+  {id:0, emoji:'🌿', name:'無情境', desc:'自由聊天模式', bg:'none'},
+  {id:1, emoji:'🌙', name:'深夜告白', desc:'夜深了，兩個人獨處，想說些什麼...', bg:'linear-gradient(180deg,#0a0a1a 0%,#1a1040 40%,#0c0820 100%)'},
+  {id:2, emoji:'☕', name:'咖啡廳偶遇', desc:'偶然坐在同一張桌子旁，相談甚歡', bg:'linear-gradient(180deg,#1a1610 0%,#2a2018 40%,#1a1408 100%)'},
+  {id:3, emoji:'🎮', name:'遊戲隊友', desc:'剛一起打完遊戲，情緒高漲', bg:'linear-gradient(180deg,#0a1018 0%,#101828 40%,#0a0c18 100%)'},
+  {id:4, emoji:'🌸', name:'校園春天', desc:'春天的校園裡，路上偶遇', bg:'linear-gradient(180deg,#1a1018 0%,#201828 40%,#18101a 100%)'},
+  {id:5, emoji:'🌊', name:'海邊散步', desc:'傍晚一起在海邊漫步', bg:'linear-gradient(180deg,#0c1820 0%,#162838 40%,#0a1018 100%)'},
+  {id:6, emoji:'🌃', name:'城市夜景', desc:'站在高處，一起看城市的燈光', bg:'linear-gradient(180deg,#0a0a14 0%,#141428 40%,#0c0c1a 100%)'},
 ];
 
 const STICKERS = [
@@ -246,6 +256,12 @@ let myGender = '', myName = '', roomId = '', myRole = '';
 let lastMsgId = 0, pollTimer = null, timerInterval = null;
 let currentScenario = 0, pendingSceneReq = null;
 let selectedScene = 0;
+// Bug-fix flags
+let _matchCancelled = false;   // Bug2: prevent ghost retry after cancel
+let _waitTimeout   = null;     // Bug3: 5-min wait timeout handle
+let _pollWaitBusy  = false;    // Bug6: prevent concurrent pollWait
+let _pollChatBusy  = false;    // concurrent pollChat guard
+let timerEnd       = 0;        // Bug8: shared timer variable for server sync
 
 // ── Init ──
 (function init(){
@@ -298,69 +314,101 @@ function showScreen(id){
 async function startMatching(){
   myName = document.getElementById('nameInput').value.trim() || '陌生人';
   if(!myGender) return;
+  _matchCancelled = false;
   showScreen('waitScreen');
   await doJoin();
 }
 
 async function doJoin(){
+  if (_matchCancelled) return;
   try {
     const r = await fetch(`${API}/chat/join`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({pid:myPid, name:myName, gender:myGender})
     });
     const d = await r.json();
-    if(d.error){alert(d.error);showScreen('setupScreen');return;}
+    if (_matchCancelled) return;
+    if(d.error){ alert(d.error); showScreen('setupScreen'); return; }
     roomId = d.room_id; myRole = d.role;
     if(d.state === 'chatting'){
       enterChat(d.opp_name);
     } else {
+      // Bug3: 5-min wait timeout
+      clearTimeout(_waitTimeout);
+      _waitTimeout = setTimeout(() => {
+        if (!roomId) return;
+        clearInterval(pollTimer); pollTimer = null;
+        const rid = roomId; roomId = ''; myRole = '';
+        fetch(`${API}/chat/${rid}/leave`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid:myPid})}).catch(()=>{});
+        showScreen('setupScreen');
+        document.getElementById('waitScreen').querySelector('.wait-sub').textContent = '等待超時，請重新配對';
+      }, 300000);
       pollTimer = setInterval(pollWait, 2000);
     }
   } catch(e){
-    setTimeout(doJoin, 3000);
+    if (!_matchCancelled) setTimeout(doJoin, 3000);
   }
 }
 
 async function pollWait(){
+  if (_pollWaitBusy || _matchCancelled) return;  // Bug6: concurrent guard
+  _pollWaitBusy = true;
   try {
     const r = await fetch(`${API}/chat/${roomId}?pid=${myPid}`);
     const d = await r.json();
+    if(_matchCancelled){ _pollWaitBusy=false; return; }
     if(d.state === 'chatting'){
       clearInterval(pollTimer); pollTimer = null;
+      clearTimeout(_waitTimeout); _waitTimeout = null;
       const oppName = myRole==='p1' ? d.p2_name : d.p1_name;
       enterChat(oppName);
+    } else if(d.error || d.state === 'done'){
+      // Bug1: room gone / cancelled → go back to setup
+      clearInterval(pollTimer); pollTimer = null;
+      clearTimeout(_waitTimeout); _waitTimeout = null;
+      roomId = ''; myRole = '';
+      document.getElementById('waitScreen').querySelector('.wait-sub').textContent = '配對失敗，請重新嘗試';
+      showScreen('setupScreen');
     }
   } catch(e){}
+  _pollWaitBusy = false;
 }
 
-function cancelMatch(){
+async function cancelMatch(){
+  _matchCancelled = true;
   clearInterval(pollTimer); pollTimer = null;
-  roomId = ''; myRole = '';
+  clearTimeout(_waitTimeout); _waitTimeout = null;
+  const rid = roomId; roomId = ''; myRole = '';
+  if (rid) {
+    fetch(`${API}/chat/${rid}/leave`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid:myPid})}).catch(()=>{});
+  }
   showScreen('setupScreen');
 }
 
 // ── Enter Chat ──
 function enterChat(oppName){
+  clearTimeout(_waitTimeout); _waitTimeout = null;  // Bug3: clear wait timeout
   const oppGender = myGender === 'male' ? 'female' : 'male';
   const avatar = document.getElementById('oppAvatar');
   avatar.textContent = oppGender === 'male' ? '♂' : '♀';
   avatar.className = 'opp-avatar ' + oppGender;
   document.getElementById('oppName').textContent = oppName || '對方';
+  document.getElementById('roomCodeBadge').textContent = roomId ? '# ' + roomId.slice(0,8) : '';
   document.getElementById('chatMsgs').innerHTML = '';
   lastMsgId = 0; currentScenario = 0; pendingSceneReq = null;
   updateScenarioBadge();
   showScreen('chatScreen');
   addSystemMsg('已連線！開始 5 分鐘的聊天吧 💬');
   pollTimer = setInterval(pollChat, 1500);
-  startTimer(CHAT_MS);
+  startTimer();
 }
 
-// ── Timer ──
-function startTimer(ms){
+// ── Timer (Bug8: use shared timerEnd so pollChat can sync) ──
+function startTimer(){
   clearInterval(timerInterval);
-  let end = Date.now() + ms;
+  timerEnd = Date.now() + CHAT_MS;  // initial local estimate
   function tick(){
-    const left = Math.max(0, end - Date.now());
+    const left = Math.max(0, timerEnd - Date.now());
     const mm = String(Math.floor(left/60000)).padStart(1,'0');
     const ss = String(Math.floor((left%60000)/1000)).padStart(2,'0');
     const el = document.getElementById('timer');
@@ -374,21 +422,22 @@ function startTimer(ms){
 
 // ── Poll Chat ──
 async function pollChat(){
+  if (_pollChatBusy) return;  // concurrent guard
+  if (!document.getElementById('chatScreen').classList.contains('active')) return;
+  _pollChatBusy = true;
   try {
     const r = await fetch(`${API}/chat/${roomId}?pid=${myPid}&last=${lastMsgId}`);
     const d = await r.json();
-    if(d.state === 'done' && document.getElementById('chatScreen').classList.contains('active')){
-      endChat(); return;
+    if (!document.getElementById('chatScreen').classList.contains('active')){ _pollChatBusy=false; return; }
+    if(d.state === 'done'){
+      _pollChatBusy = false;
+      endChat();
+      // Bug4: notify user if partner left (not timer expiry)
+      if(timerEnd - Date.now() > 5000) addSystemMsg('對方已離開聊天室');
+      return;
     }
-    // sync timer
-    if(d.time_left > 0){
-      const el = document.getElementById('timer');
-      const left = d.time_left;
-      const mm = String(Math.floor(left/60000)).padStart(1,'0');
-      const ss = String(Math.floor((left%60000)/1000)).padStart(2,'0');
-      el.textContent = mm+':'+ss;
-      el.classList.toggle('urgent', left < 60000);
-    }
+    // Bug8: sync timerEnd with server (avoid local/server drift)
+    if(d.time_left > 0) timerEnd = Date.now() + d.time_left;
     // scenario req
     if(d.scenario_req && d.scenario_req.proposer !== myRole){
       if(!pendingSceneReq || pendingSceneReq.scene_id !== d.scenario_req.scene_id){
@@ -406,6 +455,10 @@ async function pollChat(){
       const sc = SCENES[currentScenario];
       if(sc && currentScenario > 0) addSystemMsg(`🎭 情境切換為：${sc.emoji} ${sc.name}`);
     }
+    // 對方離線警告（chatting 狀態才顯示）
+    if(d.state === 'chatting'){
+      document.getElementById('oppOfflineBar').style.display = d.opp_online === false ? 'block' : 'none';
+    }
     // messages
     if(d.messages && d.messages.length){
       d.messages.forEach(m => {
@@ -414,7 +467,40 @@ async function pollChat(){
       });
     }
   } catch(e){}
+  _pollChatBusy = false;
 }
+
+// Bug4: active leave button in chat header
+async function leaveChat(){
+  if(!confirm('確定要離開聊天室嗎？')) return;
+  const rid = roomId; roomId = ''; myRole = '';
+  clearInterval(pollTimer); pollTimer = null;
+  clearInterval(timerInterval); timerInterval = null;
+  if(rid){
+    try {
+      await fetch(`${API}/chat/${rid}/leave`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid:myPid})});
+    } catch(e){}
+  }
+  document.getElementById('reqOverlay').classList.remove('open');
+  document.getElementById('sceneOverlay').classList.remove('open');
+  showScreen('doneScreen');
+}
+
+async function leaveRoom(){
+  document.getElementById('oppOfflineBar').style.display = 'none';
+  if(roomId){
+    try { navigator.sendBeacon(`${API}/chat/${roomId}/leave`, JSON.stringify({pid:myPid})); } catch(e){}
+  }
+  endChat();
+}
+
+function confirmLeave(){
+  if(confirm('確定要離開聊天室嗎？')) leaveRoom();
+}
+
+window.addEventListener('beforeunload', () => {
+  if(roomId) navigator.sendBeacon(`${API}/chat/${roomId}/leave`, JSON.stringify({pid:myPid}));
+});
 
 function endChat(){
   clearInterval(pollTimer); pollTimer = null;
@@ -425,11 +511,24 @@ function endChat(){
 }
 
 function resetAll(){
+  _matchCancelled = false;
   roomId = ''; myRole = ''; lastMsgId = 0;
   currentScenario = 0; pendingSceneReq = null;
+  timerEnd = 0;
+  // reset wait-sub text in case it was changed by timeout
+  const sub = document.getElementById('waitScreen').querySelector('.wait-sub');
+  if(sub) sub.textContent = '等待另一位使用者進入';
   document.getElementById('chatMsgs').innerHTML = '';
   showScreen('setupScreen');
 }
+
+// Bug4: beforeunload — notify server when user closes tab/browser
+window.addEventListener('beforeunload', () => {
+  if(roomId){
+    navigator.sendBeacon(`${API}/chat/${roomId}/leave`,
+      new Blob([JSON.stringify({pid:myPid})], {type:'application/json'}));
+  }
+});
 
 // ── Messages ──
 function appendMsg(side, name, type, content){
@@ -488,9 +587,46 @@ function toggleStickers(){
 }
 
 // ── Scenario ──
+const SCENE_PARTICLES = {
+  0:[], // no particles
+  1:['🌙','✨','💫','⭐'], // deep night
+  2:['☕','🍰','🧁','💨'], // cafe
+  3:['🎮','🕹️','💥','⚡'], // gaming
+  4:['🌸','🌷','🍃','🦋'], // spring campus
+  5:['🌊','🐚','🏖️','🦀'], // beach
+  6:['🌃','🏙️','💡','🌟'], // city night
+};
+let sceneParticleTimer = null;
+
 function updateScenarioBadge(){
   const sc = SCENES[currentScenario] || SCENES[0];
   document.getElementById('scenarioBadge').textContent = currentScenario > 0 ? `${sc.emoji} ${sc.name}` : '自由聊天';
+  // Apply scene background
+  const msgsEl = document.getElementById('chatMsgs');
+  if(sc.bg && sc.bg !== 'none'){
+    msgsEl.style.background = sc.bg;
+  } else {
+    msgsEl.style.background = '';
+  }
+  // Scene ambience particles
+  const amb = document.getElementById('sceneAmbience');
+  amb.innerHTML = '';
+  if(sceneParticleTimer) clearInterval(sceneParticleTimer);
+  const emojis = SCENE_PARTICLES[currentScenario] || [];
+  if(emojis.length > 0){
+    sceneParticleTimer = setInterval(()=>{
+      if(amb.children.length > 12) amb.removeChild(amb.firstChild);
+      const sp = document.createElement('span');
+      sp.className = 'scene-particle';
+      sp.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      sp.style.left = Math.random()*90 + '%';
+      sp.style.bottom = '0';
+      sp.style.animationDuration = (8+Math.random()*6) + 's';
+      sp.style.fontSize = (14+Math.random()*12) + 'px';
+      amb.appendChild(sp);
+      sp.addEventListener('animationend', ()=>sp.remove());
+    }, 2000);
+  }
 }
 
 function selectScene(id){
@@ -542,5 +678,7 @@ async function respondScene(accept){
   pendingSceneReq = null;
 }
 </script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+<script>(function(){var sid=localStorage.getItem("_cw_sid");if(!sid){sid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("_cw_sid",sid);}var d={p:location.pathname,r:document.referrer,l:navigator.language,s:screen.width+"x"+screen.height,sid:sid};fetch("/t",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d),keepalive:true});})();</script>
 </body>
 </html>

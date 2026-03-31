@@ -1,0 +1,21 @@
+{
+  "name": "capyworlds-app",
+  "version": "1.0.0",
+  "description": "CapyWorlds Android App - Play games & purchase gems",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "cap:init": "npx cap init CapyWorlds com.capyworlds.app --web-dir ../",
+    "cap:add": "npx cap add android",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:run": "npx cap run android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/android": "^6.0.0",
+    "@capgo/capacitor-purchases": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}

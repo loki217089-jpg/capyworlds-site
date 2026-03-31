@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Merge Drop</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#1a1128;font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;overflow:hidden;color:#e8ddd0}
+.top-bar{position:relative;z-index:200;flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(20,14,36,0.95);border-bottom:1px solid rgba(255,180,60,0.2)}
+.top-bar a{color:#c8a456;text-decoration:none;font-size:14px}
+.btn-group{display:flex;gap:6px}
+.btn-group button{background:rgba(255,180,60,0.15);border:1px solid rgba(255,180,60,0.3);color:#ffd080;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer}
+.game-area{flex:1;overflow:hidden;min-height:0;position:relative;display:flex;justify-content:center;align-items:center}
+canvas{touch-action:none;max-width:100%;max-height:100%}
+.score-bar{position:relative;z-index:200;flex-shrink:0;display:flex;justify-content:space-around;align-items:center;padding:8px 12px;background:rgba(20,14,36,0.95);border-top:1px solid rgba(255,180,60,0.2)}
+.score-box{text-align:center}
+.score-label{font-size:10px;color:#a89070;text-transform:uppercase;letter-spacing:1px}
+.score-val{font-size:22px;font-weight:bold;color:#ffd080}
+.next-preview{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;border:2px solid rgba(255,180,60,0.3)}
+#tutorial{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center}
+#tutorial .box{background:#1e1832;border:2px solid #ffd080;border-radius:16px;padding:28px 24px;max-width:min(360px,calc(100vw - 32px));text-align:center}
+#tutorial h2{color:#ffd080;margin-bottom:12px;font-size:22px}
+#tutorial p{color:#ccc;margin-bottom:10px;font-size:14px;line-height:1.6}
+#tutorial .start-btn{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#1a1128;border:none;border-radius:10px;padding:12px 32px;font-size:18px;font-weight:bold;cursor:pointer;margin-top:12px}
+#game-over{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center}
+#game-over .box{background:#1e1832;border:2px solid #ff4466;border-radius:16px;padding:28px 24px;max-width:min(360px,calc(100vw - 32px));text-align:center}
+#game-over h2{color:#ff4466;margin-bottom:8px;font-size:24px}
+#game-over .final-score{font-size:36px;color:#ffd080;font-weight:bold;margin:8px 0}
+#game-over .best{font-size:14px;color:#a89070;margin-bottom:16px}
+#game-over .restart-btn{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#1a1128;border:none;border-radius:10px;padding:12px 32px;font-size:18px;font-weight:bold;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="../" id="back-link">&#8592; Back</a>
+<div class="btn-group">
+<button id="lang-btn">繁中</button>
+<button id="mute-btn">&#x1f50a;</button>
+</div>
+</div>
+<div class="game-area"><canvas id="game"></canvas></div>
+<div class="score-bar">
+<div class="score-box"><div class="score-label" id="sl-score">SCORE</div><div class="score-val" id="score-display">0</div></div>
+<div class="score-box"><div class="score-label" id="sl-next">NEXT</div><div class="next-preview" id="next-preview"></div></div>
+<div class="score-box"><div class="score-label" id="sl-best">BEST</div><div class="score-val" id="best-display">0</div></div>
+</div>
+<div id="tutorial"><div class="box"><h2 id="tut-title">Merge Drop</h2><p id="tut-desc">Drop circles into the jar. When two same circles touch, they merge into a bigger one! Chain merges for huge scores. Don't let them overflow!</p><p id="tut-ctrl">Tap/Click to aim, release to drop</p><button class="start-btn" id="tut-start">Play!</button></div></div>
+<div id="game-over"><div class="box"><h2 id="go-title">Game Over</h2><div class="final-score" id="go-score">0</div><div class="best" id="go-best">Best: 0</div><button class="restart-btn" id="go-restart">Try Again</button></div></div>
+<script>
+// ===== CONSTANTS & STATE =====
+const GW=400,GH=560,WALL=10,CEIL_Y=80,GRAVITY=0.4,DAMPING=0.45,FRICTION=0.98;
+const LEVELS=[
+  {r:16,color:'#ff6b6b',val:2},{r:20,color:'#ffa06b',val:4},{r:24,color:'#ffd06b',val:8},
+  {r:28,color:'#d0ff6b',val:16},{r:33,color:'#6bffb0',val:32},{r:38,color:'#6bd4ff',val:64},
+  {r:44,color:'#6b8aff',val:128},{r:50,color:'#a06bff',val:256},{r:56,color:'#ff6bda',val:512},
+  {r:63,color:'#ff4488',val:1024},{r:70,color:'#ffd700',val:2048}
+];
+let balls=[],score=0,bestScore=0,nextLv=0,dropX=GW/2,canDrop=true,gameOver=false;
+let shakeX=0,shakeY=0,shakeDur=0;
+let particles=[];
+let combo=0,comboTimer=0;
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+canvas.width=GW;canvas.height=GH;
+
+// ===== i18n =====
+let lang=localStorage.getItem('mergeDropLang')||'en';
+const I18N={
+  en:{back:'\u2190 Back',score:'SCORE',next:'NEXT',best:'BEST',title:'Merge Drop',
+    desc:'Drop circles into the jar. When two same circles touch, they merge into a bigger one! Chain merges for huge scores. Don\'t let them overflow!',
+    ctrl:'Tap/Click to aim, release to drop',play:'Play!',over:'Game Over',again:'Try Again',bestLabel:'Best: '},
+  zh:{back:'\u2190 \u8fd4\u56de',score:'\u5206\u6578',next:'\u4e0b\u4e00\u500b',best:'\u6700\u9ad8',title:'\u5408\u6210\u6389\u843d',
+    desc:'\u628a\u5713\u7403\u4e1f\u9032\u7f50\u5b50\u88e1\uff0c\u76f8\u540c\u7684\u7403\u78b0\u5728\u4e00\u8d77\u6703\u5408\u6210\u66f4\u5927\u7684\u7403\uff01\u9023\u7e8c\u5408\u6210\u7372\u5f97\u5927\u91cf\u5206\u6578\u3002\u5225\u8b93\u7403\u6ea2\u51fa\u4f86\uff01',
+    ctrl:'\u9ede\u64ca/\u89f8\u78b0\u700f\u89bd\u5668\u4f86\u7784\u6e96\uff0c\u653e\u958b\u5c31\u6703\u6389\u843d',play:'\u958b\u59cb\uff01',over:'\u904a\u6232\u7d50\u675f',again:'\u518d\u4f86\u4e00\u6b21',bestLabel:'\u6700\u9ad8: '}
+};
+function applyLang(){
+  const t=I18N[lang];
+  document.getElementById('back-link').textContent=t.back;
+  document.getElementById('sl-score').textContent=t.score;
+  document.getElementById('sl-next').textContent=t.next;
+  document.getElementById('sl-best').textContent=t.best;
+  document.getElementById('tut-title').textContent=t.title;
+  document.getElementById('tut-desc').textContent=t.desc;
+  document.getElementById('tut-ctrl').textContent=t.ctrl;
+  document.getElementById('tut-start').textContent=t.play;
+  document.getElementById('go-title').textContent=t.over;
+  document.getElementById('go-restart').textContent=t.again;
+  document.getElementById('lang-btn').textContent=lang==='en'?'繁中':'EN';
+}
+document.getElementById('lang-btn').addEventListener('click',()=>{
+  lang=lang==='en'?'zh':'en';localStorage.setItem('mergeDropLang',lang);applyLang();
+});
+
+// ===== AUDIO =====
+const AUDIO_CTX=new (window.AudioContext||window.webkitAudioContext)();
+let audioMuted=(localStorage.getItem('mergeDropMuted')==='1');
+function playTone(freq,dur,vol){
+  if(audioMuted)return;
+  if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();
+  const o=AUDIO_CTX.createOscillator(),g=AUDIO_CTX.createGain();
+  o.type='sine';o.frequency.value=freq;
+  g.gain.setValueAtTime(vol||0.15,AUDIO_CTX.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,AUDIO_CTX.currentTime+dur);
+  o.connect(g);g.connect(AUDIO_CTX.destination);
+  o.start();o.stop(AUDIO_CTX.currentTime+dur);
+}
+function playMerge(lv){playTone(300+lv*80,0.2,0.2);setTimeout(()=>playTone(400+lv*80,0.15,0.15),80);}
+function playDrop(){playTone(200,0.08,0.1);}
+function playGameOver(){playTone(150,0.5,0.2);setTimeout(()=>playTone(100,0.6,0.15),200);}
+document.getElementById('mute-btn').addEventListener('click',()=>{
+  audioMuted=!audioMuted;
+  document.getElementById('mute-btn').textContent=audioMuted?'\u{1f507}':'\u{1f50a}';
+  localStorage.setItem('mergeDropMuted',audioMuted?'1':'0');
+});
+if(audioMuted)document.getElementById('mute-btn').textContent='\u{1f507}';
+
+// ===== PHYSICS & BALLS =====
+function makeBall(x,y,lv){return{x,y,vx:0,vy:0,lv,r:LEVELS[lv].r,merging:false,settled:0};}
+function spawnNext(){nextLv=Math.floor(Math.random()*Math.min(5,Math.max(3,Math.floor(score/500)+3)));updateNextPreview();}
+function updateNextPreview(){
+  const p=document.getElementById('next-preview');
+  const lv=LEVELS[nextLv];
+  p.style.background=lv.color;p.style.color=lv.val>64?'#fff':'#1a1128';
+  p.textContent=lv.val;p.style.width=p.style.height='42px';
+}
+function addScore(pts){
+  const mult=combo>1?combo:1;
+  score+=pts*mult;
+  document.getElementById('score-display').textContent=score;
+  if(score>bestScore){bestScore=score;document.getElementById('best-display').textContent=bestScore;localStorage.setItem('mergeDropBest',bestScore);}
+}
+function spawnParticles(x,y,color,count){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2,sp=2+Math.random()*4;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,color,r:2+Math.random()*3});
+  }
+  if(particles.length>200)particles.splice(0,particles.length-200);
+}
+
+function physics(){
+  for(let i=0;i<balls.length;i++){
+    const b=balls[i];
+    if(b.merging)continue;
+    b.vy+=GRAVITY;b.vx*=FRICTION;
+    b.x+=b.vx;b.y+=b.vy;
+    // walls
+    if(b.x-b.r<WALL){b.x=WALL+b.r;b.vx*=-DAMPING;}
+    if(b.x+b.r>GW-WALL){b.x=GW-WALL-b.r;b.vx*=-DAMPING;}
+    if(b.y+b.r>GH-WALL){b.y=GH-WALL-b.r;b.vy*=-DAMPING;b.vx*=0.9;}
+    // ball-ball collision
+    for(let j=i+1;j<balls.length;j++){
+      const o=balls[j];if(o.merging)continue;
+      const dx=o.x-b.x,dy=o.y-b.y,dist=Math.sqrt(dx*dx+dy*dy),minD=b.r+o.r;
+      if(dist<minD&&dist>0.1){
+        const nx=dx/dist,ny=dy/dist,overlap=(minD-dist)/2;
+        b.x-=nx*overlap;b.y-=ny*overlap;o.x+=nx*overlap;o.y+=ny*overlap;
+        const dvx=b.vx-o.vx,dvy=b.vy-o.vy,dot=dvx*nx+dvy*ny;
+        if(dot>0){
+          b.vx-=dot*nx*DAMPING;b.vy-=dot*ny*DAMPING;
+          o.vx+=dot*nx*DAMPING;o.vy+=dot*ny*DAMPING;
+        }
+        // merge check
+        if(b.lv===o.lv&&b.lv<LEVELS.length-1){
+          const newLv=b.lv+1;const mx=(b.x+o.x)/2,my=(b.y+o.y)/2;
+          b.merging=true;o.merging=true;
+          const nb=makeBall(mx,my,newLv);
+          nb.vx=(b.vx+o.vx)*0.3;nb.vy=Math.min((b.vy+o.vy)*0.3,-2);
+          balls.push(nb);
+          combo++;comboTimer=60;
+          addScore(LEVELS[newLv].val*(1+combo*0.2)|0);
+          playMerge(newLv);
+          spawnParticles(mx,my,LEVELS[newLv].color,8+newLv*2);
+          if(newLv>=5){shakeDur=8+newLv*2;}
+        }
+      }
+    }
+  }
+  balls=balls.filter(b=>!b.merging);
+  // combo timer
+  if(comboTimer>0){comboTimer--;if(comboTimer<=0)combo=0;}
+  // particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;p.life-=0.03;
+    if(p.life<=0)particles.splice(i,1);
+  }
+  // shake
+  if(shakeDur>0){shakeX=(Math.random()-0.5)*shakeDur*0.8;shakeY=(Math.random()-0.5)*shakeDur*0.8;shakeDur--;}
+  else{shakeX=0;shakeY=0;}
+  // game over check
+  if(canDrop){
+    for(const b of balls){
+      if(!b.merging&&b.y-b.r<CEIL_Y&&Math.abs(b.vy)<0.5){
+        b.settled++;
+        if(b.settled>90){gameOver=true;showGameOver();return;}
+      }else{b.settled=0;}
+    }
+  }
+}
+
+// ===== RENDERING =====
+function render(){
+  ctx.save();ctx.translate(shakeX,shakeY);
+  ctx.fillStyle='#1a1128';ctx.fillRect(0,0,GW,GH);
+  // jar walls
+  ctx.fillStyle='#2a1e48';ctx.fillRect(0,CEIL_Y,WALL,GH-CEIL_Y);ctx.fillRect(GW-WALL,CEIL_Y,WALL,GH-CEIL_Y);ctx.fillRect(0,GH-WALL,GW,WALL);
+  // danger line
+  ctx.strokeStyle='rgba(255,68,100,0.4)';ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(WALL,CEIL_Y);ctx.lineTo(GW-WALL,CEIL_Y);ctx.stroke();ctx.setLineDash([]);
+  // drop guide
+  if(canDrop&&!gameOver){
+    ctx.strokeStyle='rgba(255,220,140,0.25)';ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(dropX,20);ctx.lineTo(dropX,CEIL_Y);ctx.stroke();ctx.setLineDash([]);
+    const pr=LEVELS[nextLv];
+    ctx.globalAlpha=0.5;ctx.beginPath();ctx.arc(dropX,30,pr.r,0,Math.PI*2);ctx.fillStyle=pr.color;ctx.fill();ctx.globalAlpha=1;
+    ctx.fillStyle=pr.val>64?'#fff':'#1a1128';ctx.font='bold '+Math.max(11,pr.r*0.7)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(pr.val,dropX,30);
+  }
+  // balls
+  for(const b of balls){
+    const lv=LEVELS[b.lv];
+    // glow for high level
+    if(b.lv>=5){ctx.shadowColor=lv.color;ctx.shadowBlur=12+b.lv*2;}
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fillStyle=lv.color;ctx.fill();
+    ctx.shadowBlur=0;
+    // highlight
+    ctx.beginPath();ctx.arc(b.x-b.r*0.25,b.y-b.r*0.25,b.r*0.4,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fill();
+    // number
+    ctx.fillStyle=lv.val>64?'#fff':'#1a1128';
+    ctx.font='bold '+Math.max(11,b.r*0.65)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(lv.val,b.x,b.y);
+  }
+  // particles
+  for(const p of particles){
+    ctx.globalAlpha=p.life;ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);ctx.fillStyle=p.color;ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // combo display
+  if(combo>1){
+    ctx.fillStyle='#ffd700';ctx.font='bold 24px sans-serif';ctx.textAlign='center';
+    ctx.fillText((lang==='zh'?'連擊 ':'COMBO ')+combo+'x',GW/2,CEIL_Y+30);
+  }
+  ctx.restore();
+}
+
+// ===== INPUT =====
+function getCanvasX(clientX){
+  const rect=canvas.getBoundingClientRect();
+  return(clientX-rect.left)*(GW/rect.width);
+}
+let pointerDown=false;
+canvas.addEventListener('pointerdown',(e)=>{
+  if(gameOver)return;
+  pointerDown=true;dropX=Math.max(WALL+LEVELS[nextLv].r,Math.min(GW-WALL-LEVELS[nextLv].r,getCanvasX(e.clientX)));
+});
+canvas.addEventListener('pointermove',(e)=>{
+  if(!pointerDown||gameOver)return;
+  dropX=Math.max(WALL+LEVELS[nextLv].r,Math.min(GW-WALL-LEVELS[nextLv].r,getCanvasX(e.clientX)));
+});
+canvas.addEventListener('pointerup',(e)=>{
+  if(!pointerDown||!canDrop||gameOver)return;
+  pointerDown=false;
+  dropBall();
+});
+function dropBall(){
+  if(!canDrop||gameOver)return;
+  canDrop=false;
+  const b=makeBall(dropX,30,nextLv);
+  b.vy=2;balls.push(b);
+  playDrop();
+  setTimeout(()=>{if(!gameOver){canDrop=true;spawnNext();}},500);
+}
+
+// ===== GAME OVER =====
+function showGameOver(){
+  playGameOver();
+  document.getElementById('game-over').style.display='flex';
+  document.getElementById('go-score').textContent=score;
+  document.getElementById('go-best').textContent=(I18N[lang].bestLabel)+bestScore;
+}
+document.getElementById('go-restart').addEventListener('click',restartGame);
+function restartGame(){
+  balls=[];particles=[];score=0;combo=0;comboTimer=0;gameOver=false;canDrop=true;shakeDur=0;
+  document.getElementById('score-display').textContent='0';
+  document.getElementById('game-over').style.display='none';
+  spawnNext();
+}
+
+// ===== RESIZE =====
+function resizeCanvas(){
+  const area=document.querySelector('.game-area');
+  const aw=area.clientWidth,ah=area.clientHeight;
+  const scale=Math.min(aw/GW,ah/GH);
+  canvas.style.width=GW*scale+'px';canvas.style.height=GH*scale+'px';
+}
+window.addEventListener('resize',()=>setTimeout(resizeCanvas,50));
+
+// ===== GAME LOOP =====
+function loop(){
+  if(!gameOver){physics();}
+  render();
+  requestAnimationFrame(loop);
+}
+
+// ===== INIT =====
+bestScore=parseInt(localStorage.getItem('mergeDropBest'))||0;
+document.getElementById('best-display').textContent=bestScore;
+applyLang();
+if(localStorage.getItem('mergeDropTutSeen')){document.getElementById('tutorial').style.display='none';spawnNext();resizeCanvas();loop();}
+document.getElementById('tut-start').addEventListener('click',()=>{
+  document.getElementById('tutorial').style.display='none';
+  localStorage.setItem('mergeDropTutSeen','1');
+  spawnNext();resizeCanvas();loop();
+  if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();
+});
+</script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+</body>
+</html>

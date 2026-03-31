@@ -1,0 +1,408 @@
+# 世界航道 Sea Route — 設計文件
+
+> 最後同步：2026-03-24
+> 版本：v0.3（優化批次：範圍圈/ESC選單/升級Modal/水下素材）
+
+---
+
+## 一句話定位
+
+「玩家駕駛船隻環遊世界 10 國，蒐集各國特色素材強化船隻，用治癒的航行風景取代機械式點擊。」
+
+---
+
+## 遊戲製作標準表格 v0.2
+
+| 項目 | 內容 |
+|------|------|
+| 工作名稱 | 世界航道 / Sea Route（暫定）|
+| 類型 | 放置 Idle + 主動操作 + 探索解鎖 |
+| 核心動詞 | 航行・蒐集・強化・解鎖 |
+| 一句話玩法 | 船在航道上自動前進，路過特色地標蒐集素材，強化船體解鎖下一國 |
+| 核心張力 | 放置自動蒐集 vs 手動爆發效率——玩家隨時可以插手提升節奏 |
+| 成長感核心 | **紙娃娃系統**：船體外觀隨升級直觀變化（船身→船帆→艙台→裝飾）|
+| 差異化 | 以真實國家為地圖單位，每國有獨特視覺/素材/音樂；船隻強化影響「航行畫面」|
+| 地圖解鎖 | 蒐集滿該國 N 素材 **+ 打敗 Boss** → 解鎖下一國 |
+| Boss 設計 | 每國 Boss 驗收「該國航行中的升級選擇」，機制各異 |
+| 離線收益 | **無**——上線才能玩，策略深度優先 |
+| 手動互動 | 點擊/滑動手動蒐集可觸發倍率；手動應對 Boss 機制 |
+| 初始國家 | 🇹🇼 台灣 |
+| 10 國路線 | 台灣→日本→韓國→中國→越南→印度→希臘→義大利→挪威→加拿大 |
+| 治癒元素 | 流動海景、各國主題 BGM、環境音效、可縮小背景播放 |
+| 目標平台 | Web（CapyWorlds）→ CrazyGames |
+| 視覺風格 | 2D 像素，每國獨立色調 |
+| 語言 | 繁中 + 英文雙語 |
+| 預估規模 | 1500~2000 行，分塊開發 |
+
+---
+
+## 4 條升級樹（詳細版）
+
+```
+🌊 航速線 [Speed]     🪝 蒐集線 [Haul]       🛡 船體線 [Hull]       ✨ 國家線 [Culture]
+S1 基礎帆速           H1 蒐集範圍             V1 船殼強化             每國解鎖 1 個
+S2 順風感應           H2 自動頻率             V2 碰撞抗性             主動技能
+S3 燃料效率           H3 手動爆發倍率         V3 修復能力
+S4 暗流穿越           H4 稀有文物磁吸         V4 Boss 護盾
+S5 ★ 極速衝刺         H5 ★ 黃金漁網           V5 ★ 不沉之船
+```
+
+---
+
+## 組合技（跨分支解鎖，讓玩家「唉呦」的瞬間）
+
+| 組合需求 | 效果 | 玩家感受 |
+|---------|------|---------|
+| 🌀 **漂移撈取** Speed S2 + Haul H2 | 船高速移動時，蒐集範圍自動擴張 1.5× | 「移動就能賺更多？」|
+| ⚓ **靜水深流** Haul H3 + Hull V1 | 靜止不動 3 秒，自動蒐集速率 ×3 | 「掛機也有策略」|
+| 💥 **衝撞奪寶** Speed S3 + Hull V2 | 衝向 Boss 時造成撞擊傷害，同時蒐集周圍掉落物 | 「防禦技進攻用！」|
+| 🌟 **海神之眼** Speed S4 + Haul H4 + Hull V3 | 三線同時達 Lv3，稀有文物出現率 +40%，手動點擊觸發小範圍磁吸 | 「我全要！」|
+| 👑 **傳說航道** 三條主幹全 MAX + 國家線累積 5 國 | 解鎖隱藏 Boss 路線，特殊外觀獎勵 | 最終成就感 |
+
+---
+
+## 手動蒐集操作設計
+
+```
+普通素材（自動漂流蒐集）
+→ 滑鼠/手指移動方向 = 船頭朝向
+→ 路過時自動吸入蒐集範圍內的素材
+
+稀有文物（文化遺寶）
+→ 閃爍 + 特效提示「難以接近」
+→ 玩家要手動【左鍵點擊】瞄準觸發「出網/潛水員」動畫
+→ 需要 Haul H3/H4 等級才能蒐集更高稀有度的文物
+→ 點擊失準 or 太慢 → 文物沉入海底消失（懊悔感正是樂趣）
+```
+
+**節奏感設計：**
+- 普通時段：放開手、船自己漂、素材漂進來 → 放置感
+- 文物出現：專注 + 瞄準點擊 → 爽快感
+- Boss 戰：移動閃躲 + 點擊反擊同時進行 → 緊張感
+
+---
+
+## 升級 UI 系統（確認方案：混合方案）
+
+**平時畫面：船體藍圖式**
+- 點擊船的實際部位 → 彈出升級面板
+  - 點帆 → 航速線
+  - 點漁網/甲板 → 蒐集線
+  - 點船殼 → 船體線
+  - 點船頭雕像 → 國家技能
+- 升級後船外觀立即改變，回饋感最強
+
+**彈出詳細面板：火車式**
+```
+[點擊船帆] → 彈出面板
+┌─────────────────────────┐
+│  ⛵ 航速線               │
+│  ●──●──●──○──○          │
+│  S1 S2 S3 S4 S5         │
+│  [已解][已解][當前]...   │
+│  💡 搭配 Hull V2 解鎖組合技│
+└─────────────────────────┘
+```
+- 清楚看到整條升級路線
+- 組合技解鎖條件也在此標示
+
+---
+
+## 紙娃娃系統（8 層分層）
+
+| 層 | 部位 | 升級解鎖條件 | 外觀變化範例 |
+|----|------|------------|------------|
+| 1 | 船殼 | Hull V1~V5 | 木板→強化鐵甲→塗裝噴漆→鍍金龍骨→神話戰艦 |
+| 2 | 船帆 | Speed S1~S3 | 破爛布帆→方形帆→三角帆組→彩繪帆→發光聖帆 |
+| 3 | 船頭雕像 | Culture 各國解鎖 | 普通女神→各國主題（台灣媽祖/日本鬼面/希臘雅典娜...）|
+| 4 | 砲台/武裝 | Hull V2~V4 | 無→小砲管×2→重砲×4→雷射砲→神器砲 |
+| 5 | 旗幟 | 每國通關獲得 | 空旗→累積各國圖騰旗（視覺上記錄旅程）|
+| 6 | 甲板裝飾 | Haul H2~H4 | 空甲板→魚簍→大漁網→文物展示架→傳說寶藏台 |
+| 7 | 船尾燈光 | 任意 Lv10+ | 無→油燈→燈籠串→霓虹→極光 |
+| 8 | 船體光暈 | 組合技解鎖後 | 無→浪花效果→金光→傳說彩虹光軌 |
+
+---
+
+## 10 國 Boss 機制（設計核心）
+
+> Boss 不是純血量關卡，而是**驗收你在該國航行中的升級策略選擇**
+
+| 國家 | Boss 名稱 | 機制設計 | 驗收什麼 |
+|------|-----------|---------|---------|
+| 🇹🇼 台灣 | 颱風女神 | 逆風減速——必須強化「引擎/船帆」到一定程度才能突破風速 | 航速線 |
+| 🇯🇵 日本 | 海賊船長 | 定時搶奪你的庫存素材——要手動「格擋」點擊抵抗 | 手動反應力 |
+| 🇰🇷 韓國 | 幽靈鯊魚 | 潛水攻擊船底——要切換「防禦升級分支」才能撐住 | 船體線 |
+| 🇨🇳 中國 | 龍王 | 波浪週期性打亂素材欄位——要手動整理蒐集節奏 | 蒐集線 + 操作 |
+| 🇻🇳 越南 | 迷霧水鬼 | 視野被遮——靠之前蒐集的「燈籠素材（台灣）」才能驅散 | 跨國素材策略 |
+| 🇮🇳 印度 | 大象神 | 需要特定素材組合作「獻祭」才能通關 | 素材多樣性 |
+| 🇬🇷 希臘 | 克拉肯 | 觸手封鎖多個蒐集格——考驗玩家平時升級廣度 | 升級廣度 |
+| 🇮🇹 義大利 | 海盜聯盟 | 多波小船輪流來——測試攻防升級平衡 | 攻防平衡 |
+| 🇳🇴 挪威 | 冰山艦隊 | 速度考驗——船速不夠就被包圍無法手動解圍 | 航速線（高階）|
+| 🇨🇦 加拿大 | 極光巨獸 | 終極 Boss，融合前面所有機制，需要全船裝備最強 | 全線總驗收 |
+
+---
+
+## 10 國素材規劃
+
+| 國家 | 代表色調 | 素材符號（各 4~5 種）|
+|------|---------|------------------|
+| 🇹🇼 台灣 | 翠綠+橘 | 珍珠奶茶🧋 鳳梨酥🍰 燈籠🏮 101🏙 金幣💰 |
+| 🇯🇵 日本 | 粉+靛 | 壽司🍣 鳥居⛩ 富士山雪片❄️ 扇子🪭 |
+| 🇰🇷 韓國 | 白+藍 | 泡菜罐🥬 K-POP 星🎵 韓服飾帶👘 鼓🥁 |
+| 🇨🇳 中國 | 紅+金 | 龍鱗🐉 茶葉🍵 長城磚🧱 瓷器🏺 |
+| 🇻🇳 越南 | 黃+綠 | 斗笠🪖 河粉碗🍜 蓮花🪷 舢板⛵ |
+| 🇮🇳 印度 | 橘+紫 | 香料🌶 象牙🐘 花環💐 紗麗🧣 寶石💎 |
+| 🇬🇷 希臘 | 白+海藍 | 橄欖油瓶🫒 柱廊🏛 海螺🐚 陶罐🏺 |
+| 🇮🇹 義大利 | 暖紅+米 | 義大利麵🍝 比薩斜塔模型🗼 葡萄🍇 披薩🍕 |
+| 🇳🇴 挪威 | 深藍+銀 | 峽灣石🏔 極光碎片✨ 維京盾牌🛡 鯨魚🐋 |
+| 🇨🇦 加拿大 | 紅+楓葉金 | 楓糖漿🍁 冰晶🧊 鮭魚🐟 麋鹿角🦌 |
+
+---
+
+## 整體遊戲體驗流程
+
+```
+放置中 ── 船漂著，素材自己進來，順手移動加速收
+  ↓ 突然
+文物出現 ── 手動瞄準點擊，搶到稀有文物！升級樹解鎖！
+  ↓ 累積
+船長變強 ── 紙娃娃外觀進化，路程感受加深
+  ↓ 抵達
+Boss 關 ── 考驗你這國投資方向是否正確，打完看劇情
+  ↓ 解鎖
+下一國 ── 新素材、新文物、新 Boss 機制，新文化主題
+```
+
+---
+
+## 遊戲優缺點分析（2026-03-24 評估）
+
+### ✅ 優點
+- 10 國進程清楚，每國有獨特配色/地標/Boss，視覺差異感強
+- 紙娃娃船隻系統：升級後外觀直觀改變，成長感有說服力
+- Boss timing 機制簡單但有壓力，節奏起伏明確
+- 自動 + 手動蒐集雙模式，稀有文物手動機制不煩躁
+- 滑鼠/觸控控制船隻 Y 軸，有參與感但不費力
+
+### ❌ 缺點 → 已修
+- ~~蒐集範圍圈幾乎看不見（alpha=0.1）~~ → v0.3 改為明顯 glow 圓圈 ✅
+- ~~升級面板卡在右下角，手機使用不便~~ → v0.3 改為置中 modal ✅
+- ~~沒有 ESC 暫停，點其他地方就丟失狀態~~ → v0.3 加 ESC 選單 ✅
+- ~~升級面板不暫停遊戲~~ → v0.2 已修 ✅
+- ~~海面下完全空洞，缺乏層次感~~ → v0.3 加各國水下素材 ✅
+
+### ❌ 缺點 → 待修
+- [ ] Boss 戰中資源被清空（nextCountry 清 cargo），玩家沒有感受到「消耗感」
+- [ ] 物品太小且顏色與海水融合，需要更大字體或光圈
+- [ ] 升級後沒有明確的「這樣做更好了」提示，成長反饋不夠
+- [ ] 缺乏音效回饋（自動蒐集無聲，只有手動才有音效）
+- [ ] 遊戲缺乏長期目標（通關 10 國後就結束，無 Prestige 系統）
+- [ ] Boss 多種機制（timing/parry/wave）但視覺上都一樣
+
+---
+
+## ESC 選單規格（v0.3 起）
+
+> **所有遊戲 ESC 選單標準規範**
+
+```
+按 ESC / 手機點 ✕ → 彈出暫停選單
+
+選單固定包含：
+  ▶ 繼續遊戲        （取消 ESC 回到遊戲）
+  🔊/🔇 靜音切換
+  🏠 回到遊戲列表   （href='/games/'）
+
+可選追加（特定遊戲）：
+  🔄 重新開始本關
+  ⚙️ 設定
+```
+
+---
+
+## 水下素材系統（v0.3 起）
+
+### 設計邏輯
+- 30% 機率生成「水下素材」（來自 `ocean_items` 陣列）
+- 水下素材固定生成在 `H*0.52` 以下（確實在海面下）
+- 渲染時：藍色 shadow glow + alpha×0.78（表現水下透明感）
+- 水下素材 h 值 0.62~0.85（比地表素材更深）
+
+### 各國水下配對
+| 國家 | 水下素材 | 設計邏輯 |
+|------|---------|---------|
+| 🇹🇼 台灣 | 🪸珊瑚 🐠熱帶魚 | 珊瑚礁豐富 |
+| 🇯🇵 日本 | 🐡河豚 🦑魷魚 | 日本特色魚類 |
+| 🇰🇷 韓國 | 🦀螃蟹 🐙章魚 | 韓國海鮮文化 |
+| 🇨🇳 中國 | 🦞龍蝦 🫧珍珠 | 南海寶藏 |
+| 🇻🇳 越南 | 🪼水母 🦐明蝦 | 熱帶海域 |
+| 🇮🇳 印度 | 🦈鯊魚牙 🐠熱帶魚 | 印度洋大型生物 |
+| 🇬🇷 希臘 | 🐙章魚 🦞龍蝦 | 地中海美食 |
+| 🇮🇹 義大利 | 🦑魷魚 🦀螃蟹 | 地中海漁業 |
+| 🇳🇴 挪威 | 🦭海豹 🐟北極魚 | 北極海洋 |
+| 🇨🇦 加拿大 | 🦭海豹 🦈鯊魚牙 | 北太平洋/大西洋 |
+
+---
+
+## 待實作 / 待優化清單
+
+> 「知道要做但還沒做」的功能
+
+- [ ] 越南 Boss：燈籠素材跨國連動邏輯（目前只是 timing 機制）
+- [ ] 印度 Boss：素材組合「獻祭」機制（目前只是 timing）
+- [x] 組合技 #1：漂移撈取（Speed S2 + Haul H2 → 移動時蒐集範圍 ×1.5）已實作
+- [x] 手動蒐集：稀有文物 (r=1) 不自動蒐集 + 金色脈衝光環 + 點擊提示 已實作
+- [x] 滑鼠 Y 軸控制船隻位置（平滑跟隨，±12%H 範圍）已實作
+- [x] 蒐集範圍圈明顯化（glow + 標籤）v0.3
+- [x] 升級面板置中 modal v0.3
+- [x] ESC 暫停選單（繼續/靜音/回列表）v0.3
+- [x] 水下素材系統（各國 ocean_items）v0.3
+- [ ] 組合技 #2~#5：靜水深流/衝撞奪寶/海神之眼/傳說航道
+- [ ] 紙娃娃系統：8 層各自獨立 sprite，升級即時替換
+- [ ] 升級 UI：藍圖點擊 + 彈出火車式面板（混合方案）
+- [ ] 音效：蒐集音效 + 各國 BGM（JDSherbert Minigame Music）
+- [ ] 國家線技能：各國解鎖的獨特主動技能尚未實作
+- [ ] 極速衝刺（Speed S5）：手動觸發短暫爆速
+- [ ] 黃金漁網（Haul H5）：全螢幕蒐集大招
+- [ ] 船頭雕像：各國主題造型（媽祖/鬼面/雅典娜等）
+- [ ] 手機觸控優化：加入 games/mobile.html
+- [ ] 排行榜：總蒐集金幣數 / 通關國家數
+
+---
+
+## 已確認設計決策（不再討論）
+
+| 決策 | 結論 |
+|------|------|
+| 蒐集方式 | 自動 idle + 手動操作（滑鼠方向=船向，左鍵撈稀有文物）並存 |
+| 成長感 | 紙娃娃 8 層，外觀隨升級直觀變化 |
+| 解鎖條件 | 蒐集 N 素材 + 打敗 Boss（雙條件）|
+| 離線收益 | 無，上線才能玩（策略優先）|
+| 升級 UI | 船體藍圖點擊 + 彈出火車式面板（混合方案 4）|
+| 升級樹 | 4 條主幹各 5 階 + 5 個跨線組合技 |
+| 語言 | 繁中 + 英文雙語 |
+
+---
+
+## 參考遊戲
+
+- **Trainatic**（手機）：Boss 關設計靈感，UFO/挑戰機制、速度顯示、燃料條
+- 差異：以真實國家為地圖單位，每國有獨特視覺/素材/音樂
+
+---
+
+## 美術素材清單 & 上傳路徑
+
+### 統一美術風格規範
+
+> **所有素材必須遵守此風格定義，確保視覺一致性。**
+> 每個 GE prompt 開頭都要附帶這段風格描述。
+
+```
+【世界航道統一美術風格】
+
+風格：Flat cartoon vector art, bold clean outlines (2-3px black stroke),
+      cel-shaded with 3-4 color shading per object.
+色彩：Vibrant saturated colors, warm wood browns for ships,
+      each country has its own distinct color palette.
+      NOT grey, NOT washed out, NOT pixel art, NOT realistic.
+視角：Side view (船隻) / Front panorama view (地標)
+背景：Pure white (#FFFFFF), NO checkerboard, NO gradient.
+排列：Strict grid, no gaps, no borders, no text labels.
+參考風格：Similar to the ship sprite sheet — cartoon wooden ships
+         with cream-colored sails and warm brown hulls.
+```
+
+### 素材總覽
+
+> 所有素材放在 `assets/sea-route/` 目錄下
+> 格式：JFIF（GE 生成，Canvas drawImage 原生支援）
+> 白色背景，遊戲內用 `globalCompositeOperation='multiply'` 自動消白
+
+| 檔名 | 路徑 | 排列 | 內容 | 狀態 |
+|------|------|------|------|------|
+| `ships.jfif` | `assets/sea-route/ships.jfif` | 1024×506, 4欄×2列, cellW=256 cellH=253 | 8 艘船（小木舟→鐵甲蒸汽艦） | ✅ 已整合 |
+| `landmarks-1.jfif` | `assets/sea-route/landmarks-1.jfif` | 1024×254, 4欄×1列, cellW=256 cellH=254 | 台灣、日本、韓國、中國 | ✅ 已整合 |
+| `landmarks-2.jfif` | `assets/sea-route/landmarks-2.jfif` | 1024×254, 4欄×1列, cellW=256 cellH=254 | 越南、印度、希臘、義大利 | ✅ 已整合 |
+| `landmarks-3.jfif` | `assets/sea-route/landmarks-3.jfif` | 1024×506, 2欄×1列, cellW=512 cellH=506 | 挪威、加拿大 | ✅ 已整合 |
+| `bosses-1.jfif` | `assets/sea-route/bosses-1.jfif` | 4欄×1列 | 颱風女神/海賊船長/幽靈鯊魚/龍王 | ⬜ 待生成 |
+| `bosses-2.jfif` | `assets/sea-route/bosses-2.jfif` | 4欄×1列 | 迷霧水鬼/大象神/克拉肯/海盜聯盟 | ⬜ 待生成 |
+| `bosses-3.jfif` | `assets/sea-route/bosses-3.jfif` | 2欄×1列 | 冰山艦隊/極光巨獸 | ⬜ 待生成 |
+| `items.jfif` | `assets/sea-route/items.jfif` | 10欄×5列 | 50 格物品圖（替代 emoji） | 🔵 優先級低 |
+
+### GE 生圖 Prompt
+
+> ⚠️ 每個 prompt 開頭必須加上方【統一美術風格】描述
+
+**ships.jfif（已有，風格基準）：**
+> 此圖為風格基準。所有後續素材的畫風、描邊粗細、色彩飽和度都以此為參考。
+
+**landmarks-1.jfif：**
+> 【貼上統一美術風格】
+> Landmark sprite sheet. 4 columns, 1 row, white background.
+> Cell 1: Taiwan — Taipei 101 tower + warm city skyline, orange-brown wood tones (#f09040, #d87030, #1a3050)
+> Cell 2: Japan — Mt. Fuji with white snow cap + bright red torii gate, pink-red (#e05880, #c86090, #b8b8cc)
+> Cell 3: Korea — Traditional Gyeongbokgung palace with blue curved roof tiles, blue (#4870c8, #2a4898, #6898d8)
+> Cell 4: China — Red multi-tier pagoda + golden Great Wall battlement, red-gold (#cc2020, #ffd700, #c8a870)
+> Each landmark fills 70-80% of cell height, anchored to bottom edge.
+
+**landmarks-2.jfif：**
+> 【貼上統一美術風格】
+> Landmark sprite sheet. 4 columns, 1 row, white background.
+> Cell 1: Vietnam — Ha Long Bay karst limestone peaks + calm green river, green-yellow (#80c060, #508030, #fff0a0)
+> Cell 2: India — Taj Mahal dome + 4 minarets, sunset orange-cream (#ff9028, #e8e0d0, #9e3080)
+> Cell 3: Greece — Santorini white marble columns + blue dome church, white-blue (#4898e8, #d0d8e8, #ffffff)
+> Cell 4: Italy — Leaning Tower of Pisa + dark green cypress trees, warm terracotta (#e06040, #2a5010, #e8e0cc)
+> Each landmark fills 70-80% of cell height, anchored to bottom edge.
+
+**landmarks-3.jfif：**
+> 【貼上統一美術風格】
+> Landmark sprite sheet. 2 columns, 1 row, white background.
+> Cell 1: Norway — Dark dramatic fjord cliff walls + green/cyan aurora borealis streaks in sky, dark blue (#1a3a5a, #60d8ff, #00ff88)
+> Cell 2: Canada — Snow-capped Rocky Mountains + dark pine tree forest + red maple leaf accent, cool blue-white (#6888a8, #1a4020, #e83020)
+> Each landmark fills 70-80% of cell height, anchored to bottom edge.
+
+**bosses-1.jfif：**
+> 【貼上統一美術風格】
+> Boss character sprite sheet. 4 columns, 1 row, white background.
+> Half-body portraits facing front, dramatic expressions.
+> Cell 1: Storm Goddess (颱風女神) — swirling wind hair, lightning crown, teal-grey (#4af8ff, #1a4060)
+> Cell 2: Pirate Captain (海賊船長) — tricorn hat, scarred face, cutlass, dark red-brown (#8B0000, #d4a574)
+> Cell 3: Ghost Shark (幽靈鯊魚) — spectral blue shark head, glowing eyes, ethereal mist (#1a5aae, #60d8ff)
+> Cell 4: Dragon King (龍王) — golden scaled dragon head, red whiskers, imperial crown (#ffd700, #cc2020)
+
+**bosses-2.jfif：**
+> 【貼上統一美術風格】
+> Boss character sprite sheet. 4 columns, 1 row, white background.
+> Half-body portraits facing front, dramatic expressions.
+> Cell 1: Fog Wraith (迷霧水鬼) — ghostly pale face emerging from green fog, hollow eyes (#80c060, #d8a820)
+> Cell 2: Elephant God (大象神) — ornate golden elephant head, jeweled forehead, multiple arms (#ff9028, #ffd700)
+> Cell 3: Kraken (克拉肯) — giant octopus head, massive tentacles, deep sea blue-green (#0a6aae, #ffffff)
+> Cell 4: Pirate Alliance (海盜聯盟) — 3 pirate captains shoulder-to-shoulder, different hats, terracotta (#e06040, #8B4513)
+
+**bosses-3.jfif：**
+> 【貼上統一美術風格】
+> Boss character sprite sheet. 2 columns, 1 row, white background.
+> Half-body portraits facing front, dramatic expressions.
+> Cell 1: Iceberg Fleet (冰山艦隊) — giant iceberg with frozen warship embedded, frost blue (#0a3060, #60d8ff)
+> Cell 2: Aurora Beast (極光巨獸) — cosmic bear/wolf silhouette made of aurora light, green-purple-cyan (#00ff88, #aa44ff, #4af8ff)
+
+### 上傳指令模板
+
+```cmd
+cd capyworlds
+copy "來源路徑\ships.jfif" "assets\sea-route\ships.jfif"
+copy "來源路徑\landmarks-1.jfif" "assets\sea-route\landmarks-1.jfif"
+copy "來源路徑\landmarks-2.jfif" "assets\sea-route\landmarks-2.jfif"
+copy "來源路徑\landmarks-3.jfif" "assets\sea-route\landmarks-3.jfif"
+copy "來源路徑\bosses-1.jfif" "assets\sea-route\bosses-1.jfif"
+copy "來源路徑\bosses-2.jfif" "assets\sea-route\bosses-2.jfif"
+copy "來源路徑\bosses-3.jfif" "assets\sea-route\bosses-3.jfif"
+git add assets/sea-route/
+git commit -m "Add sea-route art assets"
+git push origin main
+```
+
+---
+
+*下次開發前先讀這份文件，確認設計方向一致*

@@ -1,4 +1,35 @@
-// v2.0 - Generic room system (/room/:type/*)
+// v2.1 - Generic room system + IAP (/iap/*)
+
+// ── Google Play JWT 生成（Service Account 驗證用）─────────────────
+async function makeGoogleJWT(svcAccount) {
+  const header = btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'');
+  const now = Math.floor(Date.now()/1000);
+  const payload = btoa(JSON.stringify({
+    iss: svcAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/androidpublisher',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now, exp: now+3600,
+  })).replace(/=/g,'');
+  const msg = `${header}.${payload}`;
+  // import RSA private key
+  const pemBody = svcAccount.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/,'')
+    .replace(/-----END PRIVATE KEY-----/,'')
+    .replace(/\n/g,'');
+  const keyBuf = Uint8Array.from(atob(pemBody), c=>c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', keyBuf, {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'}, false, ['sign']);
+  const sigBuf = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(msg));
+  const sig = btoa(String.fromCharCode(...new Uint8Array(sigBuf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const jwt = `${msg}.${sig}`;
+  // exchange JWT for access token
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+  const tokenData = await tokenRes.json();
+  return tokenData.access_token;
+}
 
 function rpsWinner(c1, c2) {
   if (c1 === c2) return 'draw';
@@ -124,6 +155,11 @@ export default {
 
     // ── 彈幕 ──────────────────────────────────────────────────────
     if (url.pathname==='/danmaku' && request.method==='GET') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (url.searchParams.get('admin')==='1' && auth==='66520') {
+        const {results}=await env.DB.prepare('SELECT id,text,color,created_at FROM danmaku ORDER BY id DESC LIMIT 100').all();
+        return Response.json(results,{headers:cors});
+      }
       const since=parseInt(url.searchParams.get('since')||'0');
       const {results}=await env.DB.prepare('SELECT id,text,color,created_at FROM danmaku WHERE id>? ORDER BY id ASC LIMIT 60').bind(since).all();
       return Response.json(results,{headers:cors});
@@ -135,6 +171,19 @@ export default {
       const color=allowed.includes(b.color)?b.color:'#ffffff';
       if (!text) return Response.json({error:'彈幕不能為空'},{status:400,headers:cors});
       await env.DB.prepare('INSERT INTO danmaku (text,color,created_at) VALUES (?,?,?)').bind(text,color,new Date().toISOString()).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+    if (url.pathname==='/danmaku/all' && request.method==='DELETE') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (auth!=='66520') return Response.json({error:'未授權'},{status:401,headers:cors});
+      await env.DB.prepare('DELETE FROM danmaku').run();
+      return Response.json({ok:true},{headers:cors});
+    }
+    const dmDel=url.pathname.match(/^\/danmaku\/(\d+)$/);
+    if (dmDel && request.method==='DELETE') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (auth!=='66520') return Response.json({error:'未授權'},{status:401,headers:cors});
+      await env.DB.prepare('DELETE FROM danmaku WHERE id=?').bind(parseInt(dmDel[1])).run();
       return Response.json({ok:true},{headers:cors});
     }
 
@@ -290,6 +339,88 @@ export default {
       return Response.json({ok:true},{headers:cors});
     }
 
+    // ── 流量追蹤 ──────────────────────────────────────────────────
+    if (url.pathname==='/t' && request.method==='POST') {
+      try {
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, path TEXT NOT NULL, ref TEXT DEFAULT '', ua TEXT DEFAULT '', country TEXT DEFAULT '', lang TEXT DEFAULT '', screen TEXT DEFAULT '', sid TEXT DEFAULT '')").run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_pv_ts ON page_views(ts)").run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_pv_path ON page_views(path)").run();
+      } catch(e){}
+      let b; try{b=await request.json();}catch{return Response.json({ok:true},{headers:cors});}
+      const ts=Date.now();
+      const path=(b.p||'/').slice(0,200);
+      const ref=(b.r||'').slice(0,500);
+      const ua=(request.headers.get('User-Agent')||'').slice(0,300);
+      const country=request.headers.get('CF-IPCountry')||'';
+      const lang=(b.l||'').slice(0,10);
+      const screen=(b.s||'').slice(0,20);
+      const sid=(b.sid||'').slice(0,40);
+      await env.DB.prepare('INSERT INTO page_views (ts,path,ref,ua,country,lang,screen,sid) VALUES (?,?,?,?,?,?,?,?)').bind(ts,path,ref,ua,country,lang,screen,sid).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+
+    if (url.pathname==='/t/data' && request.method==='GET') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      const adminKey=env.ADMIN_KEY||env.ANALYTICS_KEY||'';
+      if (!adminKey||auth!==adminKey) return Response.json({error:'unauthorized'},{status:401,headers:cors});
+      try {
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, path TEXT NOT NULL, ref TEXT DEFAULT '', ua TEXT DEFAULT '', country TEXT DEFAULT '', lang TEXT DEFAULT '', screen TEXT DEFAULT '', sid TEXT DEFAULT '')").run();
+      } catch(e){}
+      const q=url.searchParams.get('q')||'overview';
+      const days=Math.min(90,Math.max(1,parseInt(url.searchParams.get('days')||'7')));
+      const since=Date.now()-days*86400000;
+
+      if (q==='overview') {
+        const total=await env.DB.prepare('SELECT COUNT(*) as c FROM page_views WHERE ts>?').bind(since).first();
+        const uv=await env.DB.prepare('SELECT COUNT(DISTINCT sid) as c FROM page_views WHERE ts>? AND sid!=?').bind(since,'').first();
+        const today_start=Date.now()-Date.now()%86400000;
+        const today=await env.DB.prepare('SELECT COUNT(*) as c FROM page_views WHERE ts>?').bind(today_start).first();
+        const active=await env.DB.prepare('SELECT COUNT(DISTINCT sid) as c FROM page_views WHERE ts>? AND sid!=?').bind(Date.now()-300000,'').first();
+        return Response.json({total:total?.c||0,uv:uv?.c||0,today:today?.c||0,active:active?.c||0},{headers:cors});
+      }
+      if (q==='daily') {
+        const {results}=await env.DB.prepare("SELECT CAST((ts/86400000) AS INTEGER) as day, COUNT(*) as pv, COUNT(DISTINCT sid) as uv FROM page_views WHERE ts>? GROUP BY day ORDER BY day").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='hourly') {
+        const {results}=await env.DB.prepare("SELECT CAST((ts/3600000)%24 AS INTEGER) as hour, CAST(((ts/86400000)+4)%7 AS INTEGER) as dow, COUNT(*) as c FROM page_views WHERE ts>? GROUP BY hour, dow").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='pages') {
+        const {results}=await env.DB.prepare('SELECT path, COUNT(*) as c, COUNT(DISTINCT sid) as uv FROM page_views WHERE ts>? GROUP BY path ORDER BY c DESC LIMIT 30').bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='countries') {
+        const {results}=await env.DB.prepare("SELECT country, COUNT(*) as c FROM page_views WHERE ts>? AND country!='' GROUP BY country ORDER BY c DESC LIMIT 30").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='devices') {
+        const {results}=await env.DB.prepare('SELECT ua, COUNT(*) as c FROM page_views WHERE ts>? GROUP BY ua ORDER BY c DESC LIMIT 100').bind(since).all();
+        // parse UA server-side into categories
+        let mobile=0, desktop=0, tablet=0;
+        const browsers={};
+        for (const r of (results||[])) {
+          const u=r.ua||'';
+          if (/tablet|ipad/i.test(u)) tablet+=r.c;
+          else if (/mobile|android|iphone/i.test(u)) mobile+=r.c;
+          else desktop+=r.c;
+          const bm=u.match(/(Chrome|Firefox|Safari|Edge|Opera|Samsung)/i);
+          const bn=bm?bm[1]:'Other';
+          browsers[bn]=(browsers[bn]||0)+r.c;
+        }
+        return Response.json({mobile,desktop,tablet,browsers},{headers:cors});
+      }
+      if (q==='referrers') {
+        const {results}=await env.DB.prepare("SELECT ref, COUNT(*) as c FROM page_views WHERE ts>? AND ref!='' GROUP BY ref ORDER BY c DESC LIMIT 20").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='languages') {
+        const {results}=await env.DB.prepare("SELECT lang, COUNT(*) as c FROM page_views WHERE ts>? AND lang!='' GROUP BY lang ORDER BY c DESC LIMIT 15").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      return Response.json({error:'unknown query'},{status:400,headers:cors});
+    }
+
     // ── 1對1情境聊天室 ────────────────────────────────────────────
     // POST /chat/join  { pid, name, gender }
     if (url.pathname==='/chat/join' && request.method==='POST') {
@@ -301,24 +432,39 @@ export default {
       await env.DB.prepare("CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, msg_type TEXT NOT NULL DEFAULT 'text', content TEXT NOT NULL, created_at INTEGER NOT NULL)").run();
       await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_cm_room ON chat_messages(room_id, id)").run();
       await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_cr_state ON chat_rooms(state)").run();
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p1_ping INTEGER DEFAULT 0").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p2_ping INTEGER DEFAULT 0").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p1_ip TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p1_country TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p1_ua TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p2_ip TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p2_country TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p2_ua TEXT DEFAULT ''").run(); } catch(e){}
       const now=Date.now();
+      const joinIp=request.headers.get('CF-Connecting-IP')||'';
+      const joinCountry=request.headers.get('CF-IPCountry')||'';
+      const joinUa=request.headers.get('User-Agent')||'';
       // clean up stale rooms
       await env.DB.prepare("DELETE FROM chat_rooms WHERE created_at<?").bind(now-3600000).run();
-      // check if already in a room
-      const ex=await env.DB.prepare("SELECT id,p1_id,p2_id,state FROM chat_rooms WHERE (p1_id=? OR p2_id=?) AND state!='done' LIMIT 1").bind(pid,pid).first();
+      // check if already in an active room
+      const ex=await env.DB.prepare("SELECT id,p1_id,p2_id,state FROM chat_rooms WHERE (p1_id=? OR p2_id=?) AND state NOT IN ('done','cancelled') LIMIT 1").bind(pid,pid).first();
       if (ex) return Response.json({room_id:ex.id,role:ex.p1_id===pid?'p1':'p2',state:ex.state},{headers:cors});
-      // find opposite gender waiting room
+      // find opposite gender waiting room（跳過殭屍：60秒內沒ping且建立超過60秒）
       const opp=gender==='male'?'female':'male';
-      const wait=await env.DB.prepare("SELECT id,p1_id,p1_name FROM chat_rooms WHERE state='waiting' AND p1_gender=? LIMIT 1").bind(opp).first();
+      const wait=await env.DB.prepare("SELECT id,p1_id,p1_name FROM chat_rooms WHERE state='waiting' AND p1_gender=? AND NOT(p1_ping=0 AND created_at<?) AND (p1_ping=0 OR p1_ping>?) LIMIT 1").bind(opp,now-60000,now-90000).first();
       if (wait && wait.p1_id!==pid) {
         const timer_end=now+300000;
-        await env.DB.prepare("UPDATE chat_rooms SET p2_id=?,p2_name=?,p2_gender=?,state='chatting',timer_end=? WHERE id=?").bind(pid,name,gender,timer_end,wait.id).run();
-        return Response.json({room_id:wait.id,role:'p2',state:'chatting',opp_name:wait.p1_name},{headers:cors});
+        // conditional UPDATE to prevent race condition + include IP/country/UA
+        const upd=await env.DB.prepare("UPDATE chat_rooms SET p2_id=?,p2_name=?,p2_gender=?,state='chatting',timer_end=?,p2_ip=?,p2_country=?,p2_ua=? WHERE id=? AND state='waiting'").bind(pid,name,gender,timer_end,joinIp,joinCountry,joinUa,wait.id).run();
+        if ((upd.meta?.changes||0)>0) {
+          return Response.json({room_id:wait.id,role:'p2',state:'chatting',opp_name:wait.p1_name},{headers:cors});
+        }
+        // another user grabbed that room first — fall through to create new waiting room
       }
       const cnt=await env.DB.prepare("SELECT COUNT(*) as c FROM chat_rooms WHERE state='waiting'").first();
       if ((cnt?.c||0)>=20) return Response.json({error:'等待人數已滿，請稍後再試'},{status:503,headers:cors});
       const id=Math.random().toString(36).slice(2,8).toUpperCase();
-      await env.DB.prepare("INSERT INTO chat_rooms (id,p1_id,p1_name,p1_gender,state,created_at) VALUES (?,?,?,?,?,?)").bind(id,pid,name,gender,'waiting',now).run();
+      await env.DB.prepare("INSERT INTO chat_rooms (id,p1_id,p1_name,p1_gender,state,created_at,p1_ip,p1_country,p1_ua) VALUES (?,?,?,?,?,?,?,?,?)").bind(id,pid,name,gender,'waiting',now,joinIp,joinCountry,joinUa).run();
       return Response.json({room_id:id,role:'p1',state:'waiting'},{headers:cors});
     }
 
@@ -329,20 +475,46 @@ export default {
       const now=Date.now();
       const room=await env.DB.prepare('SELECT * FROM chat_rooms WHERE id=?').bind(room_id).first();
       if (!room) return Response.json({error:'room not found'},{status:404,headers:cors});
+      // 更新自己的心跳
+      const role=room.p1_id===pid?'p1':'p2';
+      if (role==='p1') { try{await env.DB.prepare("UPDATE chat_rooms SET p1_ping=? WHERE id=?").bind(now,room_id).run();}catch(e){} }
+      if (role==='p2') { try{await env.DB.prepare("UPDATE chat_rooms SET p2_ping=? WHERE id=?").bind(now,room_id).run();}catch(e){} }
       let {state,timer_end}=room;
       if (state==='chatting' && timer_end && now>=timer_end) {
         state='done';
         await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=? AND state='chatting'").bind(room_id).run();
       }
       const msgs=await env.DB.prepare('SELECT id,role,name,msg_type,content,created_at FROM chat_messages WHERE room_id=? AND id>? ORDER BY id ASC LIMIT 80').bind(room_id,last_msg).all();
-      const role=room.p1_id===pid?'p1':'p2';
+      // 判斷對方是否在線（90秒內有ping）
+      const oppPing = role==='p1'? room.p2_ping : room.p1_ping;
+      const opp_online = oppPing && oppPing > now-90000;
       return Response.json({
         state, role, scenario_id:room.scenario_id, scenario_req:room.scenario_req?JSON.parse(room.scenario_req):null,
         p1_name:room.p1_name, p2_name:room.p2_name||null,
         p1_gender:room.p1_gender, p2_gender:room.p2_gender||null,
         time_left:state==='chatting'?Math.max(0,timer_end-now):0,
         messages:(msgs.results||[]),
+        opp_online: !!opp_online,
       },{headers:cors});
+    }
+
+    // POST /chat/:id/leave  { pid }
+    const chatLeave=url.pathname.match(/^\/chat\/([A-Z0-9]{6})\/leave$/);
+    if (chatLeave && request.method==='POST') {
+      const room_id=chatLeave[1];
+      let b; try{b=await request.json();}catch{b={};}
+      const pid=(b.pid||'').slice(0,40);
+      const room=await env.DB.prepare("SELECT p1_id,p2_id,state FROM chat_rooms WHERE id=?").bind(room_id).first();
+      if (!room) return Response.json({ok:true},{headers:cors});
+      const isP1=room.p1_id===pid, isP2=room.p2_id===pid;
+      if (!isP1 && !isP2) return Response.json({ok:true},{headers:cors});
+      if (room.state==='waiting' && isP1) {
+        await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=?").bind(room_id).run();
+      } else if (room.state==='chatting') {
+        // one side left → mark done so other side's poll detects it
+        await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=?").bind(room_id).run();
+      }
+      return Response.json({ok:true},{headers:cors});
     }
 
     // POST /chat/:id/msg  { pid, type, content }
@@ -393,6 +565,16 @@ export default {
       return Response.json({ok:false},{headers:cors});
     }
 
+    // DELETE /chat/admin/:room_id  (強制關閉房間)
+    const adminClose=url.pathname.match(/^\/chat\/admin\/([A-Z0-9]{6})$/);
+    if (adminClose && request.method==='DELETE') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (!env.ADMIN_KEY||auth!==env.ADMIN_KEY) return Response.json({error:'unauthorized'},{status:401,headers:cors});
+      const room_id=adminClose[1];
+      await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=? AND state!='done'").bind(room_id).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+
     // GET /chat/admin  (requires Authorization: Bearer {ADMIN_KEY})
     if (url.pathname==='/chat/admin' && request.method==='GET') {
       const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -441,6 +623,223 @@ export default {
         }
       } catch(e){ return Response.json({error:'tables not yet created, no chats yet'},{headers:cors}); }
       return Response.json({rooms,totalWaiting,totalChatting,now},{headers:cors});
+    }
+
+    // ── IAP 內購系統 ───────────────────────────────────────────────
+    // D1 tables: iap_users, iap_purchases (auto-created on first call)
+    if (url.pathname.startsWith('/iap/')) {
+      // ensure tables
+      try {
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS iap_users (
+          id TEXT PRIMARY KEY,
+          device_id TEXT UNIQUE NOT NULL,
+          gems INTEGER NOT NULL DEFAULT 0,
+          total_spent_gems INTEGER NOT NULL DEFAULT 0,
+          total_purchased INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        )`).run();
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS iap_purchases (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          order_id TEXT UNIQUE,
+          purchase_token TEXT,
+          gems_granted INTEGER NOT NULL DEFAULT 0,
+          price_micros INTEGER NOT NULL DEFAULT 0,
+          currency TEXT NOT NULL DEFAULT 'TWD',
+          platform TEXT NOT NULL DEFAULT 'android',
+          status TEXT NOT NULL DEFAULT 'pending',
+          receipt TEXT,
+          created_at INTEGER NOT NULL,
+          verified_at INTEGER
+        )`).run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_iap_usr_dev ON iap_users(device_id)").run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_iap_pur_usr ON iap_purchases(user_id)").run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_iap_pur_ord ON iap_purchases(order_id)").run();
+      } catch(e){}
+
+      // ── 商品清單 ──
+      const IAP_PRODUCTS = [
+        { id:'gems_100',  gems:100,  price:'NT$30',  price_micros:30000000,  currency:'TWD', bonus:0,   label_zh:'💎 100 寶石',        label_en:'💎 100 Gems' },
+        { id:'gems_500',  gems:600,  price:'NT$150', price_micros:150000000, currency:'TWD', bonus:20,  label_zh:'💎 500+100 寶石',    label_en:'💎 500+100 Gems' },
+        { id:'gems_1200', gems:1680, price:'NT$300', price_micros:300000000, currency:'TWD', bonus:40,  label_zh:'💎 1200+480 寶石',   label_en:'💎 1200+480 Gems' },
+        { id:'monthly',   gems:30,   price:'NT$60/月', price_micros:60000000, currency:'TWD', bonus:0, label_zh:'🎫 月卡 (每日30💎)', label_en:'🎫 Monthly (30💎/day)', type:'subscription' },
+        { id:'no_ads',    gems:0,    price:'NT$90',  price_micros:90000000,  currency:'TWD', bonus:0,   label_zh:'🚫 去廣告 (永久)',   label_en:'🚫 Remove Ads', type:'lifetime' },
+      ];
+
+      // GET /iap/products
+      if (url.pathname==='/iap/products' && request.method==='GET') {
+        return Response.json(IAP_PRODUCTS, {headers:cors});
+      }
+
+      // POST /iap/register  { device_id }
+      if (url.pathname==='/iap/register' && request.method==='POST') {
+        let b; try{b=await request.json();}catch{return Response.json({error:'bad request'},{status:400,headers:cors});}
+        const device_id=(b.device_id||'').trim().slice(0,80);
+        if (!device_id) return Response.json({error:'device_id required'},{status:400,headers:cors});
+        const now=Date.now();
+        // check existing
+        const existing=await env.DB.prepare('SELECT id,gems,total_spent_gems,total_purchased,created_at FROM iap_users WHERE device_id=?').bind(device_id).first();
+        if (existing) return Response.json({user:existing},{headers:cors});
+        // create new
+        const uid='u_'+Math.random().toString(36).slice(2,14);
+        await env.DB.prepare('INSERT INTO iap_users (id,device_id,gems,total_spent_gems,total_purchased,created_at,updated_at) VALUES (?,?,0,0,0,?,?)').bind(uid,device_id,now,now).run();
+        return Response.json({user:{id:uid,gems:0,total_spent_gems:0,total_purchased:0,created_at:now}},{headers:cors});
+      }
+
+      // GET /iap/user?uid=xxx
+      if (url.pathname==='/iap/user' && request.method==='GET') {
+        const uid=url.searchParams.get('uid')||'';
+        if (!uid) return Response.json({error:'uid required'},{status:400,headers:cors});
+        const user=await env.DB.prepare('SELECT id,gems,total_spent_gems,total_purchased,created_at FROM iap_users WHERE id=?').bind(uid).first();
+        if (!user) return Response.json({error:'user not found'},{status:404,headers:cors});
+        return Response.json({user},{headers:cors});
+      }
+
+      // POST /iap/verify  { uid, product_id, order_id, purchase_token, receipt }
+      // Google Play receipt verification
+      if (url.pathname==='/iap/verify' && request.method==='POST') {
+        let b; try{b=await request.json();}catch{return Response.json({error:'bad request'},{status:400,headers:cors});}
+        const uid=(b.uid||'').trim(), product_id=(b.product_id||'').trim();
+        const order_id=(b.order_id||'').trim(), purchase_token=(b.purchase_token||'').trim();
+        if (!uid||!product_id||!order_id) return Response.json({error:'missing fields'},{status:400,headers:cors});
+
+        // check user exists
+        const user=await env.DB.prepare('SELECT id,gems FROM iap_users WHERE id=?').bind(uid).first();
+        if (!user) return Response.json({error:'user not found'},{status:404,headers:cors});
+
+        // check duplicate order
+        const dup=await env.DB.prepare('SELECT id FROM iap_purchases WHERE order_id=?').bind(order_id).first();
+        if (dup) return Response.json({error:'order already processed',gems:user.gems},{status:409,headers:cors});
+
+        // find product
+        const product=IAP_PRODUCTS.find(p=>p.id===product_id);
+        if (!product) return Response.json({error:'unknown product'},{status:400,headers:cors});
+
+        const now=Date.now();
+        let verified=false;
+
+        // Google Play Server-Side Verification
+        // Requires GOOGLE_PLAY_KEY (service account JSON) in env
+        if (env.GOOGLE_PLAY_KEY && purchase_token) {
+          try {
+            const svcAccount=JSON.parse(env.GOOGLE_PLAY_KEY);
+            const jwt = await makeGoogleJWT(svcAccount);
+            const pkg = env.ANDROID_PACKAGE || 'com.capyworlds.app';
+            const gpUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${pkg}/purchases/products/${product_id}/tokens/${purchase_token}`;
+            const gpRes = await fetch(gpUrl, { headers:{'Authorization':`Bearer ${jwt}`} });
+            if (gpRes.ok) {
+              const gpData = await gpRes.json();
+              // purchaseState: 0=purchased, 1=canceled, 2=pending
+              if (gpData.purchaseState===0) verified=true;
+            }
+          } catch(e) {
+            // verification failed, fall through to sandbox mode
+          }
+        }
+
+        // Sandbox/dev mode: if no GOOGLE_PLAY_KEY configured, auto-verify
+        // (Remove this in production!)
+        if (!env.GOOGLE_PLAY_KEY) {
+          verified=true;
+        }
+
+        if (!verified) {
+          await env.DB.prepare('INSERT INTO iap_purchases (user_id,product_id,order_id,purchase_token,gems_granted,price_micros,currency,platform,status,receipt,created_at) VALUES (?,?,?,?,0,?,?,?,?,?,?)').bind(uid,product_id,order_id,purchase_token,product.price_micros,product.currency,'android','failed',b.receipt||'',now).run();
+          return Response.json({error:'verification failed',gems:user.gems},{status:402,headers:cors});
+        }
+
+        // Grant gems
+        const gemsToGrant=product.gems;
+        const newGems=user.gems+gemsToGrant;
+        await env.DB.prepare('UPDATE iap_users SET gems=?,total_purchased=total_purchased+1,updated_at=? WHERE id=?').bind(newGems,now,uid).run();
+        await env.DB.prepare('INSERT INTO iap_purchases (user_id,product_id,order_id,purchase_token,gems_granted,price_micros,currency,platform,status,receipt,created_at,verified_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(uid,product_id,order_id,purchase_token,gemsToGrant,product.price_micros,product.currency,'android','verified',b.receipt||'',now,now).run();
+
+        return Response.json({ok:true,gems:newGems,granted:gemsToGrant},{headers:cors});
+      }
+
+      // POST /iap/spend  { uid, amount, reason }
+      if (url.pathname==='/iap/spend' && request.method==='POST') {
+        let b; try{b=await request.json();}catch{return Response.json({error:'bad request'},{status:400,headers:cors});}
+        const uid=(b.uid||'').trim(), amount=parseInt(b.amount)||0, reason=(b.reason||'').slice(0,100);
+        if (!uid||amount<=0) return Response.json({error:'invalid params'},{status:400,headers:cors});
+        const user=await env.DB.prepare('SELECT id,gems FROM iap_users WHERE id=?').bind(uid).first();
+        if (!user) return Response.json({error:'user not found'},{status:404,headers:cors});
+        if (user.gems<amount) return Response.json({error:'insufficient gems',gems:user.gems},{status:402,headers:cors});
+        const newGems=user.gems-amount;
+        await env.DB.prepare('UPDATE iap_users SET gems=?,total_spent_gems=total_spent_gems+?,updated_at=? WHERE id=?').bind(newGems,amount,Date.now(),uid).run();
+        return Response.json({ok:true,gems:newGems,spent:amount},{headers:cors});
+      }
+
+      // GET /iap/history?uid=xxx
+      if (url.pathname==='/iap/history' && request.method==='GET') {
+        const uid=url.searchParams.get('uid')||'';
+        if (!uid) return Response.json({error:'uid required'},{status:400,headers:cors});
+        const {results}=await env.DB.prepare('SELECT product_id,order_id,gems_granted,status,created_at FROM iap_purchases WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(uid).all();
+        return Response.json(results||[],{headers:cors});
+      }
+
+      // GET /iap/admin  (requires ADMIN_KEY)
+      if (url.pathname==='/iap/admin' && request.method==='GET') {
+        const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+        if (!env.ADMIN_KEY||auth!==env.ADMIN_KEY) return Response.json({error:'unauthorized'},{status:401,headers:cors});
+        const days=parseInt(url.searchParams.get('days')||'7');
+        const since=Date.now()-days*86400000;
+        const totalUsers=await env.DB.prepare('SELECT COUNT(*) as c FROM iap_users').first();
+        const totalRevenue=await env.DB.prepare('SELECT SUM(price_micros) as s, COUNT(*) as c FROM iap_purchases WHERE status=? AND created_at>?').bind('verified',since).first();
+        const recentPurchases=await env.DB.prepare('SELECT p.product_id,p.gems_granted,p.price_micros,p.currency,p.status,p.created_at,u.device_id FROM iap_purchases p JOIN iap_users u ON p.user_id=u.id WHERE p.created_at>? ORDER BY p.created_at DESC LIMIT 50').bind(since).all();
+        return Response.json({
+          total_users:totalUsers?.c||0,
+          period_revenue_micros:totalRevenue?.s||0,
+          period_purchases:totalRevenue?.c||0,
+          recent:(recentPurchases.results||[]),
+        },{headers:cors});
+      }
+
+      return Response.json({error:'not found'},{status:404,headers:cors});
+    }
+
+    // ── 社群趨勢代理 (/trends/:source) ────────────────────────────
+    // 用 CF Cache API 快取 4 小時，避免重複打外部 API
+    // Reddit 被 CF Worker IP 封鎖（.json 和 .rss 都擋），改用遊戲媒體 RSS
+    const TREND_SOURCES = {
+      // HackerNews Algolia API — 完全公開，不擋 Server IP
+      '/trends/hn-gaming':  { url:'https://hn.algolia.com/api/v1/search?tags=story&query=game+gaming&hitsPerPage=30', type:'application/json;charset=utf-8' },
+      '/trends/hn-steam':   { url:'https://hn.algolia.com/api/v1/search?tags=story&query=steam+game&hitsPerPage=20', type:'application/json;charset=utf-8' },
+      '/trends/hn-indie':   { url:'https://hn.algolia.com/api/v1/search?tags=story&query=indie+game&hitsPerPage=20', type:'application/json;charset=utf-8' },
+      // 遊戲媒體 RSS（備用，可能被擋）
+      '/trends/news-rps':      { url:'https://www.rockpapershotgun.com/feed', type:'application/xml;charset=utf-8' },
+      '/trends/news-pcgamer':  { url:'https://www.pcgamer.com/rss/', type:'application/xml;charset=utf-8' },
+      // Steam — 官方公開 API，不需 key
+      '/trends/steam-featured':  { url:'https://store.steampowered.com/api/featured/', type:'application/json;charset=utf-8' },
+      '/trends/steam-top':       { url:'https://store.steampowered.com/api/featuredcategories/', type:'application/json;charset=utf-8' },
+      // SteamSpy — 專門提供遊戲數據的公開 API
+      '/trends/steamspy-top':    { url:'https://steamspy.com/api.php?request=top100in2weeks', type:'application/json;charset=utf-8' },
+      // CheapShark — 遊戲特價比價 API
+      '/trends/deals':           { url:'https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=15&sortBy=recent&pageSize=20', type:'application/json;charset=utf-8' },
+    };
+    const trendSrc = TREND_SOURCES[url.pathname];
+    if (trendSrc && request.method==='GET') {
+      const cache = caches.default;
+      const cacheKey = new Request(url.toString(), request);
+      // 先查快取
+      let cached = await cache.match(cacheKey);
+      if (cached) {
+        // 加上 CORS headers（快取的 response 可能沒有）
+        const body = await cached.text();
+        return new Response(body, { headers:{...cors,'Content-Type':trendSrc.type,'X-Cache':'HIT'} });
+      }
+      // 快取沒有 → 打外部 API
+      try {
+        const r = await fetch(trendSrc.url, { headers:{'User-Agent':'Mozilla/5.0',...(trendSrc.extraHeaders||{})} });
+        const body = await r.text();
+        const resp = new Response(body, { headers:{...cors,'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=14400','X-Cache':'MISS'} });
+        // 存入快取（4小時 = 14400秒）
+        const cacheResp = new Response(body, { headers:{'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=14400'} });
+        await cache.put(cacheKey, cacheResp);
+        return resp;
+      } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
     }
 
     return env.ASSETS.fetch(request);
