@@ -121,7 +121,8 @@
         <p id="descText">Control your black hole to swallow objects and compete!<br>
         Move mouse = Move black hole<br>
         Eating danger objects will shrink you<br>
-        Reach 1st place in 25s to advance</p>
+        Collect power-ups: 🧲Magnet 🔥Frenzy ❄️Freeze<br>
+        Reach 1st place in 20s to advance</p>
         <button class="start-btn" onclick="startGame()" id="startBtn">Start Game</button>
     </div>
 
@@ -175,7 +176,7 @@ let currentLang = 'en';
 const i18n = {
     en: {
         title: 'Black Hole Swallow',
-        desc: 'Control your black hole to swallow objects and compete!<br>Move mouse = Move black hole<br>Eating danger objects will shrink you<br>Reach 1st place in 25s to advance',
+        desc: 'Control your black hole to swallow objects and compete!<br>Move mouse = Move black hole<br>Eating danger objects will shrink you<br>Collect power-ups: 🧲Magnet 🔥Frenzy ❄️Freeze<br>Reach 1st place in 20s to advance',
         start: 'Start Game', score: 'Score', timeLeft: 'Time Left', stage: 'Stage',
         size: 'Size', eaten: 'Eaten!', nextStage: 'Next Stage ▶', tryAgain: 'Try Again',
         restart: 'Restart', you: 'You', rivalA: 'Rival A', rivalB: 'Rival B',
@@ -190,7 +191,7 @@ const i18n = {
     },
     zh: {
         title: '黑洞吞噬',
-        desc: '控制黑洞吞噬物體，與對手競爭！<br>滑鼠移動 = 黑洞移動<br>吃到危險物體會縮小<br>25秒內達到第1名才能進入下一關',
+        desc: '控制黑洞吞噬物體，與對手競爭！<br>滑鼠移動 = 黑洞移動<br>吃到危險物體會縮小<br>收集道具：🧲磁鐵 🔥狂熱 ❄️凍結<br>20秒內達到第1名才能進入下一關',
         start: '開始遊戲', score: '得分', timeLeft: '剩餘時間', stage: '關卡',
         size: '大小', eaten: '被吃掉了！', nextStage: '下一關 ▶', tryAgain: '重新挑戰',
         restart: '重新開始', you: '你', rivalA: '對手A', rivalB: '對手B',
@@ -244,23 +245,63 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// === Audio ===
-const sounds = {};
-const foodImageList = [];
-const gemImages = [];
-let bgm = null;
-let bgmPlaying = false;
+// === Audio (WebAudio API + real SFX from asset library) ===
+const AUDIO_CTX = new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS = {};
+let audioMuted = false;
+let bgmSource = null, bgmGain = null, bgmLoaded = false;
+const SFX_ROOT = '../../assets/sfx/';
+const MUS_ROOT = '../../assets/music/';
+
+const SFX_MAP = {
+  eat:       {url: SFX_ROOT+'400 Sounds Pack/Items/coin_collect.wav', maxMs:220},
+  gem:       {url: SFX_ROOT+'400 Sounds Pack/Items/coins_gather_quick.wav', maxMs:280},
+  crunch:    {url: SFX_ROOT+'GameSFX2/Impact/Retro Impact 20.wav', maxMs:200},
+  danger:    {url: SFX_ROOT+'400 Sounds Pack/Musical Effects/8_bit_negative.wav', maxMs:300},
+  pop:       {url: SFX_ROOT+'GameSFX1/Bounce Jump/Retro Jump Simple A 01.wav', maxMs:180},
+  stageclear:{url: SFX_ROOT+'400 Sounds Pack/Musical Effects/8_bit_level_complete.wav'},
+  fail:      {url: SFX_ROOT+'400 Sounds Pack/Musical Effects/8_bit_defeated.wav'},
+  warning:   {url: SFX_ROOT+'400 Sounds Pack/Musical Effects/8_bit_mystery.wav', maxMs:300},
+  combo1:    {url: SFX_ROOT+'400 Sounds Pack/Musical Effects/8_bit_chime_positive.wav', maxMs:250},
+  combo2:    {url: SFX_ROOT+'400 Sounds Pack/Musical Effects/8_bit_chime_quick.wav', maxMs:250},
+  combo3:    {url: SFX_ROOT+'GameSFX3/PowerUp/Retro PowerUP 09.wav', maxMs:280},
+  powerup:   {url: SFX_ROOT+'GameSFX3/PowerUp/Retro PowerUP 23.wav', maxMs:280},
+  countdown: {url: SFX_ROOT+'400 Sounds Pack/UI/cancel.wav', maxMs:200},
+};
+const BGM_URL = MUS_ROOT+'JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Electric Eel Fishing.ogg';
+
+function loadAudio(name, url) {
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab))
+    .then(buf=>{ AUDIO_BUFS[name]=buf; }).catch(()=>{});
+}
+function playSound(name, vol=0.7) {
+  if(audioMuted) return;
+  const buf=AUDIO_BUFS[name]; if(!buf) return;
+  if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+  const src=AUDIO_CTX.createBufferSource();
+  src.buffer=buf;
+  const gain=AUDIO_CTX.createGain(); gain.gain.value=vol;
+  src.connect(gain); gain.connect(AUDIO_CTX.destination);
+  const info=SFX_MAP[name];
+  src.start(0,0,info&&info.maxMs?info.maxMs/1000:buf.duration);
+}
+function startBGM() {
+  if(bgmLoaded||audioMuted) return; bgmLoaded=true;
+  fetch(BGM_URL).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
+    if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+    bgmSource=AUDIO_CTX.createBufferSource();
+    bgmSource.buffer=buf; bgmSource.loop=true;
+    bgmGain=AUDIO_CTX.createGain(); bgmGain.gain.value=0.22;
+    bgmSource.connect(bgmGain); bgmGain.connect(AUDIO_CTX.destination);
+    bgmSource.start();
+  }).catch(()=>{});
+}
+function stopBGM() {
+  if(bgmSource){try{bgmSource.stop()}catch{}} bgmSource=null; bgmLoaded=false;
+}
 
 function preloadAssets() {
-    const soundFiles = ['eat','gem','crunch','danger','pop','stageclear','fail','warning','combo1','combo2','combo3'];
-    for (const name of soundFiles) {
-        const audio = new Audio(`assets/sfx/${name}.wav`);
-        audio.preload = 'auto';
-        sounds[name] = audio;
-    }
-    bgm = new Audio('assets/sfx/bgm.ogg');
-    bgm.loop = true;
-    bgm.volume = 0.3;
+  for(const [name,info] of Object.entries(SFX_MAP)) loadAudio(name, info.url);
 
     const foodNames = [
         'banana','red_apple','strawberry','green_grape','watermelon1',
@@ -280,37 +321,24 @@ function preloadAssets() {
     }
 }
 
-function playSound(name, volume = 1.0) {
-    if (sounds[name]) {
-        try {
-            const s = sounds[name].cloneNode();
-            s.volume = volume;
-            s.play().catch(() => {});
-        } catch(e) {}
-    }
-}
-
-function startBGM() {
-    if (!bgmPlaying && bgm) {
-        bgm.currentTime = 0;
-        bgm.play().catch(() => {});
-        bgmPlaying = true;
-    }
-}
-
-function stopBGM() {
-    if (bgm) { bgm.pause(); bgmPlaying = false; }
-}
-
 // Game variables
 let score = 0;
-let timeLeft = 25;
+let timeLeft = 20;
 let gameRunning = true;
 let stage = 1;
 let frameCount = 0;
 let totalScore = 0;
 let lastComboTime = 0;
 let comboCount = 0;
+let shakeTimer = 0;
+let shakeIntensity = 0;
+// Power-up state
+let magnetActive = 0; // frames remaining
+let frenzyActive = 0; // double points frames
+let freezeActive = 0; // time freeze frames
+const POWERUP_TYPES = ['magnet','frenzy','freeze'];
+const POWERUP_COLORS = {magnet:'#00BFFF',frenzy:'#FFD700',freeze:'#00FFCC'};
+const POWERUP_ICONS = {magnet:'🧲',frenzy:'🔥',freeze:'❄️'};
 
 let hole = {
     x: 400, y: 300,
@@ -360,10 +388,19 @@ class GameObject {
         this.spawnTimer = 60;
         this.active = false;
 
+        this.isPowerup = false;
+        this.powerupType = null;
         const rand = Math.random();
-        if (rand < 0.10) {
+        if (rand < 0.03 && stage >= 2) {
+            // Power-up!
+            this.isPowerup = true;
+            this.isDanger = false; this.isGem = false;
+            this.powerupType = POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];
+            this.width = 28; this.height = 28;
+            this.imgIndex = -1;
+        } else if (rand < 0.13) {
             this.isDanger = true; this.isGem = false; this.imgIndex = -1;
-        } else if (rand < 0.25) {
+        } else if (rand < 0.28) {
             this.isDanger = false; this.isGem = true;
             this.width = 24 + Math.random() * 16;
             this.height = this.width;
@@ -399,7 +436,19 @@ class GameObject {
             ctx.globalAlpha = 0.4 + 0.6 * (Math.floor(this.spawnTimer / 6) % 2);
         }
 
-        if (this.isDanger) {
+        if (this.isPowerup) {
+            // Glowing orb with icon
+            const glow = ctx.createRadialGradient(0,0,0,0,0,this.width);
+            const pc = POWERUP_COLORS[this.powerupType];
+            glow.addColorStop(0, pc);
+            glow.addColorStop(0.6, pc+'88');
+            glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow;
+            ctx.beginPath(); ctx.arc(0,0,this.width,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 20px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(POWERUP_ICONS[this.powerupType],0,1);
+        } else if (this.isDanger) {
             ctx.fillStyle = '#FF0000';
             ctx.beginPath();
             for (let i = 0; i < 8; i++) {
@@ -554,12 +603,14 @@ function nextStage() {
 
 function resetStage() {
     score = 0;
-    timeLeft = 25;
+    timeLeft = 20;
     gameRunning = true;
     frameCount = 0;
     objects = [];
     floatingTexts = [];
     hole.radius = 20;
+    magnetActive = 0; frenzyActive = 0; freezeActive = 0;
+    shakeTimer = 0;
     hole.x = canvas.width / 2;
     hole.y = canvas.height / 2;
 
@@ -610,8 +661,29 @@ function gameLoop() {
     frameCount++;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Screen shake
+    if (shakeTimer > 0) { shakeTimer--; ctx.save(); ctx.translate((Math.random()-.5)*shakeIntensity,(Math.random()-.5)*shakeIntensity); }
+
     hole.x = mouseX;
     hole.y = mouseY;
+
+    // Power-up timers
+    if (magnetActive > 0) magnetActive--;
+    if (frenzyActive > 0) frenzyActive--;
+    if (freezeActive > 0) freezeActive--;
+
+    // Magnet: pull nearby objects toward hole
+    if (magnetActive > 0) {
+        objects.forEach(obj => {
+            if (!obj.active || obj.isDanger) return;
+            const dx = hole.x - obj.x, dy = hole.y - obj.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < hole.radius * 4 && dist > 0) {
+                obj.x += dx/dist * 3;
+                obj.y += dy/dist * 3;
+            }
+        });
+    }
 
     spawnObjects();
 
@@ -621,16 +693,27 @@ function gameLoop() {
             const dx = hole.x - objects[i].x;
             const dy = hole.y - objects[i].y;
             if (Math.hypot(dx, dy) < hole.radius) {
-                if (objects[i].isDanger) {
+                if (objects[i].isPowerup) {
+                    // Activate power-up
+                    playSound('powerup');
+                    const pt = objects[i].powerupType;
+                    if (pt==='magnet') magnetActive = 300; // 5 seconds
+                    else if (pt==='frenzy') frenzyActive = 240; // 4 seconds
+                    else if (pt==='freeze') freezeActive = 180; // 3 seconds
+                    floatingTexts.push(new FloatingText(objects[i].x, objects[i].y, POWERUP_ICONS[pt]+' '+{magnet:'磁鐵!',frenzy:'狂熱!',freeze:'凍結!'}[pt], POWERUP_COLORS[pt]));
+                    objects.splice(i, 1);
+                    continue;
+                } else if (objects[i].isDanger) {
                     hole.radius = Math.max(5, hole.radius - 15);
                     playSound('danger');
+                    shakeTimer = 12; shakeIntensity = 8;
                     const sw = document.getElementById('shrinkWarning');
                     sw.classList.remove('show');
                     void sw.offsetWidth;
                     sw.classList.add('show');
                 } else {
-                    const points = objects[i].isGem ? 30 : 10;
-                    // BUG FIX #4: 用整數累積避免浮點數顯示異常
+                    let points = objects[i].isGem ? 30 : 10;
+                    if (frenzyActive > 0) points *= 2;
                     score += points;
                     hole.radius = Math.min(hole.maxRadius, hole.radius + points * 0.06);
 
@@ -710,8 +793,11 @@ function gameLoop() {
     drawCursor();
     for (let ft of floatingTexts) ft.draw();
 
-    timeLeft -= 1 / 60;
-    if (timeLeft <= 5 && timeLeft > 4.95) playSound('warning', 0.5);
+    if (freezeActive <= 0) timeLeft -= 1 / 60;
+    // Countdown beeps for last 5 seconds
+    const prevSec = Math.ceil(timeLeft + 1/60);
+    const curSec = Math.ceil(timeLeft);
+    if (curSec <= 5 && curSec >= 1 && prevSec !== curSec) playSound('countdown', 0.5);
     if (timeLeft <= 0) { endStage(); return; }
 
     if (timeLeft < 5) {
@@ -719,7 +805,14 @@ function gameLoop() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // BUG FIX #4: Math.floor 避免浮點數顯示
+    // Draw active power-up indicators
+    let piY = 60;
+    if (magnetActive > 0) { ctx.fillStyle='#00BFFF'; ctx.font='bold 16px Arial'; ctx.textAlign='left'; ctx.fillText('🧲 磁鐵 '+(magnetActive/60|0)+'s',10,piY); piY+=22; }
+    if (frenzyActive > 0) { ctx.fillStyle='#FFD700'; ctx.font='bold 16px Arial'; ctx.textAlign='left'; ctx.fillText('🔥 雙倍 '+(frenzyActive/60|0)+'s',10,piY); piY+=22; }
+    if (freezeActive > 0) { ctx.fillStyle='#00FFCC'; ctx.font='bold 16px Arial'; ctx.textAlign='left'; ctx.fillText('❄️ 凍結 '+(freezeActive/60|0)+'s',10,piY); }
+
+    if (shakeTimer > 0) ctx.restore();
+
     document.getElementById('score').textContent = Math.floor(score);
     document.getElementById('timer').textContent = Math.ceil(timeLeft);
     document.getElementById('sizeDisplay').textContent = `${t('size')}: ${Math.floor(hole.radius)}`;
@@ -728,8 +821,28 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-document.addEventListener('click', () => { if (!bgmPlaying && gameRunning) startBGM(); }, { once: false });
-document.addEventListener('mousemove', () => { if (!bgmPlaying && gameRunning) startBGM(); }, { once: false });
+document.addEventListener('click', () => { if (!bgmLoaded && gameRunning) startBGM(); }, { once: false });
+document.addEventListener('mousemove', () => { if (!bgmLoaded && gameRunning) startBGM(); }, { once: false });
+
+// Touch support
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const touch = e.touches[0];
+    mouseX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    mouseY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+}, {passive:false});
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (!bgmLoaded && gameRunning) startBGM();
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const touch = e.touches[0];
+    mouseX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+    mouseY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+}, {passive:false});
 </script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
 </body>
 </html>
