@@ -198,6 +198,12 @@
     .pts-popup{position:fixed;right:16px;bottom:110px;z-index:500;background:rgba(10,6,22,.85);border:1px solid rgba(var(--accent-rgb),.5);border-radius:8px;padding:6px 16px;font-size:13px;color:var(--accent);pointer-events:none;white-space:nowrap;animation:pts-up 2.2s ease forwards}
     @keyframes pts-up{0%{opacity:0;transform:translateY(10px)}12%{opacity:1;transform:translateY(0)}75%{opacity:1}100%{opacity:0;transform:translateY(-20px)}}
 
+    /* Game card fav heart */
+    .g-card{position:relative}
+    .fav-heart{position:absolute;top:6px;right:6px;z-index:10;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.45);border:none;color:#888;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,background .15s;backdrop-filter:blur(4px);line-height:1}
+    .fav-heart:hover{background:rgba(0,0,0,.65);color:#ff6b8a}
+    .fav-heart.active{color:#ff3366;background:rgba(255,51,102,.15)}
+
     /* Auth */
     .auth-btn{background:var(--accent);color:#fff;border:none;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s}
     .auth-btn:hover{opacity:.85}
@@ -708,6 +714,37 @@
       }
     }catch{}
   })();
+
+  // Inject fav hearts on all game cards
+  function injectFavHearts(){
+    document.querySelectorAll('.g-card[href*="games/"]').forEach(card=>{
+      if(card.querySelector('.fav-heart')) return; // already has one
+      let slug=card.getAttribute('href').replace(/^games\//,'').replace(/\/$/,'').replace(/\.html$/,'');
+      if(!slug) return;
+      const btn=document.createElement('button');
+      btn.className='fav-heart';
+      btn.dataset.slug=slug;
+      btn.textContent=userFavs.has(slug)?'♥':'♡';
+      if(userFavs.has(slug)) btn.classList.add('active');
+      btn.addEventListener('click',e=>{
+        e.preventDefault();e.stopPropagation();
+        toggleFav(slug).then(()=>refreshHearts());
+      });
+      card.appendChild(btn);
+    });
+  }
+  function refreshHearts(){
+    document.querySelectorAll('.fav-heart').forEach(btn=>{
+      const s=btn.dataset.slug;
+      btn.textContent=userFavs.has(s)?'♥':'♡';
+      btn.classList.toggle('active',userFavs.has(s));
+    });
+  }
+  // Re-inject after favorites load
+  const _origLoadFav=loadFavorites;
+  loadFavorites=async function(){await _origLoadFav();injectFavHearts();};
+  // Initial inject
+  injectFavHearts();
 
   /* ── Comments ── */
   const API = 'https://capyworlds-comments.loki217089.workers.dev';
