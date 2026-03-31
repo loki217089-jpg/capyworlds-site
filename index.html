@@ -7,729 +7,443 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6193561251326215"
      crossorigin="anonymous"></script>
   <style>
-    /* ── Theme Variables ── */
     :root {
-      --bg: #0a0a12; --bg2: #12121e; --bg3: #0a0a12; --bg4: #0e0e18;
-      --bg-hero: #0f0f22;
-      --border: #1e1e3a; --border2: #181830; --border3: #1a1a34;
-      --accent: #00e5ff; --accent-rgb: 0,229,255;
-      --accent2: #ff3c8e; --accent2-rgb: 255,60,142;
-      --text: #d0d8e8; --text2: #6878a0; --text3: #4a5880; --text4: #2a3450; --text5: #b0bcd0;
-      --h1: #ffffff;
-      --cancel-bg: #1a1a2e;
-      --card-glow: rgba(0,229,255,0.08);
-      --card-glow2: rgba(255,60,142,0.08);
+      --bg:#0a0a12;--bg2:#12121e;--bg3:#0e0e1a;--bg4:#181828;
+      --sidebar-bg:#0e0e1a;--header-bg:rgba(10,10,18,.92);
+      --border:#1e1e3a;--border2:#181830;
+      --accent:#7c5cfc;--accent-rgb:124,92,252;
+      --accent2:#00e5ff;--accent2-rgb:0,229,255;
+      --pink:#ff3c8e;--pink-rgb:255,60,142;
+      --green:#3ddc84;--green-rgb:61,220,132;
+      --text:#d0d8e8;--text2:#6878a0;--text3:#4a5880;
+      --h1:#fff;--cancel-bg:#1a1a2e;--card-r:12px;
     }
-    [data-theme="light"] {
-      --bg: #f0f2f8; --bg2: #ffffff; --bg3: #eaecf4; --bg4: #f5f6fa;
-      --bg-hero: #dde0f0;
-      --border: #c8cce0; --border2: #d4d8ea; --border3: #d0d4e4;
-      --accent: #0090b0; --accent-rgb: 0,144,176;
-      --accent2: #d02070; --accent2-rgb: 208,32,112;
-      --text: #1a1e2e; --text2: #5a6080; --text3: #7a80a0; --text4: #a0a4b8; --text5: #3a3e50;
-      --h1: #0a0e1e;
-      --cancel-bg: #e0e2ea;
-      --card-glow: rgba(0,144,176,0.06);
-      --card-glow2: rgba(208,32,112,0.06);
+    [data-theme="light"]{
+      --bg:#f0f2f8;--bg2:#fff;--bg3:#eaecf4;--bg4:#f5f6fa;
+      --sidebar-bg:#f5f6fa;--header-bg:rgba(240,242,248,.92);
+      --border:#c8cce0;--border2:#d4d8ea;
+      --accent:#6040d0;--accent-rgb:96,64,208;
+      --accent2:#0090b0;--accent2-rgb:0,144,176;
+      --pink:#d02070;--pink-rgb:208,32,112;
+      --green:#1a9050;--green-rgb:26,144,80;
+      --text:#1a1e2e;--text2:#5a6080;--text3:#7a80a0;
+      --h1:#0a0e1e;--cancel-bg:#e0e2ea;
     }
-    [data-theme="pink"] {
-      --bg: #12081a; --bg2: #1e0e28; --bg3: #12081a; --bg4: #180c22;
-      --bg-hero: #200e30;
-      --border: #3a1850; --border2: #2e1240; --border3: #321446;
-      --accent: #e060a8; --accent-rgb: 224,96,168;
-      --accent2: #a040ff; --accent2-rgb: 160,64,255;
-      --text: #f0d8e8; --text2: #b068a0; --text3: #905888; --text4: #604060; --text5: #dcc0d4;
-      --h1: #fff0f8;
-      --cancel-bg: #2a1038;
-      --card-glow: rgba(224,96,168,0.08);
-      --card-glow2: rgba(160,64,255,0.08);
+    [data-theme="pink"]{
+      --bg:#12081a;--bg2:#1e0e28;--bg3:#180c22;--bg4:#220e30;
+      --sidebar-bg:#180c22;--header-bg:rgba(18,8,26,.92);
+      --border:#3a1850;--border2:#2e1240;
+      --accent:#e060a8;--accent-rgb:224,96,168;
+      --accent2:#a040ff;--accent2-rgb:160,64,255;
+      --pink:#ff60b0;--pink-rgb:255,96,176;
+      --green:#60cc88;--green-rgb:96,204,136;
+      --text:#f0d8e8;--text2:#b068a0;--text3:#905888;
+      --h1:#fff0f8;--cancel-bg:#2a1038;
     }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Header */
+    .header{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;display:flex;align-items:center;gap:16px;padding:0 20px;background:var(--header-bg);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+    .header-logo{font-size:22px;font-weight:900;color:var(--h1);text-decoration:none;white-space:nowrap;flex-shrink:0}
+    .header-logo span{color:var(--accent)}
+    .menu-btn{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px}
+    .search-box{flex:1;max-width:420px;position:relative}
+    .search-box input{width:100%;padding:8px 14px 8px 36px;background:var(--bg3);border:1px solid var(--border);border-radius:24px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+    .search-box input:focus{border-color:var(--accent)}
+    .search-box input::placeholder{color:var(--text3)}
+    .search-box .s-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3)}
+    .search-results{position:absolute;top:44px;left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-height:320px;overflow-y:auto;display:none;z-index:10;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+    .search-results.show{display:block}
+    .sr-item{display:flex;align-items:center;gap:10px;padding:10px 14px;text-decoration:none;color:var(--text);transition:background .1s}
+    .sr-item:hover{background:rgba(var(--accent-rgb),.08)}
+    .sr-item .sr-emoji{font-size:24px;width:32px;text-align:center}
+    .sr-item .sr-name{font-size:14px;font-weight:600;color:var(--h1)}
+    .sr-item .sr-cat{font-size:11px;color:var(--text3)}
+    .header-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+    .theme-dots{display:flex;gap:5px}
+    .theme-dot{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;outline:none;transition:transform .15s,border-color .15s}
+    .theme-dot:hover{transform:scale(1.15)}
+    .theme-dot.active{border-color:var(--h1)}
+    .theme-dot[data-t="dark"]{background:radial-gradient(circle at 35% 35%,#7c5cfc,#0a0a20)}
+    .theme-dot[data-t="light"]{background:radial-gradient(circle at 35% 35%,#f5f0d8,#c8b480)}
+    .theme-dot[data-t="pink"]{background:radial-gradient(circle at 35% 35%,#f880c0,#8a1858)}
 
-    body {
-      font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      transition: background 0.3s, color 0.3s;
-      overflow-x: hidden;
-    }
+    /* Sidebar */
+    .sidebar{position:fixed;top:56px;left:0;bottom:0;width:200px;background:var(--sidebar-bg);border-right:1px solid var(--border);overflow-y:auto;z-index:90;padding:12px 0;transition:transform .3s}
+    .sidebar::-webkit-scrollbar{width:4px}
+    .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+    .sb-sec{padding:10px 16px 4px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+    .sidebar a{display:flex;align-items:center;gap:10px;padding:9px 16px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:background .15s,color .15s}
+    .sidebar a:hover{background:rgba(var(--accent-rgb),.08);color:var(--accent)}
+    .sidebar a .ico{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+    .sidebar .div{height:1px;background:var(--border);margin:8px 16px}
 
-    /* ── Theme Switcher ── */
-    .theme-switcher {
-      position: fixed; top: 14px; right: 14px; z-index: 200;
-      display: flex; align-items: center; gap: 6px;
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 28px; padding: 6px 12px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.35);
-      transition: background 0.3s, border-color 0.3s;
-    }
-    .theme-switcher-label { font-size: 11px; color: var(--text3); letter-spacing: 0.5px; margin-right: 2px; user-select: none; }
-    .theme-dot {
-      width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
-      border: 2px solid transparent; outline: none;
-      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-    }
-    .theme-dot:hover { transform: scale(1.2); }
-    .theme-dot.active { border-color: var(--text); box-shadow: 0 0 0 1px var(--bg2); transform: scale(1.1); }
-    .theme-dot[data-t="dark"]  { background: radial-gradient(circle at 35% 35%, #00e5ff, #0a2040); }
-    .theme-dot[data-t="light"] { background: radial-gradient(circle at 35% 35%, #f5f0d8, #c8b480); }
-    .theme-dot[data-t="pink"]  { background: radial-gradient(circle at 35% 35%, #f880c0, #8a1858); }
+    /* Main */
+    .main{margin-left:200px;padding-top:56px;min-height:100vh}
+    .content{padding:24px 28px 0}
 
-    /* ── Scanline overlay ── */
-    body::before {
-      content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
-    }
+    /* Featured */
+    .featured{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px}
+    .feat-card{position:relative;border-radius:16px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);text-decoration:none;color:inherit;display:flex;flex-direction:column;justify-content:flex-end;min-height:200px;padding:24px;transition:transform .2s,box-shadow .2s}
+    .feat-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(var(--accent-rgb),.2)}
+    .feat-bg{position:absolute;inset:0}
+    .feat-emoji{position:absolute;top:20px;right:24px;font-size:64px;opacity:.3}
+    .feat-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:8px;background:var(--accent);color:#fff;width:fit-content;position:relative;z-index:1}
+    .feat-badge.hot{background:var(--pink)}
+    .feat-title{font-size:22px;font-weight:800;color:var(--h1);position:relative;z-index:1}
+    .feat-desc{font-size:14px;color:var(--text2);margin-top:6px;position:relative;z-index:1;line-height:1.5}
+    .feat-play{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:8px 20px;border-radius:24px;background:var(--accent);color:#fff;font-weight:700;font-size:14px;position:relative;z-index:1;width:fit-content;transition:opacity .15s}
+    .feat-play:hover{opacity:.85}
 
-    /* ── Hero ── */
-    .hero {
-      text-align: center; padding: 80px 24px 60px;
-      background: radial-gradient(ellipse at 50% 20%, var(--bg-hero) 0%, var(--bg) 70%);
-      position: relative; overflow: hidden;
-    }
-    .hero::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    }
-    /* 網格背景 */
-    .hero::before {
-      content: ''; position: absolute; inset: 0; opacity: 0.04;
-      background-image:
-        linear-gradient(var(--accent) 1px, transparent 1px),
-        linear-gradient(90deg, var(--accent) 1px, transparent 1px);
-      background-size: 60px 60px;
-      mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
-      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
-    }
+    /* Row */
+    .row-section{margin-bottom:32px}
+    .row-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+    .row-title{font-size:18px;font-weight:800;color:var(--h1)}
+    .row-badge{font-size:11px;padding:2px 10px;border-radius:12px;font-weight:700}
+    .row-badge.new{background:rgba(var(--green-rgb),.15);color:var(--green)}
+    .row-badge.hot{background:rgba(var(--pink-rgb),.15);color:var(--pink)}
+    .row-see{margin-left:auto;font-size:13px;color:var(--text2);text-decoration:none;font-weight:600;transition:color .15s}
+    .row-see:hover{color:var(--accent)}
+    .row-scroll{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+    .row-scroll::-webkit-scrollbar{height:4px}
+    .row-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
-    .hero-logo {
-      font-size: clamp(42px, 8vw, 72px); font-weight: 900; color: var(--h1);
-      letter-spacing: 6px; position: relative; z-index: 1;
-      text-shadow: 0 0 60px rgba(var(--accent-rgb), 0.3), 0 0 120px rgba(var(--accent-rgb), 0.1);
-    }
-    .hero-logo .cyber { color: var(--accent); }
-    .hero-tagline {
-      margin-top: 16px; color: var(--text2); font-size: 16px;
-      letter-spacing: 2px; position: relative; z-index: 1;
-    }
+    /* Game Card */
+    .g-card{flex-shrink:0;width:180px;scroll-snap-align:start;background:var(--bg2);border:1px solid var(--border);border-radius:var(--card-r);overflow:hidden;text-decoration:none;color:inherit;transition:transform .18s,border-color .18s,box-shadow .18s}
+    .g-card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 8px 24px rgba(var(--accent-rgb),.15)}
+    .g-card-banner{height:100px;display:flex;align-items:center;justify-content:center;font-size:48px;position:relative}
+    .g-card-body{padding:10px 12px 12px}
+    .g-card-title{font-size:14px;font-weight:700;color:var(--h1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .g-card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+    .g-card-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+    .g-card-tag{font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(var(--accent-rgb),.08);color:var(--accent);border:1px solid rgba(var(--accent-rgb),.2)}
 
-    /* 水豚吉祥物 */
-    .capy-mascot {
-      width: 160px; height: 140px; margin: 0 auto 24px; display: block;
-      filter: drop-shadow(0 0 30px rgba(var(--accent-rgb), 0.25));
-      position: relative; z-index: 1;
-    }
+    /* Grid */
+    .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+    .game-grid .g-card{width:auto}
 
-    /* ── Section ── */
-    .section { max-width: 1100px; margin: 0 auto; padding: 60px 24px 0; }
+    /* Contact */
+    .contact-section{padding:40px 28px 0;text-align:center}
+    .ct-title{font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:12px}
+    .ct-title::before,.ct-title::after{content:'';flex:1;height:1px;max-width:200px;background:linear-gradient(90deg,transparent,var(--border))}
+    .ct-title::after{background:linear-gradient(90deg,var(--border),transparent)}
+    .contact-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+    .contact-link{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:50px;padding:10px 20px;text-decoration:none;color:var(--text);font-size:14px;font-weight:600;transition:transform .2s,border-color .2s}
+    .contact-link:hover{transform:translateY(-2px);border-color:var(--accent)}
+    .contact-link svg{flex-shrink:0}
 
-    .section-header {
-      display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
-    }
-    .section-icon { font-size: 32px; line-height: 1; }
-    .section-label {
-      font-size: 14px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase;
-    }
-    .section-label.cyan { color: var(--accent); }
-    .section-label.pink { color: var(--accent2); }
-    .section-line {
-      flex: 1; height: 1px;
-      background: linear-gradient(90deg, var(--border), transparent);
-    }
-    .section-line.cyan { background: linear-gradient(90deg, rgba(var(--accent-rgb),0.4), transparent); }
-    .section-line.pink { background: linear-gradient(90deg, rgba(var(--accent2-rgb),0.4), transparent); }
+    /* Comments */
+    .cmt-sec{max-width:840px;margin:0 auto;padding:40px 28px 40px}
+    .cmt-title{font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:12px}
+    .cmt-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+    .cmt-form{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;display:flex;flex-direction:column;gap:10px}
+    .cmt-form input,.cmt-form textarea{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color .2s}
+    .cmt-form input:focus,.cmt-form textarea:focus{border-color:var(--accent)}
+    .cmt-form textarea{resize:vertical;min-height:70px}
+    .cmt-form button{align-self:flex-end;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-weight:700;font-size:14px;cursor:pointer}
+    .cmt-form button:hover{opacity:.85}
+    .cmt-form button:disabled{opacity:.5;cursor:not-allowed}
+    .cmt-list{display:flex;flex-direction:column;gap:12px}
+    .cmt-item{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px}
+    .cmt-item.reply{background:var(--bg4);margin-left:24px;margin-top:6px;border-left:2px solid rgba(var(--accent-rgb),.25)}
+    .cmt-meta{display:flex;gap:8px;align-items:center;margin-bottom:4px;flex-wrap:wrap}
+    .cmt-name{font-weight:700;color:var(--accent);font-size:14px}
+    .cmt-date{color:var(--text3);font-size:12px}
+    .cmt-content{color:var(--text);font-size:14px;line-height:1.6;white-space:pre-wrap}
+    .cmt-actions{margin-top:6px;display:flex;gap:6px}
+    .btn-reply{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text3);font-size:12px;padding:3px 10px;cursor:pointer;transition:border-color .2s,color .2s}
+    .btn-reply:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-delete{background:none;border:1px solid #5a2020;border-radius:6px;color:#7a4040;font-size:12px;padding:3px 10px;cursor:pointer}
+    .btn-delete:hover{border-color:#c45050;color:#c45050}
+    .ir-form{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+    .ir-form input,.ir-form textarea{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none}
+    .ir-form textarea{min-height:50px;resize:vertical}
+    .ir-form input:focus,.ir-form textarea:focus{border-color:var(--accent)}
+    .ir-btns{display:flex;gap:8px;justify-content:flex-end}
+    .ir-btns button{border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer}
+    .btn-cancel{background:var(--cancel-bg);color:var(--text3)}
+    .admin-bar{display:none;background:var(--bg4);border:1px solid #5a2020;border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:13px;color:#c45050;align-items:center;gap:10px}
+    .admin-bar.show{display:flex}
+    .admin-bar input{background:var(--bg3);border:1px solid #5a2020;border-radius:6px;padding:5px 10px;color:var(--text);font-size:13px;outline:none;flex:1}
+    .admin-bar button{background:#5a2020;border:none;border-radius:6px;color:var(--text);font-size:13px;padding:5px 14px;cursor:pointer}
+    .cmt-msg{color:var(--text3);font-size:13px;text-align:center;padding:16px 0}
 
-    /* ── Game Cards Grid ── */
-    .game-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-    }
+    /* Footer */
+    footer{text-align:center;padding:28px 24px;color:var(--text3);font-size:13px;border-top:1px solid var(--border2)}
+    footer span{color:var(--accent)}
+    footer a{color:var(--accent);opacity:.6;text-decoration:none;font-size:13px}
+    footer a:hover{opacity:1}
 
-    .game-card {
-      background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 16px; padding: 24px 20px; text-decoration: none; color: inherit;
-      display: flex; flex-direction: column; gap: 10px;
-      position: relative; overflow: hidden;
-      transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
-    }
-    .game-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      opacity: 0; transition: opacity 0.22s;
-    }
-    .game-card.cyan-glow::before { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
-    .game-card.pink-glow::before { background: linear-gradient(90deg, transparent, var(--accent2), transparent); }
-    .game-card:hover {
-      transform: translateY(-6px);
-    }
-    .game-card.cyan-glow:hover {
-      border-color: var(--accent);
-      box-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.15), inset 0 0 60px var(--card-glow);
-    }
-    .game-card.pink-glow:hover {
-      border-color: var(--accent2);
-      box-shadow: 0 8px 32px rgba(var(--accent2-rgb), 0.15), inset 0 0 60px var(--card-glow2);
-    }
-    .game-card:hover::before { opacity: 1; }
+    /* Danmaku */
+    #danmaku-layer{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden;z-index:200}
+    .dm{position:absolute;white-space:nowrap;font-size:17px;font-weight:700;text-shadow:0 1px 5px rgba(0,0,0,.98),0 0 12px rgba(0,0,0,.7);animation:dm-fly linear forwards}
+    @keyframes dm-fly{from{transform:translateX(105vw)}to{transform:translateX(calc(-100% - 40px))}}
+    .pts-badge{position:fixed;top:100px;right:14px;z-index:200;background:var(--bg2);border:1px solid rgba(var(--accent-rgb),.45);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--accent);display:flex;align-items:center;gap:5px;user-select:none;box-shadow:0 2px 16px rgba(0,0,0,.35);font-weight:600}
+    #dm-toggle{position:fixed;top:66px;right:14px;z-index:200;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .2s;box-shadow:0 2px 16px rgba(0,0,0,.35);display:flex;align-items:center;gap:5px;font-weight:600;letter-spacing:.3px}
+    #dm-toggle:hover{border-color:var(--accent);color:var(--accent)}
+    #dm-toggle.on{border-color:var(--accent);color:var(--accent);background:rgba(var(--accent-rgb),.12)}
+    #danmaku-bar{position:fixed;bottom:0;left:0;right:0;z-index:301;background:rgba(8,5,18,.85);backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.07);padding:8px 16px;display:none;align-items:center;gap:10px}
+    #danmaku-bar.open{display:flex}
+    .dm-pts{font-size:12px;color:var(--accent);white-space:nowrap;flex-shrink:0}
+    .dm-input{flex:1;min-width:0;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:20px;padding:7px 16px;font-size:14px;color:#fff;outline:none;transition:border-color .2s}
+    .dm-input:focus{border-color:rgba(var(--accent-rgb),.5)}
+    .dm-input::placeholder{color:rgba(255,255,255,.25)}
+    .dm-colors{display:flex;gap:7px;align-items:center;flex-shrink:0}
+    .dm-dot{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s}
+    .dm-dot.sel{border-color:#fff;transform:scale(1.25)}
+    .dm-send{background:rgba(var(--accent-rgb),.12);border:1px solid rgba(var(--accent-rgb),.4);color:var(--accent);border-radius:20px;padding:7px 20px;font-size:13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .dm-send:hover{background:rgba(var(--accent-rgb),.28)}
+    .dm-send:disabled{opacity:.4;cursor:not-allowed}
+    .pts-popup{position:fixed;right:16px;bottom:110px;z-index:500;background:rgba(10,6,22,.85);border:1px solid rgba(var(--accent-rgb),.5);border-radius:8px;padding:6px 16px;font-size:13px;color:var(--accent);pointer-events:none;white-space:nowrap;animation:pts-up 2.2s ease forwards}
+    @keyframes pts-up{0%{opacity:0;transform:translateY(10px)}12%{opacity:1;transform:translateY(0)}75%{opacity:1}100%{opacity:0;transform:translateY(-20px)}}
 
-    .card-emoji { font-size: 36px; line-height: 1; }
-    .card-title { font-size: 18px; font-weight: 800; color: var(--h1); }
-    .card-desc { font-size: 14px; color: var(--text2); line-height: 1.5; }
-    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-    .card-tag {
-      font-size: 11px; padding: 3px 10px; border-radius: 20px;
-      border: 1px solid rgba(var(--accent-rgb), 0.25); color: var(--accent);
-      background: rgba(var(--accent-rgb), 0.06);
-    }
-    .card-tag.pink {
-      border-color: rgba(var(--accent2-rgb), 0.25); color: var(--accent2);
-      background: rgba(var(--accent2-rgb), 0.06);
-    }
-    .card-play {
-      margin-top: auto; padding-top: 8px;
-      font-size: 13px; font-weight: 700; letter-spacing: 1px;
-    }
-    .card-play.cyan { color: var(--accent); }
-    .card-play.pink { color: var(--accent2); }
+    /* Overlay for mobile sidebar */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:85;display:none}
+    .overlay.show{display:block}
 
-    /* ── More Games (collapsible) ── */
-    .more-games-toggle {
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      margin: 40px auto 0; padding: 12px 28px;
-      background: var(--bg2); border: 1px solid var(--border); border-radius: 30px;
-      color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
-    }
-    .more-games-toggle:hover { border-color: var(--accent); color: var(--accent); }
-    .more-games-toggle .arrow { transition: transform 0.3s; }
-    .more-games-toggle.open .arrow { transform: rotate(180deg); }
-    .more-games-area {
-      max-height: 0; overflow: hidden; transition: max-height 0.5s ease;
-    }
-    .more-games-area.open { max-height: 2000px; }
-    .more-games-inner { padding-top: 24px; }
-
-    /* ── Contact ── */
-    .contact-section {
-      max-width: 1100px; margin: 60px auto 0; padding: 0 24px; text-align: center;
-    }
-    .contact-title {
-      font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
-      color: var(--accent); margin-bottom: 20px;
-      display: flex; align-items: center; justify-content: center; gap: 12px;
-    }
-    .contact-title::before, .contact-title::after {
-      content: ''; flex: 1; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border));
-    }
-    .contact-title::after { background: linear-gradient(90deg, var(--border), transparent); }
-    .contact-links { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
-    .contact-link {
-      display: flex; align-items: center; gap: 10px;
-      background: var(--bg2); border: 1px solid var(--border); border-radius: 50px;
-      padding: 11px 22px; text-decoration: none; color: var(--text);
-      font-size: 14px; font-weight: 600;
-      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-    }
-    .contact-link:hover {
-      transform: translateY(-3px); border-color: var(--accent);
-      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.18);
-    }
-    .contact-link svg { flex-shrink: 0; }
-
-    /* ── Comments ── */
-    .comments-section { max-width: 840px; margin: 0 auto; padding: 60px 24px 60px; }
-    .comments-title {
-      font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
-      color: var(--accent); margin-bottom: 20px;
-      display: flex; align-items: center; gap: 12px;
-    }
-    .comments-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
-    .comment-form {
-      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
-      padding: 20px; margin-bottom: 28px; display: flex; flex-direction: column; gap: 12px;
-    }
-    .comment-form input, .comment-form textarea {
-      background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
-      padding: 10px 14px; color: var(--text); font-family: inherit; font-size: 14px; outline: none;
-      transition: border-color 0.2s;
-    }
-    .comment-form input:focus, .comment-form textarea:focus { border-color: var(--accent); }
-    .comment-form textarea { resize: vertical; min-height: 80px; }
-    .comment-form button {
-      align-self: flex-end; background: var(--accent); color: var(--bg); border: none;
-      border-radius: 8px; padding: 9px 24px; font-weight: 700; font-size: 14px; cursor: pointer;
-    }
-    .comment-form button:hover { opacity: 0.85; }
-    .comment-form button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .comment-list { display: flex; flex-direction: column; gap: 14px; }
-    .comment-item { background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 14px 18px; }
-    .comment-item.reply { background: var(--bg4); border-color: var(--border3); margin-left: 28px; margin-top: 8px; border-left: 2px solid rgba(var(--accent-rgb),0.25); }
-    .comment-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
-    .comment-name { font-weight: 700; color: var(--accent); font-size: 14px; }
-    .comment-date { color: var(--text4); font-size: 12px; }
-    .comment-content { color: var(--text5); font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
-    .comment-actions { margin-top: 8px; display: flex; gap: 8px; }
-    .btn-reply { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text3); font-size: 12px; padding: 3px 10px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-    .btn-reply:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-delete { background: none; border: 1px solid #5a2020; border-radius: 6px; color: #7a4040; font-size: 12px; padding: 3px 10px; cursor: pointer; }
-    .btn-delete:hover { border-color: #c45050; color: #c45050; }
-    .inline-reply-form { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-    .inline-reply-form input, .inline-reply-form textarea {
-      background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
-      padding: 8px 12px; color: var(--text); font-family: inherit; font-size: 13px; outline: none;
-    }
-    .inline-reply-form textarea { min-height: 60px; resize: vertical; }
-    .inline-reply-form input:focus, .inline-reply-form textarea:focus { border-color: var(--accent); }
-    .inline-reply-btns { display: flex; gap: 8px; justify-content: flex-end; }
-    .inline-reply-btns button { border: none; border-radius: 6px; padding: 6px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
-    .btn-cancel { background: var(--cancel-bg); color: var(--text3); }
-    .btn-send { background: var(--accent); color: var(--bg); }
-    .admin-bar {
-      display: none; background: var(--bg4); border: 1px solid #5a2020; border-radius: 10px;
-      padding: 10px 16px; margin-bottom: 16px; font-size: 13px; color: #c45050; align-items: center; gap: 10px;
-    }
-    .admin-bar.show { display: flex; }
-    .admin-bar input { background: var(--bg3); border: 1px solid #5a2020; border-radius: 6px; padding: 5px 10px; color: var(--text); font-size: 13px; outline: none; flex: 1; }
-    .admin-bar button { background: #5a2020; border: none; border-radius: 6px; color: var(--text); font-size: 13px; padding: 5px 14px; cursor: pointer; }
-    .comment-msg { color: var(--text3); font-size: 13px; text-align: center; padding: 20px 0; }
-
-    /* ── Footer ── */
-    footer {
-      text-align: center; padding: 36px 24px; margin-top: 20px;
-      color: var(--text4); font-size: 13px;
-      border-top: 1px solid var(--border2);
-    }
-    footer span { color: var(--accent); }
-    footer a { color: var(--accent); opacity: 0.6; text-decoration: none; font-size: 13px; transition: opacity 0.2s; }
-    footer a:hover { opacity: 1; }
-
-    /* ── Danmaku & Points ── */
-    #danmaku-layer { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; overflow:hidden; z-index:200; }
-    .dm { position:absolute; white-space:nowrap; font-size:17px; font-weight:700; text-shadow: 0 1px 5px rgba(0,0,0,.98), 0 0 12px rgba(0,0,0,.7); animation: dm-fly linear forwards; }
-    @keyframes dm-fly { from { transform: translateX(105vw); } to { transform: translateX(calc(-100% - 40px)); } }
-    .pts-badge { position:fixed; top:100px; right:14px; z-index:200; background: var(--bg2); border:1px solid rgba(var(--accent-rgb),.45); border-radius:20px; padding:6px 14px; font-size:12px; color:var(--accent); display:flex; align-items:center; gap:5px; user-select:none; box-shadow: 0 2px 16px rgba(0,0,0,0.35); font-weight:600; }
-    #dm-toggle { position:fixed; top:58px; right:14px; z-index:200; background: var(--bg2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; color:var(--text2); cursor:pointer; transition:all .2s; box-shadow: 0 2px 16px rgba(0,0,0,0.35); display:flex; align-items:center; gap:5px; font-weight:600; letter-spacing:0.3px; }
-    #dm-toggle:hover { border-color:var(--accent); color:var(--accent); }
-    #dm-toggle.on { border-color:var(--accent); color:var(--accent); background:rgba(var(--accent-rgb),.12); }
-    #danmaku-bar { position:fixed; bottom:0; left:0; right:0; z-index:301; background:rgba(8,5,18,.85); backdrop-filter:blur(14px); border-top:1px solid rgba(255,255,255,.07); padding:8px 16px; display:none; align-items:center; gap:10px; }
-    #danmaku-bar.open { display:flex; }
-    .dm-pts { font-size:12px; color:var(--accent); white-space:nowrap; flex-shrink:0; }
-    .dm-input { flex:1; min-width:0; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.13); border-radius:20px; padding:7px 16px; font-size:14px; color:#fff; outline:none; transition:border-color .2s; }
-    .dm-input:focus { border-color:rgba(var(--accent-rgb),.5); }
-    .dm-input::placeholder { color:rgba(255,255,255,.25); }
-    .dm-colors { display:flex; gap:7px; align-items:center; flex-shrink:0; }
-    .dm-dot { width:18px; height:18px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:transform .15s, border-color .15s; }
-    .dm-dot.sel { border-color:#fff; transform:scale(1.25); }
-    .dm-send { background:rgba(var(--accent-rgb),.12); border:1px solid rgba(var(--accent-rgb),.4); color:var(--accent); border-radius:20px; padding:7px 20px; font-size:13px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
-    .dm-send:hover { background:rgba(var(--accent-rgb),.28); }
-    .dm-send:disabled { opacity:.4; cursor:not-allowed; }
-    .pts-popup { position:fixed; right:16px; bottom:110px; z-index:500; background:rgba(10,6,22,.85); border:1px solid rgba(var(--accent-rgb),.5); border-radius:8px; padding:6px 16px; font-size:13px; color:var(--accent); pointer-events:none; white-space:nowrap; animation: pts-up 2.2s ease forwards; }
-    @keyframes pts-up { 0%{opacity:0;transform:translateY(10px);} 12%{opacity:1;transform:translateY(0);} 75%{opacity:1;} 100%{opacity:0;transform:translateY(-20px);} }
-
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-      .hero { padding: 60px 16px 40px; }
-      .section { padding: 40px 16px 0; }
-      .game-grid { grid-template-columns: 1fr; }
+    /* Responsive */
+    @media(max-width:768px){
+      .sidebar{transform:translateX(-100%)}
+      .sidebar.open{transform:translateX(0)}
+      .main{margin-left:0}
+      .menu-btn{display:block}
+      .featured{grid-template-columns:1fr}
+      .content{padding:16px 14px 0}
+      .g-card{width:156px}
+      .game-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+      .search-box{max-width:none}
     }
   </style>
 </head>
 <body>
 
-  <!-- Theme Switcher -->
-  <div class="theme-switcher">
-    <span class="theme-switcher-label">主題</span>
-    <button class="theme-dot active" data-t="dark"  title="深色" onclick="setTheme('dark')"></button>
-    <button class="theme-dot"        data-t="light" title="明亮" onclick="setTheme('light')"></button>
-    <button class="theme-dot"        data-t="pink"  title="粉色" onclick="setTheme('pink')"></button>
-  </div>
-
-  <!-- ══ HERO ══ -->
-  <div class="hero">
-    <svg class="capy-mascot" viewBox="0 0 190 170" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="95" cy="160" rx="82" ry="14" fill="#2d4a1e" opacity="0.45"/>
-      <path d="M18 158 Q14 142 22 132 Q26 143 18 158Z" fill="#3a6424" opacity="0.65"/>
-      <path d="M32 156 Q30 144 37 136 Q39 145 32 156Z" fill="#4a7a30" opacity="0.55"/>
-      <path d="M160 156 Q163 141 156 132 Q153 143 160 156Z" fill="#3a6424" opacity="0.65"/>
-      <path d="M172 158 Q175 143 168 133 Q165 144 172 158Z" fill="#4a7a30" opacity="0.55"/>
-      <ellipse cx="95" cy="128" rx="55" ry="36" fill="#b8955a"/>
-      <ellipse cx="145" cy="133" rx="15" ry="13" fill="#a8854e"/>
-      <ellipse cx="95" cy="80" rx="42" ry="38" fill="#c09a62"/>
-      <ellipse cx="95" cy="95" rx="26" ry="18" fill="#d4aa78"/>
-      <ellipse cx="63" cy="50" rx="14" ry="16" fill="#b8955a"/>
-      <ellipse cx="127" cy="50" rx="14" ry="16" fill="#b8955a"/>
-      <ellipse cx="63" cy="50" rx="9" ry="11" fill="#d0a874"/>
-      <ellipse cx="127" cy="50" rx="9" ry="11" fill="#d0a874"/>
-      <circle cx="79" cy="72" r="9" fill="#1a0e06"/>
-      <circle cx="111" cy="72" r="9" fill="#1a0e06"/>
-      <circle cx="76" cy="69" r="3.5" fill="white"/>
-      <circle cx="108" cy="69" r="3.5" fill="white"/>
-      <circle cx="77" cy="70" r="1.5" fill="#3d2a10" opacity="0.5"/>
-      <circle cx="109" cy="70" r="1.5" fill="#3d2a10" opacity="0.5"/>
-      <ellipse cx="87" cy="95" rx="4" ry="3" fill="#7a5035"/>
-      <ellipse cx="103" cy="95" rx="4" ry="3" fill="#7a5035"/>
-      <path d="M 80 104 Q 95 115 110 104" stroke="#7a5035" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      <ellipse cx="56" cy="153" rx="20" ry="11" fill="#b8955a"/>
-      <ellipse cx="134" cy="153" rx="20" ry="11" fill="#b8955a"/>
-      <path d="M49 152 L48 160 M56 151 L55 160 M63 152 L62 160" stroke="#8a6a40" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M127 152 L126 160 M134 151 L133 160 M141 152 L140 160" stroke="#8a6a40" stroke-width="1.5" stroke-linecap="round"/>
-      <circle cx="14" cy="144" r="5" fill="#ffd700" opacity="0.85"/>
-      <circle cx="14" cy="136" r="4" fill="#ffd700" opacity="0.65"/>
-      <circle cx="20" cy="140" r="4" fill="#ffd700" opacity="0.65"/>
-      <circle cx="8"  cy="140" r="4" fill="#ffd700" opacity="0.65"/>
-      <circle cx="14" cy="144" r="2.5" fill="#e07800"/>
-      <circle cx="176" cy="142" r="5" fill="#ffb6d9" opacity="0.9"/>
-      <circle cx="176" cy="134" r="4" fill="#ffb6d9" opacity="0.65"/>
-      <circle cx="182" cy="138" r="4" fill="#ffb6d9" opacity="0.65"/>
-      <circle cx="170" cy="138" r="4" fill="#ffb6d9" opacity="0.65"/>
-      <circle cx="176" cy="142" r="2.5" fill="#d4609a"/>
-      <text x="158" y="68" font-size="12" opacity="0.6">✦</text>
-      <text x="22" y="80" font-size="10" opacity="0.5">✦</text>
-    </svg>
-    <h1 class="hero-logo">Capy<span class="cyber">Worlds</span></h1>
-    <p class="hero-tagline">遊戲創作宇宙 &nbsp;·&nbsp; Indie Game Portal</p>
-  </div>
-
-  <!-- ══ SECTION 1: 放置類 ══ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">🏰</span>
-      <span class="section-label cyan">放置類 · Idle</span>
-      <div class="section-line cyan"></div>
+  <!-- ═══ HEADER ═══ -->
+  <header class="header">
+    <button class="menu-btn" id="menuBtn">☰</button>
+    <a class="header-logo" href="/">Capy<span>Worlds</span></a>
+    <div class="search-box">
+      <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="Search games..." autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
     </div>
-    <div class="game-grid">
-      <a class="game-card cyan-glow" href="games/hero/">
-        <div class="card-emoji">⚔️</div>
-        <div class="card-title">勇者傳說</div>
-        <div class="card-desc">職業、技能、裝備、天賦、地城、Boss 全配齊的放置 RPG</div>
-        <div class="card-tags"><span class="card-tag">放置RPG</span><span class="card-tag">裝備</span><span class="card-tag">地城</span></div>
-        <div class="card-play cyan">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card cyan-glow" href="games/zombie-idle/">
-        <div class="card-emoji">🧟</div>
-        <div class="card-title">殭屍蔓延 Zombie Idle</div>
-        <div class="card-desc">點擊 + 放置雙核心、DNA Prestige 無限輪迴</div>
-        <div class="card-tags"><span class="card-tag">放置</span><span class="card-tag">點擊</span><span class="card-tag">Prestige</span></div>
-        <div class="card-play cyan">▶ 開始遊戲</div>
-      </a>
+    <div class="header-right">
+      <div class="theme-dots">
+        <button class="theme-dot active" data-t="dark" title="Dark" onclick="setTheme('dark')"></button>
+        <button class="theme-dot" data-t="light" title="Light" onclick="setTheme('light')"></button>
+        <button class="theme-dot" data-t="pink" title="Pink" onclick="setTheme('pink')"></button>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <!-- ══ SECTION 2: 動作類 ══ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">⚡</span>
-      <span class="section-label pink">動作類 · Action</span>
-      <div class="section-line pink"></div>
-    </div>
-    <div class="game-grid">
-      <a class="game-card pink-glow" href="games/capy-runner/">
-        <div class="card-emoji">🦫</div>
-        <div class="card-title">水豚跑酷</div>
-        <div class="card-desc">直式觸控跑酷，護盾 + 磁鐵道具，速度漸增</div>
-        <div class="card-tags"><span class="card-tag pink">跑酷</span><span class="card-tag pink">手機</span><span class="card-tag pink">觸控</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card pink-glow" href="games/beat-warrior/">
-        <div class="card-emoji">🎵</div>
-        <div class="card-title">節拍戰士</div>
-        <div class="card-desc">跟著節奏攻擊，Perfect / Good / Miss 判定</div>
-        <div class="card-tags"><span class="card-tag pink">節奏</span><span class="card-tag pink">RPG</span><span class="card-tag pink">動作</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card pink-glow" href="games/fps/">
-        <div class="card-emoji">🔫</div>
-        <div class="card-title">FPS 射擊</div>
-        <div class="card-desc">光線追蹤引擎、爆頭機制、3 種武器</div>
-        <div class="card-tags"><span class="card-tag pink">射擊</span><span class="card-tag pink">FPS</span><span class="card-tag pink">爆頭</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card pink-glow" href="games/zombie-spread/">
-        <div class="card-emoji">☣</div>
-        <div class="card-title">末日求生</div>
-        <div class="card-desc">PostApocalypse 波次生存射擊、3 種殭屍</div>
-        <div class="card-tags"><span class="card-tag pink">生存</span><span class="card-tag pink">射擊</span><span class="card-tag pink">波次</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card pink-glow" href="games/mosquito/">
-        <div class="card-emoji">🦟</div>
-        <div class="card-title">進化蚊子</div>
-        <div class="card-desc">吸血點擊升級、進化路線分歧、Boss 戰</div>
-        <div class="card-tags"><span class="card-tag pink">進化</span><span class="card-tag pink">Boss</span><span class="card-tag pink">點擊</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card pink-glow" href="games/virus/">
-        <div class="card-emoji">🦠</div>
-        <div class="card-title">VIRUS.EXE 系統清除</div>
-        <div class="card-desc">賽博朋克風格、多層防禦，清除入侵病毒</div>
-        <div class="card-tags"><span class="card-tag pink">防禦</span><span class="card-tag pink">賽博朋克</span><span class="card-tag pink">策略</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card pink-glow" href="games/space-roguelike/">
-        <div class="card-emoji">🚀</div>
-        <div class="card-title">虛空領航員</div>
-        <div class="card-desc">太空探索 + 採礦、燃料管理、Meta 升級</div>
-        <div class="card-tags"><span class="card-tag pink">Roguelike</span><span class="card-tag pink">太空</span><span class="card-tag pink">探索</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card pink-glow" href="games/deep-diggers.html">
-        <div class="card-emoji">⛏️</div>
-        <div class="card-title">Deep Diggers</div>
-        <div class="card-desc">500 層縱向地城、5 種生物群系、7 升級樹</div>
-        <div class="card-tags"><span class="card-tag pink">挖礦</span><span class="card-tag pink">Roguelike</span><span class="card-tag pink">升級</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-      <a class="game-card pink-glow" href="games/drift-boss/">
-        <div class="card-emoji">🏎️</div>
-        <div class="card-title">Drift Boss</div>
-        <div class="card-desc">一鍵甩尾漂移、彎道連續過關、速度感十足</div>
-        <div class="card-tags"><span class="card-tag pink">漂移</span><span class="card-tag pink">一鍵操作</span><span class="card-tag pink">駕駛</span></div>
-        <div class="card-play pink">▶ 開始遊戲</div>
-      </a>
-    </div>
-  </div>
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-sec">Browse</div>
+    <a href="games/"><span class="ico">🎮</span> All Games</a>
+    <a href="games/mobile.html"><span class="ico">📱</span> Mobile</a>
+    <a href="games/battle.html"><span class="ico">⚔️</span> Multiplayer</a>
+    <div class="div"></div>
+    <div class="sb-sec">Categories</div>
+    <a href="#idle"><span class="ico">🏰</span> Idle / RPG</a>
+    <a href="#action"><span class="ico">⚡</span> Action</a>
+    <a href="#puzzle"><span class="ico">🧩</span> Puzzle</a>
+    <a href="#simulation"><span class="ico">🌿</span> Simulation</a>
+    <a href="#multiplayer"><span class="ico">👥</span> Multiplayer</a>
+    <div class="div"></div>
+    <div class="sb-sec">More</div>
+    <a href="fortune/"><span class="ico">🌟</span> Daily Fortune</a>
+    <a href="tarot/"><span class="ico">🃏</span> Tarot</a>
+    <a href="soul-match/"><span class="ico">🌀</span> Soul Match</a>
+    <a href="games/psych-test/"><span class="ico">🔮</span> Psyche Test</a>
+    <div class="div"></div>
+    <div class="sb-sec">Tools</div>
+    <a href="rental-rights/"><span class="ico">📋</span> Rental Rights</a>
+    <a href="scam-detector/"><span class="ico">🔍</span> Scam Detector</a>
+    <a href="legislator/"><span class="ico">🗳️</span> Legislator Watch</a>
+    <div class="div"></div>
+    <a href="blog.html"><span class="ico">📝</span> Blog</a>
+    <a href="books.html"><span class="ico">📚</span> Books</a>
+    <a href="tools.html"><span class="ico">🛠</span> Tools</a>
+    <a href="about.html"><span class="ico">🦫</span> About</a>
+  </nav>
+  <div class="overlay" id="overlay"></div>
 
-  <!-- ══ SECTION 3: 劇情類 ══ -->
-  <div class="section">
-    <div class="section-header">
-      <span class="section-icon">📖</span>
-      <span class="section-label cyan">劇情類 · Story</span>
-      <div class="section-line cyan"></div>
-    </div>
-    <div class="game-grid">
-      <a class="game-card cyan-glow" href="games/village/">
-        <div class="card-emoji">🦫</div>
-        <div class="card-title">水豚小村</div>
-        <div class="card-desc">收集採集、行為日誌，經營你的水豚村落</div>
-        <div class="card-tags"><span class="card-tag">村落模擬</span><span class="card-tag">收集</span><span class="card-tag">日誌</span></div>
-        <div class="card-play cyan">▶ 開始遊戲</div>
-      </a>
-    </div>
-  </div>
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+    <div class="content">
 
-  <!-- ══ CONTACT ══ -->
-  <section class="contact-section">
-    <div class="contact-title">聯絡我 · Contact</div>
-    <div class="contact-links">
-      <a class="contact-link" href="https://www.threads.com/@lokiweiwei" target="_blank" rel="noopener">
-        <svg width="20" height="20" viewBox="0 0 192 192" fill="none"><path d="M141.537 88.988c-1.177-.546-2.377-1.07-3.595-1.573-2.033-17.419-12.713-27.373-28.715-27.471-9.593-.058-17.827 3.986-22.811 11.136l10.5 7.203c3.39-4.82 8.707-7.147 14.31-7.113 6.896.044 12.11 3.546 14.298 9.745-1.782-.315-3.619-.476-5.507-.476-11.443 0-22.505 3.963-30.45 11.158-8.62 7.793-12.823 18.714-11.49 29.95.68 5.714 2.858 10.93 6.397 15.35 4.19 5.198 10.004 8.856 17.285 10.874 3.765 1.047 7.72 1.573 11.754 1.573 8.684 0 17.207-2.35 23.886-6.657 8.68-5.607 13.797-14.194 14.403-24.189.293-4.782-.462-9.506-2.265-13.955zm-45.435 24.044c-1.082-8.895 4.658-17.14 13.457-19.977 2.818-.908 5.771-1.352 8.693-1.313.996.013 1.986.075 2.967.185.55 2.22.83 4.533.83 6.89 0 5.58-1.62 10.707-4.428 14.817-3.065 4.471-7.59 7.258-12.87 7.258-1.485 0-2.97-.205-4.404-.625-1.918-.56-3.245-1.56-4.245-3.235z" fill="currentColor"/></svg>
-        Threads @lokiweiwei
-      </a>
-      <a class="contact-link" href="https://s.team/p/qch-rmmd/pmvwgwjg" target="_blank" rel="noopener">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.003.187.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.029 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.497 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z" fill="currentColor"/></svg>
-        Steam
-      </a>
-    </div>
-  </section>
+      <!-- Featured -->
+      <div class="featured">
+        <a class="feat-card" href="games/eco-defense/">
+          <div class="feat-bg" style="background:linear-gradient(135deg,rgba(var(--green-rgb),.18),rgba(var(--accent-rgb),.12))"></div>
+          <div class="feat-emoji">🌿</div>
+          <span class="feat-badge">NEW</span>
+          <div class="feat-title">Eco Defense</div>
+          <div class="feat-desc">Plant-based tower defense with Roguelike upgrades and ecosystem synergy!</div>
+          <div class="feat-play">▶ Play Now</div>
+        </a>
+        <a class="feat-card" href="games/hero/">
+          <div class="feat-bg" style="background:linear-gradient(135deg,rgba(var(--accent-rgb),.18),rgba(var(--pink-rgb),.12))"></div>
+          <div class="feat-emoji">⚔️</div>
+          <span class="feat-badge hot">POPULAR</span>
+          <div class="feat-title">Hero Legend</div>
+          <div class="feat-desc">Full RPG: classes, skills, equipment, talents, dungeons & bosses</div>
+          <div class="feat-play">▶ Play Now</div>
+        </a>
+      </div>
 
-  <!-- ══ COMMENTS ══ -->
-  <section class="comments-section">
-    <div class="comments-title" id="commentsTitle">💬 留言區 &nbsp; Comments</div>
-    <div class="admin-bar" id="adminBar">
-      🔑 管理員密碼：
-      <input type="password" id="adminKeyInput" placeholder="輸入密碼" />
-      <button onclick="adminLogin()">登入</button>
-      <button onclick="adminLogout()" id="adminLogoutBtn" style="display:none;background:#2a1e14;color:#c45050">登出</button>
-    </div>
-    <form class="comment-form" id="commentForm">
-      <input type="text" id="commentName" placeholder="你的名稱" maxlength="50" required />
-      <textarea id="commentContent" placeholder="留下你的想法..." maxlength="500" required></textarea>
-      <button type="submit" id="submitBtn">送出留言</button>
-    </form>
-    <div class="comment-list" id="commentList">
-      <div class="comment-msg">載入中...</div>
-    </div>
-  </section>
-
-  <script>
-    const API = 'https://capyworlds-comments.loki217089.workers.dev';
-    let adminKey = sessionStorage.getItem('adminKey') || '';
-    let titleClickCount = 0, titleClickTimer = null;
-
-    // 點標題 5 下開啟管理員列
-    document.getElementById('commentsTitle').addEventListener('click', () => {
-      titleClickCount++;
-      clearTimeout(titleClickTimer);
-      titleClickTimer = setTimeout(() => { titleClickCount = 0; }, 1500);
-      if (titleClickCount >= 5) {
-        titleClickCount = 0;
-        document.getElementById('adminBar').classList.toggle('show');
-        updateAdminUI();
-      }
-    });
-
-    function adminLogin() {
-      const key = document.getElementById('adminKeyInput').value.trim();
-      if (!key) return;
-      adminKey = key;
-      sessionStorage.setItem('adminKey', key);
-      updateAdminUI();
-      loadComments();
-    }
-    function adminLogout() {
-      adminKey = '';
-      sessionStorage.removeItem('adminKey');
-      document.getElementById('adminBar').classList.remove('show');
-      updateAdminUI();
-      loadComments();
-    }
-    function updateAdminUI() {
-      const logoutBtn = document.getElementById('adminLogoutBtn');
-      const input = document.getElementById('adminKeyInput');
-      if (adminKey) {
-        logoutBtn.style.display = '';
-        input.style.display = 'none';
-        input.previousSibling && (input.previousSibling.textContent = '✅ 管理員模式');
-      } else {
-        logoutBtn.style.display = 'none';
-        input.style.display = '';
-      }
-    }
-
-    async function loadComments() {
-      const list = document.getElementById('commentList');
-      try {
-        const res = await fetch(API + '/comments');
-        const data = await res.json();
-        if (!data.length) {
-          list.innerHTML = '<div class="comment-msg">還沒有留言，來說第一句話吧！</div>';
-          return;
-        }
-        const top = data.filter(c => !c.parent_id);
-        const replies = data.filter(c => c.parent_id);
-        list.innerHTML = top.map(c => renderComment(c, replies)).join('');
-      } catch {
-        list.innerHTML = '<div class="comment-msg">留言載入失敗，請稍後再試。</div>';
-      }
-    }
-
-    function renderComment(c, replies, isReply) {
-      const myReplies = replies ? replies.filter(r => r.parent_id === c.id) : [];
-      return `
-        <div class="comment-item${isReply ? ' reply' : ''}" id="comment-${c.id}">
-          <div class="comment-meta">
-            <span class="comment-name">${esc(c.name)}</span>
-            <span class="comment-date">${formatDate(c.created_at)}</span>
-          </div>
-          <div class="comment-content">${esc(c.content)}</div>
-          <div class="comment-actions">
-            ${!isReply ? `<button class="btn-reply" onclick="toggleReply(${c.id})">↩ 回覆</button>` : ''}
-            ${adminKey ? `<button class="btn-delete" onclick="deleteComment(${c.id})">🗑 刪除</button>` : ''}
-          </div>
-          <div id="reply-form-${c.id}" style="display:none"></div>
-          ${myReplies.map(r => renderComment(r, [], true)).join('')}
+      <!-- NEW GAMES ROW -->
+      <div class="row-section">
+        <div class="row-header">
+          <div class="row-title">New Games</div>
+          <span class="row-badge new">NEW</span>
+          <a class="row-see" href="games/">See all →</a>
         </div>
-      `;
-    }
-
-    function toggleReply(parentId) {
-      const el = document.getElementById(`reply-form-${parentId}`);
-      if (el.innerHTML) { el.innerHTML = ''; el.style.display = 'none'; return; }
-      el.style.display = '';
-      el.innerHTML = `
-        <div class="inline-reply-form">
-          <input type="text" placeholder="你的名稱" maxlength="50" id="rname-${parentId}" />
-          <textarea placeholder="回覆內容..." maxlength="500" id="rcontent-${parentId}"></textarea>
-          <div class="inline-reply-btns">
-            <button class="btn-cancel" onclick="toggleReply(${parentId})">取消</button>
-            <button class="btn-send" onclick="submitReply(${parentId})">送出回覆</button>
-          </div>
+        <div class="row-scroll">
+          <a class="g-card" href="games/eco-defense/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a3a20,#0a2a18)">🌿</div><div class="g-card-body"><div class="g-card-title">Eco Defense</div><div class="g-card-sub">Tower Defense</div></div></a>
+          <a class="g-card" href="games/capy-collector/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a2a10,#2a1a08)">🦫</div><div class="g-card-body"><div class="g-card-title">Capy Collector</div><div class="g-card-sub">Gacha / Idle</div></div></a>
+          <a class="g-card" href="games/ragdoll-sports/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a2a3a,#0a1828)">⚽</div><div class="g-card-body"><div class="g-card-title">Ragdoll Sports</div><div class="g-card-sub">Physics / Sports</div></div></a>
+          <a class="g-card" href="games/drift-boss/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a1a1a,#280a0a)">🏎️</div><div class="g-card-body"><div class="g-card-title">Drift Boss</div><div class="g-card-sub">Racing / Endless</div></div></a>
+          <a class="g-card" href="games/slash-monsters/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a1a0a,#281008)">⚔️</div><div class="g-card-body"><div class="g-card-title">Slash Monsters</div><div class="g-card-sub">Action RPG</div></div></a>
+          <a class="g-card" href="games/merge-drop/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a2a3a,#0a1828)">🫧</div><div class="g-card-body"><div class="g-card-title">Merge Drop</div><div class="g-card-sub">Puzzle / Merge</div></div></a>
+          <a class="g-card" href="games/black-hole-swallow/"><div class="g-card-banner" style="background:linear-gradient(135deg,#0a0a2a,#1a0a3a)">🕳️</div><div class="g-card-body"><div class="g-card-title">Black Hole Swallow</div><div class="g-card-sub">Action / Casual</div></div></a>
         </div>
-      `;
-      document.getElementById(`rname-${parentId}`).focus();
-    }
+      </div>
 
-    async function submitReply(parentId) {
-      const name = document.getElementById(`rname-${parentId}`).value.trim();
-      const content = document.getElementById(`rcontent-${parentId}`).value.trim();
-      if (!name || !content) { alert('請填寫名稱和回覆內容'); return; }
-      const res = await fetch(API + '/comments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, content, parent_id: parentId }),
-      });
-      const data = await res.json();
-      if (data.ok) { await loadComments(); }
-      else { alert(data.error || '送出失敗'); }
-    }
+      <!-- POPULAR ROW -->
+      <div class="row-section">
+        <div class="row-header">
+          <div class="row-title">Popular</div>
+          <span class="row-badge hot">HOT</span>
+        </div>
+        <div class="row-scroll">
+          <a class="g-card" href="games/hero/"><div class="g-card-banner" style="background:linear-gradient(135deg,#2a1a3a,#1a0a28)">⚔️</div><div class="g-card-body"><div class="g-card-title">Hero Legend</div><div class="g-card-sub">Idle RPG</div></div></a>
+          <a class="g-card" href="games/space-roguelike/"><div class="g-card-banner" style="background:linear-gradient(135deg,#0a1a3a,#081028)">🚀</div><div class="g-card-body"><div class="g-card-title">Void Navigator</div><div class="g-card-sub">Space Roguelike</div></div></a>
+          <a class="g-card" href="games/virus/"><div class="g-card-banner" style="background:linear-gradient(135deg,#0a2a1a,#081a10)">🦠</div><div class="g-card-body"><div class="g-card-title">VIRUS.EXE</div><div class="g-card-sub">Cyberpunk / Strategy</div></div></a>
+          <a class="g-card" href="games/mosquito/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a2a0a,#281a08)">🦟</div><div class="g-card-body"><div class="g-card-title">Evolution Mosquito</div><div class="g-card-sub">Clicker / Evolution</div></div></a>
+          <a class="g-card" href="games/village/"><div class="g-card-banner" style="background:linear-gradient(135deg,#2a2a0a,#1a1a08)">🦫</div><div class="g-card-body"><div class="g-card-title">Capy Village</div><div class="g-card-sub">Life Simulation</div></div></a>
+          <a class="g-card" href="games/zombie-idle/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a2a1a,#0a1a0a)">🧟</div><div class="g-card-body"><div class="g-card-title">Zombie Idle</div><div class="g-card-sub">Idle / Clicker</div></div></a>
+        </div>
+      </div>
 
-    async function deleteComment(id) {
-      if (!confirm('確定要刪除這則留言嗎？')) return;
-      const res = await fetch(`${API}/comments/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${adminKey}` },
-      });
-      const data = await res.json();
-      if (data.ok) { await loadComments(); }
-      else { alert(data.error || '刪除失敗，請確認密碼正確'); }
-    }
+      <!-- IDLE / RPG -->
+      <div class="row-section" id="idle">
+        <div class="row-header">
+          <div class="row-title">🏰 Idle / RPG</div>
+        </div>
+        <div class="row-scroll">
+          <a class="g-card" href="games/hero/"><div class="g-card-banner" style="background:linear-gradient(135deg,#2a1a3a,#1a0a28)">⚔️</div><div class="g-card-body"><div class="g-card-title">Hero Legend</div><div class="g-card-tags"><span class="g-card-tag">RPG</span><span class="g-card-tag">Idle</span></div></div></a>
+          <a class="g-card" href="games/zombie-idle/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a2a1a,#0a1a0a)">🧟</div><div class="g-card-body"><div class="g-card-title">Zombie Idle</div><div class="g-card-tags"><span class="g-card-tag">Idle</span><span class="g-card-tag">Prestige</span></div></div></a>
+          <a class="g-card" href="games/sea-route/"><div class="g-card-banner" style="background:linear-gradient(135deg,#0a1a3a,#081028)">⛵</div><div class="g-card-body"><div class="g-card-title">Sea Route</div><div class="g-card-tags"><span class="g-card-tag">Idle</span><span class="g-card-tag">Explore</span></div></div></a>
+          <a class="g-card" href="games/mosquito/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a2a0a,#281a08)">🦟</div><div class="g-card-body"><div class="g-card-title">Evolution Mosquito</div><div class="g-card-tags"><span class="g-card-tag">Clicker</span><span class="g-card-tag">Boss</span></div></div></a>
+          <a class="g-card" href="games/capy-collector/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a2a10,#2a1a08)">🦫</div><div class="g-card-body"><div class="g-card-title">Capy Collector</div><div class="g-card-tags"><span class="g-card-tag">Gacha</span><span class="g-card-tag">Idle</span></div></div></a>
+          <a class="g-card" href="games/deep-diggers.html"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a2a0a,#281a08)">⛏️</div><div class="g-card-body"><div class="g-card-title">Deep Diggers</div><div class="g-card-tags"><span class="g-card-tag">Mining</span><span class="g-card-tag">Upgrade</span></div></div></a>
+        </div>
+      </div>
 
-    document.getElementById('commentForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      const name = document.getElementById('commentName').value.trim();
-      const content = document.getElementById('commentContent').value.trim();
-      btn.disabled = true; btn.textContent = '送出中...';
-      try {
-        const res = await fetch(API + '/comments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, content }),
-        });
-        const data = await res.json();
-        if (data.ok) {
-          document.getElementById('commentContent').value = '';
-          await loadComments();
-          if (typeof awardPoints === 'function') awardPoints(10, '留言獎勵 💬');
-        } else { alert(data.error || '送出失敗'); }
-      } catch { alert('網路錯誤，請稍後再試'); }
-      btn.disabled = false; btn.textContent = '送出留言';
-    });
+      <!-- ACTION -->
+      <div class="row-section" id="action">
+        <div class="row-header">
+          <div class="row-title">⚡ Action</div>
+        </div>
+        <div class="row-scroll">
+          <a class="g-card" href="games/space-roguelike/"><div class="g-card-banner" style="background:linear-gradient(135deg,#0a1a3a,#081028)">🚀</div><div class="g-card-body"><div class="g-card-title">Void Navigator</div><div class="g-card-tags"><span class="g-card-tag">Roguelike</span><span class="g-card-tag">Space</span></div></div></a>
+          <a class="g-card" href="games/virus/"><div class="g-card-banner" style="background:linear-gradient(135deg,#0a2a1a,#081a10)">🦠</div><div class="g-card-body"><div class="g-card-title">VIRUS.EXE</div><div class="g-card-tags"><span class="g-card-tag">Defense</span><span class="g-card-tag">Cyber</span></div></div></a>
+          <a class="g-card" href="games/capy-runner/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a2a0a,#281a08)">🦫</div><div class="g-card-body"><div class="g-card-title">Capy Runner</div><div class="g-card-tags"><span class="g-card-tag">Runner</span><span class="g-card-tag">Mobile</span></div></div></a>
+          <a class="g-card" href="games/beat-warrior/"><div class="g-card-banner" style="background:linear-gradient(135deg,#2a1a3a,#1a0a28)">🎵</div><div class="g-card-body"><div class="g-card-title">Beat Warrior</div><div class="g-card-tags"><span class="g-card-tag">Rhythm</span><span class="g-card-tag">RPG</span></div></div></a>
+          <a class="g-card" href="games/zombie-spread/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a2a1a,#0a1a0a)">☣️</div><div class="g-card-body"><div class="g-card-title">Last Stand</div><div class="g-card-tags"><span class="g-card-tag">Survival</span><span class="g-card-tag">Shooter</span></div></div></a>
+          <a class="g-card" href="games/slash-monsters/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a1a0a,#281008)">⚔️</div><div class="g-card-body"><div class="g-card-title">Slash Monsters</div><div class="g-card-tags"><span class="g-card-tag">Action</span><span class="g-card-tag">Touch</span></div></div></a>
+          <a class="g-card" href="games/drift-boss/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a1a1a,#280a0a)">🏎️</div><div class="g-card-body"><div class="g-card-title">Drift Boss</div><div class="g-card-tags"><span class="g-card-tag">Racing</span><span class="g-card-tag">Endless</span></div></div></a>
+          <a class="g-card" href="games/black-hole/"><div class="g-card-banner" style="background:linear-gradient(135deg,#0a0a2a,#1a0a3a)">🕳️</div><div class="g-card-body"><div class="g-card-title">Black Hole</div><div class="g-card-tags"><span class="g-card-tag">Casual</span><span class="g-card-tag">Action</span></div></div></a>
+        </div>
+      </div>
 
-    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-    function formatDate(iso) { const d = new Date(iso); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
+      <!-- PUZZLE -->
+      <div class="row-section" id="puzzle">
+        <div class="row-header">
+          <div class="row-title">🧩 Puzzle</div>
+        </div>
+        <div class="row-scroll">
+          <a class="g-card" href="games/merge-drop/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a2a3a,#0a1828)">🫧</div><div class="g-card-body"><div class="g-card-title">Merge Drop</div><div class="g-card-tags"><span class="g-card-tag">Merge</span><span class="g-card-tag">Addictive</span></div></div></a>
+          <a class="g-card" href="games/farm-match/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a2a0a,#281a08)">💎</div><div class="g-card-body"><div class="g-card-title">Farm Match</div><div class="g-card-tags"><span class="g-card-tag">Match 3</span><span class="g-card-tag">Gacha</span></div></div></a>
+        </div>
+      </div>
 
-    if (adminKey) updateAdminUI();
-    loadComments();
+      <!-- SIMULATION -->
+      <div class="row-section" id="simulation">
+        <div class="row-header">
+          <div class="row-title">🌿 Simulation</div>
+        </div>
+        <div class="row-scroll">
+          <a class="g-card" href="games/village/"><div class="g-card-banner" style="background:linear-gradient(135deg,#2a2a0a,#1a1a08)">🦫</div><div class="g-card-body"><div class="g-card-title">Capy Village</div><div class="g-card-tags"><span class="g-card-tag">Village</span><span class="g-card-tag">Story</span></div></div></a>
+          <a class="g-card" href="games/sunnyside-farm/"><div class="g-card-banner" style="background:linear-gradient(135deg,#2a3a1a,#1a2a0a)">🌾</div><div class="g-card-body"><div class="g-card-title">Sunnyside Farm</div><div class="g-card-tags"><span class="g-card-tag">Farm</span><span class="g-card-tag">Eco</span></div></div></a>
+          <a class="g-card" href="games/eco-defense/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a3a20,#0a2a18)">🌿</div><div class="g-card-body"><div class="g-card-title">Eco Defense</div><div class="g-card-tags"><span class="g-card-tag">TD</span><span class="g-card-tag">Roguelike</span></div></div></a>
+        </div>
+      </div>
 
-    // ── More Games Toggle ──
-    function toggleMoreGames(btn) {
-      const area = document.getElementById('moreGamesArea');
-      btn.classList.toggle('open');
-      area.classList.toggle('open');
-    }
+      <!-- MULTIPLAYER -->
+      <div class="row-section" id="multiplayer">
+        <div class="row-header">
+          <div class="row-title">👥 Multiplayer</div>
+        </div>
+        <div class="row-scroll">
+          <a class="g-card" href="games/chat-room/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a1a3a,#0a0a28)">💬</div><div class="g-card-body"><div class="g-card-title">Chat Room</div><div class="g-card-tags"><span class="g-card-tag">Social</span><span class="g-card-tag">1v1</span></div></div></a>
+          <a class="g-card" href="games/capy-tug/"><div class="g-card-banner" style="background:linear-gradient(135deg,#2a2a0a,#1a1a08)">🦫</div><div class="g-card-body"><div class="g-card-title">Capy Tug</div><div class="g-card-tags"><span class="g-card-tag">PvP</span><span class="g-card-tag">Tug</span></div></div></a>
+          <a class="g-card" href="games/capy-rps/"><div class="g-card-banner" style="background:linear-gradient(135deg,#2a1a2a,#1a0a1a)">✂️</div><div class="g-card-body"><div class="g-card-title">Capy RPS</div><div class="g-card-tags"><span class="g-card-tag">PvP</span><span class="g-card-tag">RPS</span></div></div></a>
+          <a class="g-card" href="games/capy-quiz/"><div class="g-card-banner" style="background:linear-gradient(135deg,#0a1a3a,#081028)">📚</div><div class="g-card-body"><div class="g-card-title">Capy Quiz</div><div class="g-card-tags"><span class="g-card-tag">PvP</span><span class="g-card-tag">Trivia</span></div></div></a>
+          <a class="g-card" href="games/ragdoll-sports/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a2a3a,#0a1828)">⚽</div><div class="g-card-body"><div class="g-card-title">Ragdoll Sports</div><div class="g-card-tags"><span class="g-card-tag">Physics</span><span class="g-card-tag">Sports</span></div></div></a>
+        </div>
+      </div>
 
-    // ── Theme Switcher ──
-    (function() {
-      const saved = localStorage.getItem('capyTheme') || 'dark';
-      function setTheme(t) {
-        if (t === 'dark') document.documentElement.removeAttribute('data-theme');
-        else document.documentElement.setAttribute('data-theme', t);
-        localStorage.setItem('capyTheme', t);
-        document.querySelectorAll('.theme-dot').forEach(d => {
-          d.classList.toggle('active', d.dataset.t === t);
-        });
-      }
-      window.setTheme = setTheme;
-      setTheme(saved);
-    })();
-  </script>
+    </div><!-- /content -->
 
-  <footer>
-    © 2025 <span>CapyWorlds</span> &nbsp;·&nbsp; Made with 🦫 &amp; ❤️
-    &nbsp;·&nbsp; <a href="/privacy.html">隱私權政策</a>
-  </footer>
+    <!-- Contact -->
+    <section class="contact-section">
+      <div class="ct-title">Contact</div>
+      <div class="contact-links">
+        <a class="contact-link" href="https://www.threads.com/@lokiweiwei" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 192 192" fill="currentColor"><path d="M141.537 88.988c-1.177-.546-2.377-1.07-3.595-1.573-2.033-17.419-12.713-27.373-28.715-27.471-9.593-.058-17.827 3.986-22.811 11.136l10.5 7.203c3.39-4.82 8.707-7.147 14.31-7.113 6.896.044 12.11 3.546 14.298 9.745-1.782-.315-3.619-.476-5.507-.476-11.443 0-22.505 3.963-30.45 11.158-8.62 7.793-12.823 18.714-11.49 29.95.68 5.714 2.858 10.93 6.397 15.35 4.19 5.198 10.004 8.856 17.285 10.874 3.765 1.047 7.72 1.573 11.754 1.573 8.684 0 17.207-2.35 23.886-6.657 8.68-5.607 13.797-14.194 14.403-24.189.293-4.782-.462-9.506-2.265-13.955zm-45.435 24.044c-1.082-8.895 4.658-17.14 13.457-19.977 2.818-.908 5.771-1.352 8.693-1.313.996.013 1.986.075 2.967.185.55 2.22.83 4.533.83 6.89 0 5.58-1.62 10.707-4.428 14.817-3.065 4.471-7.59 7.258-12.87 7.258-1.485 0-2.97-.205-4.404-.625-1.918-.56-3.245-1.56-4.245-3.235z"/></svg>
+          Threads
+        </a>
+        <a class="contact-link" href="https://s.team/p/qch-rmmd/pmvwgwjg" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.003.187.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.029 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0z"/></svg>
+          Steam
+        </a>
+      </div>
+    </section>
 
-  <!-- ── Danmaku Layer ── -->
+    <!-- Comments -->
+    <section class="cmt-sec">
+      <div class="cmt-title" id="cmtTitle">💬 Comments</div>
+      <div class="admin-bar" id="adminBar">
+        🔑 Admin:
+        <input type="password" id="adminKeyInput" placeholder="Password" />
+        <button onclick="adminLogin()">Login</button>
+        <button onclick="adminLogout()" id="adminLogoutBtn" style="display:none;background:#2a1e14;color:#c45050">Logout</button>
+      </div>
+      <form class="cmt-form" id="cmtForm">
+        <input type="text" id="cmtName" placeholder="Your name" maxlength="50" required />
+        <textarea id="cmtContent" placeholder="Leave a comment..." maxlength="500" required></textarea>
+        <button type="submit" id="submitBtn">Submit</button>
+      </form>
+      <div class="cmt-list" id="cmtList">
+        <div class="cmt-msg">Loading...</div>
+      </div>
+    </section>
+
+    <footer>
+      © 2025 <span>CapyWorlds</span> · Made with 🦫 & ❤️
+      · <a href="/privacy.html">Privacy Policy</a>
+    </footer>
+  </div><!-- /main -->
+
+  <!-- Danmaku -->
   <div id="danmaku-layer"></div>
-  <div class="pts-badge" title="積分：玩遊戲 +5 / 留言 +10 / 發彈幕 -8">✦ <span class="pts-val">0</span> 積分</div>
-  <button id="dm-toggle" title="開啟彈幕">💬 彈幕</button>
+  <div class="pts-badge" title="Points: Play game +5 / Comment +10 / Danmaku -8">✦ <span class="pts-val">0</span> pts</div>
+  <button id="dm-toggle" title="Toggle danmaku">💬 Danmaku</button>
   <div id="danmaku-bar">
-    <span class="dm-pts">✦ <span class="pts-val">0</span> 積分</span>
-    <input class="dm-input" id="dm-input" placeholder="輸入彈幕（-8 積分）" maxlength="30" autocomplete="off">
+    <span class="dm-pts">✦ <span class="pts-val">0</span> pts</span>
+    <input class="dm-input" id="dm-input" placeholder="Send danmaku (-8 pts)" maxlength="30" autocomplete="off">
     <div class="dm-colors">
       <div class="dm-dot sel" data-c="#ffffff" style="background:#fff"></div>
       <div class="dm-dot" data-c="#ffd700" style="background:#ffd700"></div>
@@ -738,101 +452,213 @@
       <div class="dm-dot" data-c="#7fff00" style="background:#7fff00"></div>
       <div class="dm-dot" data-c="#ff6347" style="background:#ff6347"></div>
     </div>
-    <button class="dm-send" id="dm-send">發送</button>
+    <button class="dm-send" id="dm-send">Send</button>
   </div>
 
   <script>
-  // ── Points System ──
-  const PTS_KEY = 'capyPoints';
-  const DM_COST = 8;
-  function getPoints() { return parseInt(localStorage.getItem(PTS_KEY) || '0'); }
-  function setPoints(n) {
-    const v = Math.max(0, n);
-    localStorage.setItem(PTS_KEY, v);
-    document.querySelectorAll('.pts-val').forEach(el => el.textContent = v);
-    return v;
-  }
-  function awardPoints(n, label) { setPoints(getPoints() + n); showPtsPopup('+' + n + ' ' + label); }
-  function spendPoints(n) { if (getPoints() < n) return false; setPoints(getPoints() - n); return true; }
-  function showPtsPopup(msg) {
-    const el = document.createElement('div');
-    el.className = 'pts-popup'; el.textContent = msg;
-    document.body.appendChild(el);
-    el.addEventListener('animationend', () => el.remove());
-  }
-  (function checkGameReward() {
-    if (localStorage.getItem('capyPendingReward') === 'game') {
-      localStorage.removeItem('capyPendingReward');
-      setTimeout(() => awardPoints(5, '玩遊戲 🎮'), 1200);
-    }
-  })();
-  setPoints(getPoints());
+  /* ── Search Data ── */
+  const GAMES = [
+    {name:'Hero Legend',emoji:'⚔️',href:'games/hero/',cat:'Idle RPG'},
+    {name:'Zombie Idle',emoji:'🧟',href:'games/zombie-idle/',cat:'Idle / Clicker'},
+    {name:'Sea Route',emoji:'⛵',href:'games/sea-route/',cat:'Idle / Explore'},
+    {name:'Evolution Mosquito',emoji:'🦟',href:'games/mosquito/',cat:'Clicker / Evolution'},
+    {name:'Capy Collector',emoji:'🦫',href:'games/capy-collector/',cat:'Gacha / Idle'},
+    {name:'Deep Diggers',emoji:'⛏️',href:'games/deep-diggers.html',cat:'Mining / Upgrade'},
+    {name:'Void Navigator',emoji:'🚀',href:'games/space-roguelike/',cat:'Space Roguelike'},
+    {name:'VIRUS.EXE',emoji:'🦠',href:'games/virus/',cat:'Cyberpunk / Strategy'},
+    {name:'Capy Runner',emoji:'🦫',href:'games/capy-runner/',cat:'Runner / Mobile'},
+    {name:'Beat Warrior',emoji:'🎵',href:'games/beat-warrior/',cat:'Rhythm RPG'},
+    {name:'Last Stand',emoji:'☣️',href:'games/zombie-spread/',cat:'Survival Shooter'},
+    {name:'Slash Monsters',emoji:'⚔️',href:'games/slash-monsters/',cat:'Action RPG'},
+    {name:'Drift Boss',emoji:'🏎️',href:'games/drift-boss/',cat:'Racing / Endless'},
+    {name:'Black Hole',emoji:'🕳️',href:'games/black-hole/',cat:'Casual Action'},
+    {name:'Black Hole Swallow',emoji:'🕳️',href:'games/black-hole-swallow/',cat:'Action / Casual'},
+    {name:'Merge Drop',emoji:'🫧',href:'games/merge-drop/',cat:'Puzzle / Merge'},
+    {name:'Farm Match',emoji:'💎',href:'games/farm-match/',cat:'Match 3 / Gacha'},
+    {name:'Capy Village',emoji:'🦫',href:'games/village/',cat:'Life Simulation'},
+    {name:'Sunnyside Farm',emoji:'🌾',href:'games/sunnyside-farm/',cat:'Farm / Eco'},
+    {name:'Eco Defense',emoji:'🌿',href:'games/eco-defense/',cat:'Tower Defense'},
+    {name:'Chat Room',emoji:'💬',href:'games/chat-room/',cat:'Social / 1v1'},
+    {name:'Capy Tug',emoji:'🦫',href:'games/capy-tug/',cat:'PvP / Multiplayer'},
+    {name:'Capy RPS',emoji:'✂️',href:'games/capy-rps/',cat:'PvP / Multiplayer'},
+    {name:'Capy Quiz',emoji:'📚',href:'games/capy-quiz/',cat:'PvP / Trivia'},
+    {name:'Ragdoll Sports',emoji:'⚽',href:'games/ragdoll-sports/',cat:'Physics / Sports'},
+    {name:'Psyche Test',emoji:'🔮',href:'games/psych-test/',cat:'Personality Test'},
+    {name:'Daily Fortune',emoji:'🌟',href:'fortune/',cat:'Fun'},
+    {name:'Tarot',emoji:'🃏',href:'tarot/',cat:'Fun'},
+    {name:'Soul Match',emoji:'🌀',href:'soul-match/',cat:'Fun'},
+  ];
 
-  // ── Danmaku System ──
-  let dmOn = false, dmLastId = 0, dmPollTimer = null, dmColor = '#ffffff';
-  const dmLayer  = document.getElementById('danmaku-layer');
-  const dmToggle = document.getElementById('dm-toggle');
-  const dmBar    = document.getElementById('danmaku-bar');
-  const dmInput  = document.getElementById('dm-input');
-  const dmSend   = document.getElementById('dm-send');
-
-  dmToggle.addEventListener('click', () => {
-    dmOn = !dmOn;
-    dmToggle.classList.toggle('on', dmOn);
-    dmToggle.textContent = dmOn ? '💬 彈幕 ON' : '💬 彈幕';
-    dmBar.classList.toggle('open', dmOn);
-    if (dmOn) { fetchDanmaku(true); dmPollTimer = setInterval(() => fetchDanmaku(false), 15000); }
-    else { clearInterval(dmPollTimer); dmLayer.innerHTML = ''; }
+  /* ── Search ── */
+  const searchInput = document.getElementById('searchInput');
+  const searchResults = document.getElementById('searchResults');
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    if (!q) { searchResults.classList.remove('show'); return; }
+    const matches = GAMES.filter(g => g.name.toLowerCase().includes(q) || g.cat.toLowerCase().includes(q)).slice(0, 8);
+    if (!matches.length) { searchResults.innerHTML = '<div style="padding:14px;color:var(--text3);font-size:13px;text-align:center">No results</div>'; }
+    else { searchResults.innerHTML = matches.map(g => `<a class="sr-item" href="${g.href}"><span class="sr-emoji">${g.emoji}</span><div><div class="sr-name">${g.name}</div><div class="sr-cat">${g.cat}</div></div></a>`).join(''); }
+    searchResults.classList.add('show');
   });
+  document.addEventListener('click', e => { if (!e.target.closest('.search-box')) searchResults.classList.remove('show'); });
 
-  document.querySelectorAll('.dm-dot').forEach(dot => {
-    dot.addEventListener('click', () => {
-      document.querySelectorAll('.dm-dot').forEach(d => d.classList.remove('sel'));
-      dot.classList.add('sel'); dmColor = dot.dataset.c;
+  /* ── Sidebar Toggle (mobile) ── */
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  document.getElementById('menuBtn').addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+  /* Sidebar smooth scroll for anchor links */
+  sidebar.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const el = document.querySelector(a.getAttribute('href'));
+      if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
     });
   });
 
-  async function fetchDanmaku(initial) {
-    try {
-      const res  = await fetch(API + '/danmaku?since=' + (initial ? 0 : dmLastId));
-      const list = await res.json();
-      if (!list.length) return;
-      dmLastId = Math.max(dmLastId, ...list.map(d => d.id));
-      const show = initial ? list.slice(-12) : list;
-      show.forEach((d, i) => setTimeout(() => dmShow(d.text, d.color), i * 700));
-    } catch {}
-  }
+  /* ── Theme ── */
+  (function(){
+    const saved = localStorage.getItem('capyTheme') || 'dark';
+    function setTheme(t) {
+      if (t === 'dark') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('capyTheme', t);
+      document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === t));
+    }
+    window.setTheme = setTheme;
+    setTheme(saved);
+  })();
 
-  function dmShow(text, color) {
-    if (!dmOn) return;
-    const el = document.createElement('div');
-    el.className = 'dm'; el.textContent = text; el.style.color = color || '#fff';
-    el.style.top = (5 + Math.random() * 83) + 'vh';
-    el.style.animationDuration = (9 + Math.random() * 5).toFixed(1) + 's';
-    dmLayer.appendChild(el);
-    el.addEventListener('animationend', () => el.remove());
+  /* ── Comments ── */
+  const API = 'https://capyworlds-comments.loki217089.workers.dev';
+  let adminKey = sessionStorage.getItem('adminKey') || '';
+  let titleClickCount = 0, titleClickTimer = null;
+  document.getElementById('cmtTitle').addEventListener('click', () => {
+    titleClickCount++;
+    clearTimeout(titleClickTimer);
+    titleClickTimer = setTimeout(() => { titleClickCount = 0; }, 1500);
+    if (titleClickCount >= 5) {
+      titleClickCount = 0;
+      document.getElementById('adminBar').classList.toggle('show');
+      updateAdminUI();
+    }
+  });
+  function adminLogin() {
+    const key = document.getElementById('adminKeyInput').value.trim();
+    if (!key) return;
+    adminKey = key; sessionStorage.setItem('adminKey', key);
+    updateAdminUI(); loadComments();
   }
-
-  async function sendDanmaku() {
-    const txt = dmInput.value.trim();
-    if (!txt) return;
-    if (!spendPoints(DM_COST)) { showPtsPopup('積分不足！需要 ' + DM_COST); return; }
-    dmSend.disabled = true;
+  function adminLogout() {
+    adminKey = ''; sessionStorage.removeItem('adminKey');
+    document.getElementById('adminBar').classList.remove('show');
+    updateAdminUI(); loadComments();
+  }
+  function updateAdminUI() {
+    const lb = document.getElementById('adminLogoutBtn');
+    const inp = document.getElementById('adminKeyInput');
+    if (adminKey) { lb.style.display=''; inp.style.display='none'; }
+    else { lb.style.display='none'; inp.style.display=''; }
+  }
+  async function loadComments() {
+    const list = document.getElementById('cmtList');
     try {
-      const res = await fetch(API + '/danmaku', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: txt, color: dmColor }),
-      });
+      const res = await fetch(API + '/comments');
       const data = await res.json();
-      if (data.ok) { dmInput.value = ''; dmShow(txt, dmColor); }
-      else { awardPoints(DM_COST, '退還'); alert(data.error || '發送失敗'); }
-    } catch { awardPoints(DM_COST, '退還'); alert('網路錯誤'); }
-    dmSend.disabled = false;
+      if (!data.length) { list.innerHTML = '<div class="cmt-msg">No comments yet. Be the first!</div>'; return; }
+      const top = data.filter(c => !c.parent_id);
+      const replies = data.filter(c => c.parent_id);
+      list.innerHTML = top.map(c => renderCmt(c, replies)).join('');
+    } catch { list.innerHTML = '<div class="cmt-msg">Failed to load comments.</div>'; }
   }
+  function renderCmt(c, replies, isReply) {
+    const myR = replies ? replies.filter(r => r.parent_id === c.id) : [];
+    return `<div class="cmt-item${isReply?' reply':''}" id="cmt-${c.id}">
+      <div class="cmt-meta"><span class="cmt-name">${esc(c.name)}</span><span class="cmt-date">${fmtDate(c.created_at)}</span></div>
+      <div class="cmt-content">${esc(c.content)}</div>
+      <div class="cmt-actions">${!isReply?`<button class="btn-reply" onclick="toggleReply(${c.id})">↩ Reply</button>`:''}${adminKey?`<button class="btn-delete" onclick="delCmt(${c.id})">🗑 Delete</button>`:''}</div>
+      <div id="rf-${c.id}" style="display:none"></div>
+      ${myR.map(r=>renderCmt(r,[],true)).join('')}
+    </div>`;
+  }
+  function toggleReply(pid) {
+    const el = document.getElementById(`rf-${pid}`);
+    if (el.innerHTML) { el.innerHTML=''; el.style.display='none'; return; }
+    el.style.display='';
+    el.innerHTML = `<div class="ir-form"><input type="text" placeholder="Your name" maxlength="50" id="rn-${pid}" /><textarea placeholder="Reply..." maxlength="500" id="rc-${pid}"></textarea><div class="ir-btns"><button class="btn-cancel" onclick="toggleReply(${pid})">Cancel</button><button class="btn-send" onclick="submitReply(${pid})">Reply</button></div></div>`;
+    document.getElementById(`rn-${pid}`).focus();
+  }
+  async function submitReply(pid) {
+    const name = document.getElementById(`rn-${pid}`).value.trim();
+    const content = document.getElementById(`rc-${pid}`).value.trim();
+    if (!name||!content) return;
+    const res = await fetch(API+'/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,content,parent_id:pid})});
+    const data = await res.json();
+    if (data.ok) await loadComments();
+  }
+  async function delCmt(id) {
+    if (!confirm('Delete this comment?')) return;
+    const res = await fetch(`${API}/comments/${id}`,{method:'DELETE',headers:{'Authorization':`Bearer ${adminKey}`}});
+    const data = await res.json();
+    if (data.ok) await loadComments(); else alert(data.error||'Failed');
+  }
+  document.getElementById('cmtForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const name = document.getElementById('cmtName').value.trim();
+    const content = document.getElementById('cmtContent').value.trim();
+    btn.disabled=true; btn.textContent='Sending...';
+    try {
+      const res = await fetch(API+'/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,content})});
+      const data = await res.json();
+      if (data.ok) { document.getElementById('cmtContent').value=''; await loadComments(); if(typeof awardPoints==='function') awardPoints(10,'Comment 💬'); }
+      else alert(data.error||'Failed');
+    } catch { alert('Network error'); }
+    btn.disabled=false; btn.textContent='Submit';
+  });
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  function fmtDate(iso){const d=new Date(iso);return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`}
+  if(adminKey)updateAdminUI();
+  loadComments();
+  </script>
 
-  dmSend.addEventListener('click', sendDanmaku);
-  dmInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendDanmaku(); });
+  <script>
+  /* ── Points ── */
+  const PTS_KEY='capyPoints', DM_COST=8;
+  function getPoints(){return parseInt(localStorage.getItem(PTS_KEY)||'0')}
+  function setPoints(n){const v=Math.max(0,n);localStorage.setItem(PTS_KEY,v);document.querySelectorAll('.pts-val').forEach(el=>el.textContent=v);return v}
+  function awardPoints(n,label){setPoints(getPoints()+n);showPtsPopup('+'+n+' '+label)}
+  function spendPoints(n){if(getPoints()<n)return false;setPoints(getPoints()-n);return true}
+  function showPtsPopup(msg){const el=document.createElement('div');el.className='pts-popup';el.textContent=msg;document.body.appendChild(el);el.addEventListener('animationend',()=>el.remove())}
+  (function(){if(localStorage.getItem('capyPendingReward')==='game'){localStorage.removeItem('capyPendingReward');setTimeout(()=>awardPoints(5,'Play game 🎮'),1200)}})();
+  setPoints(getPoints());
+
+  /* ── Danmaku ── */
+  let dmOn=false,dmLastId=0,dmPollTimer=null,dmColor='#ffffff';
+  const dmLayer=document.getElementById('danmaku-layer'),dmToggle=document.getElementById('dm-toggle'),dmBar=document.getElementById('danmaku-bar'),dmInput=document.getElementById('dm-input'),dmSend=document.getElementById('dm-send');
+  dmToggle.addEventListener('click',()=>{
+    dmOn=!dmOn;dmToggle.classList.toggle('on',dmOn);dmToggle.textContent=dmOn?'💬 ON':'💬 Danmaku';dmBar.classList.toggle('open',dmOn);
+    if(dmOn){fetchDm(true);dmPollTimer=setInterval(()=>fetchDm(false),15000)}else{clearInterval(dmPollTimer);dmLayer.innerHTML=''}
+  });
+  document.querySelectorAll('.dm-dot').forEach(dot=>{dot.addEventListener('click',()=>{document.querySelectorAll('.dm-dot').forEach(d=>d.classList.remove('sel'));dot.classList.add('sel');dmColor=dot.dataset.c})});
+  async function fetchDm(init){try{const res=await fetch(API+'/danmaku?since='+(init?0:dmLastId));const list=await res.json();if(!list.length)return;dmLastId=Math.max(dmLastId,...list.map(d=>d.id));const show=init?list.slice(-12):list;show.forEach((d,i)=>setTimeout(()=>dmShow(d.text,d.color),i*700))}catch{}}
+  function dmShow(text,color){if(!dmOn)return;const el=document.createElement('div');el.className='dm';el.textContent=text;el.style.color=color||'#fff';el.style.top=(5+Math.random()*83)+'vh';el.style.animationDuration=(9+Math.random()*5).toFixed(1)+'s';dmLayer.appendChild(el);el.addEventListener('animationend',()=>el.remove())}
+  async function sendDm(){const txt=dmInput.value.trim();if(!txt)return;if(!spendPoints(DM_COST)){showPtsPopup('Not enough pts!');return}dmSend.disabled=true;try{const res=await fetch(API+'/danmaku',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:txt,color:dmColor})});const data=await res.json();if(data.ok){dmInput.value='';dmShow(txt,dmColor)}else{awardPoints(DM_COST,'Refund');alert(data.error||'Failed')}}catch{awardPoints(DM_COST,'Refund');alert('Network error')}dmSend.disabled=false}
+  dmSend.addEventListener('click',sendDm);
+  dmInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendDm()});
+  </script>
+
+  <!-- Analytics -->
+  <script>
+  (function(){try{const s=sessionStorage,k='capySid';let sid=s.getItem(k);if(!sid){sid=Math.random().toString(36).slice(2)+Date.now().toString(36);s.setItem(k,sid)}fetch('https://capyworlds-comments.loki217089.workers.dev/t',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,ref:document.referrer,ua:navigator.userAgent,sw:screen.width,sh:screen.height,lang:navigator.language,sid:sid}),keepalive:true}).catch(()=>{})}catch{}})();
   </script>
 
 </body>
