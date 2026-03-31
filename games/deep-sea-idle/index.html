@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深海秘境 - 海洋放置探索</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #050d1a; color: #c8e6f8; font-family: 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+/* ── 版面 ── */
+#app { display: grid; grid-template-columns: 280px 1fr 300px; grid-template-rows: 56px 1fr 80px; height: 100vh; gap: 0; }
+#topbar { grid-column: 1/-1; background: #081628; border-bottom: 1px solid #1a3a5c; display: flex; align-items: center; padding: 0 20px; gap: 24px; z-index: 10; }
+#left-panel { background: #06111f; border-right: 1px solid #122a44; overflow-y: auto; padding: 12px; }
+#center-panel { position: relative; overflow: hidden; }
+#right-panel { background: #06111f; border-left: 1px solid #122a44; overflow-y: auto; padding: 12px; }
+#bottom-bar { grid-column: 1/-1; background: #081628; border-top: 1px solid #1a3a5c; display: flex; align-items: center; gap: 12px; padding: 0 16px; }
+
+/* ── 海洋動畫背景 ── */
+#ocean-bg { width: 100%; height: 100%; background: linear-gradient(180deg, #0a1e36 0%, #071226 40%, #040c1a 100%); position: relative; overflow: hidden; }
+canvas#ocean-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+/* ── 頂部資源欄 ── */
+.res-item { display: flex; align-items: center; gap: 6px; font-size: 15px; white-space: nowrap; }
+.res-icon { font-size: 18px; }
+.res-val { color: #7ed4f0; font-weight: 600; }
+.res-rate { color: #4a9ab8; font-size: 12px; }
+#game-title { font-size: 20px; font-weight: 700; color: #40b8e8; letter-spacing: 2px; margin-right: 12px; }
+
+/* ── 面板標題 ── */
+.panel-title { font-size: 13px; font-weight: 600; color: #4a9ab8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #122a44; }
+
+/* ── 潛艇狀態 ── */
+#sub-status { background: #0a1e36; border: 1px solid #1a3a5c; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+.sub-name { font-size: 16px; font-weight: 600; color: #7ed4f0; margin-bottom: 6px; }
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 13px; }
+.bar-label { width: 40px; color: #4a9ab8; }
+.bar-bg { flex: 1; height: 8px; background: #122a44; border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.bar-fuel { background: linear-gradient(90deg, #f0a830, #f0d060); }
+.bar-hp { background: linear-gradient(90deg, #30c068, #60f090); }
+.bar-cargo { background: linear-gradient(90deg, #6080f0, #80a8ff); }
+
+/* ── 按鈕 ── */
+.btn { background: linear-gradient(135deg, #0d3060 0%, #0a2448 100%); border: 1px solid #1e5080; color: #7ed4f0; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.15s; width: 100%; text-align: left; margin-bottom: 6px; }
+.btn:hover { background: linear-gradient(135deg, #1a4a80 0%, #123460 100%); border-color: #40a0d0; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: linear-gradient(135deg, #0d6060 0%, #084844 100%); border-color: #1e9080; }
+.btn-primary:hover { background: linear-gradient(135deg, #1a8070 0%, #126058 100%); }
+.btn-warn { background: linear-gradient(135deg, #602010 0%, #481608 100%); border-color: #a03020; }
+.btn-warn:hover:not(:disabled) { background: linear-gradient(135deg, #803020 0%, #602018 100%); }
+.btn-cost { font-size: 11px; color: #4a9ab8; margin-top: 2px; }
+.btn-header { display: flex; justify-content: space-between; align-items: center; }
+.btn-badge { background: #1a5080; border-radius: 12px; padding: 1px 7px; font-size: 11px; color: #60c0e0; }
+
+/* ── 探索卡片 ── */
+.explore-card { background: #0a1e36; border: 1px solid #1a3a5c; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+.explore-card:hover { border-color: #2a6a9c; background: #0d2840; }
+.explore-card.active { border-color: #40a0d0; background: #0f2e4a; }
+.explore-card.locked { opacity: 0.4; cursor: not-allowed; }
+.ec-name { font-size: 15px; font-weight: 600; color: #90d0f0; }
+.ec-depth { font-size: 12px; color: #4a7a9a; margin-bottom: 4px; }
+.ec-desc { font-size: 12px; color: #6090b0; line-height: 1.4; }
+.ec-rewards { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ec-tag { background: #122a44; border-radius: 4px; padding: 2px 7px; font-size: 11px; color: #60a8c8; }
+.ec-progress { margin-top: 6px; }
+.ec-progress-bar { height: 4px; background: #122a44; border-radius: 2px; overflow: hidden; }
+.ec-progress-fill { height: 100%; background: linear-gradient(90deg, #1880d0, #40c0f0); transition: width 0.5s; }
+.ec-time { font-size: 11px; color: #4a9ab8; margin-top: 3px; text-align: right; }
+.ec-auto-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.auto-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; color: #4a9ab8; user-select: none; }
+.auto-switch { width: 32px; height: 18px; background: #122a44; border-radius: 9px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+.auto-switch.on { background: #1a7050; }
+.auto-switch::after { content: ''; position: absolute; width: 12px; height: 12px; background: #4a9ab8; border-radius: 50%; top: 3px; left: 3px; transition: all 0.2s; }
+.auto-switch.on::after { left: 17px; background: #40d090; }
+
+/* ── 生物圖鑑 ── */
+.creature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+.creature-card { background: #0a1e36; border: 1px solid #122a44; border-radius: 8px; padding: 8px 6px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.creature-card:hover { border-color: #2a5a7c; }
+.creature-card.locked-card { opacity: 0.3; filter: grayscale(1); }
+.creature-icon { font-size: 28px; margin-bottom: 4px; }
+.creature-name { font-size: 11px; color: #7ab8d8; }
+.creature-lvl { font-size: 10px; color: #3a8ab0; }
+
+/* ── 全域 Tooltip ── */
+#global-tooltip {
+  display: none;
+  position: absolute;
+  background: #04101e;
+  border: 1px solid #40a0d0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 190px;
+  z-index: 9999;
+  pointer-events: none;
+  text-align: left;
+}
+.tt-zone { font-size: 12px; color: #60c0e8; margin-bottom: 4px; }
+.tt-rate { font-size: 12px; color: #f0c040; font-weight: 600; margin-bottom: 2px; }
+.tt-desc { font-size: 12px; color: #80b0d0; margin-top: 6px; line-height: 1.5; }
+.tt-lock { font-size: 12px; color: #5080a0; margin-top: 4px; font-style: italic; }
+
+/* ── 文物系統 ── */
+.artifact-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.artifact-card { background: #0a1e36; border: 1px solid #122a44; border-radius: 8px; padding: 10px 8px; text-align: center; transition: all 0.2s; }
+.artifact-card.found { border-color: #2a5a7c; cursor: pointer; }
+.artifact-card.found:hover { border-color: #60a0d0; background: #0d2840; }
+.artifact-card.not-found { opacity: 0.25; }
+.artifact-card.legendary { border-color: #6040a0 !important; }
+.artifact-card.legendary.found { box-shadow: 0 0 8px rgba(120,80,200,0.3); }
+.artifact-icon { font-size: 26px; margin-bottom: 4px; }
+.artifact-name { font-size: 11px; color: #90c8f0; font-weight: 600; margin-bottom: 2px; }
+.artifact-rarity { font-size: 10px; border-radius: 3px; padding: 1px 5px; display: inline-block; margin-bottom: 4px; }
+.rarity-common { background: #122a44; color: #60a0c0; }
+.rarity-rare { background: #1a3060; color: #60a0ff; }
+.rarity-legendary { background: #2a1860; color: #c080ff; }
+.artifact-bonus { font-size: 10px; color: #3aaa80; }
+.artifact-source { font-size: 10px; color: #3a6080; margin-top: 3px; }
+.artifact-count { font-size: 10px; color: #4a8ab0; margin-top: 2px; }
+.set-bonus-bar { background: #0a1e36; border: 1px solid #1a3060; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+.set-bonus-title { font-size: 12px; color: #4a9ab8; margin-bottom: 4px; }
+.set-bonus-desc { font-size: 11px; color: #3aaa80; }
+
+/* ── 任務面板 ── */
+.quest-item { background: #0a1e36; border: 1px solid #122a44; border-radius: 8px; padding: 10px; margin-bottom: 6px; }
+.quest-name { font-size: 14px; color: #90d0f0; margin-bottom: 4px; }
+.quest-desc { font-size: 12px; color: #5090b0; margin-bottom: 6px; }
+.quest-bar-bg { height: 6px; background: #122a44; border-radius: 3px; overflow: hidden; }
+.quest-bar-fill { height: 100%; background: linear-gradient(90deg, #2060c0, #40a0f0); transition: width 0.5s; }
+.quest-reward { font-size: 11px; color: #3aaa80; margin-top: 5px; }
+.quest-complete { background: #0a2a18; border-color: #1a6040; }
+.quest-complete .quest-name { color: #40d090; }
+.quest-claimed { background: #061812; border-color: #0e3020; opacity: 0.6; }
+.quest-claimed .quest-name { color: #2a8060; }
+.quest-claimed .quest-bar-fill { background: #1a6040; }
+.btn-claim { background: linear-gradient(135deg, #0a4028 0%, #082e20 100%); border: 1px solid #1a7050; color: #40d090; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-top: 6px; }
+.btn-claim:hover { background: linear-gradient(135deg, #1a6040 0%, #124030 100%); }
+
+/* ── 通知 ── */
+#notif-container { position: fixed; top: 70px; right: 20px; z-index: 100; pointer-events: none; }
+.notif { background: #0d2840; border: 1px solid #2a7ab0; border-radius: 8px; padding: 8px 16px; margin-bottom: 6px; font-size: 13px; color: #80d0f0; animation: notifIn 0.3s ease, notifOut 0.3s ease 2.7s forwards; max-width: 260px; }
+@keyframes notifIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+@keyframes notifOut { to { opacity:0; transform:translateX(20px); } }
+.notif-special { border-color: #40c080; color: #60e0a0; background: #0a2820; }
+
+/* ── 升級面板 ── */
+.upgrade-item { background: #0a1e36; border: 1px solid #122a44; border-radius: 8px; padding: 10px; margin-bottom: 6px; }
+.upgrade-name { font-size: 14px; color: #90d0f0; }
+.upgrade-desc { font-size: 12px; color: #5090b0; margin: 3px 0 6px; }
+.upgrade-btn { background: linear-gradient(135deg, #0d3060, #0a2448); border: 1px solid #1e5080; color: #7ed4f0; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.15s; }
+.upgrade-btn:hover:not(:disabled) { background: linear-gradient(135deg, #1a4a80, #123460); border-color: #40a0d0; }
+.upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── 標籤切換 ── */
+.tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.tab { background: #0a1e36; border: 1px solid #122a44; color: #5090b0; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.15s; }
+.tab.active { background: #0d3060; border-color: #2060a0; color: #70c0e8; }
+
+/* ── 底部操作欄 ── */
+.action-btn { background: linear-gradient(135deg, #0d3060, #0a2448); border: 1px solid #1e5080; color: #7ed4f0; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.15s; }
+.action-btn:hover { background: linear-gradient(135deg, #1a4a80, #123460); border-color: #40a0d0; }
+.action-btn.active-btn { background: linear-gradient(135deg, #0d6060, #084844); border-color: #1e9080; }
+
+/* ── 廣告模擬 ── */
+#ad-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:500; align-items:center; justify-content:center; }
+#ad-overlay.show { display:flex; }
+.ad-box { background:#0a1e36; border:1px solid #2a6090; border-radius:14px; padding:28px 32px; text-align:center; width:320px; }
+.ad-title { font-size:16px; color:#7ed4f0; margin-bottom:8px; }
+.ad-sub { font-size:12px; color:#4a7a9a; margin-bottom:20px; }
+.ad-screen { background:#040c1a; border:1px solid #122a44; border-radius:8px; height:120px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; font-size:13px; color:#2a5a7a; }
+.ad-timer { font-size:28px; font-weight:700; color:#40a0d0; margin-bottom:4px; }
+.ad-skip { font-size:11px; color:#2a5a7a; margin-bottom:16px; height:16px; }
+.ad-close-btn { background:linear-gradient(135deg,#0d6060,#084844); border:1px solid #1e9080; color:#40d090; padding:10px 28px; border-radius:8px; cursor:pointer; font-size:14px; display:none; }
+.ad-close-btn.show { display:inline-block; }
+
+/* ── 卷軸樣式 ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1a3a5c; border-radius: 2px; }
+
+/* ── 彈出對話框 ── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #0a1e36; border: 1px solid #2a6090; border-radius: 14px; padding: 24px; max-width: 360px; width: 90%; }
+.modal-title { font-size: 18px; font-weight: 600; color: #7ed4f0; margin-bottom: 12px; }
+.modal-desc { font-size: 13px; color: #5090b0; line-height: 1.6; margin-bottom: 16px; }
+.modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.modal-btn { padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; border: 1px solid; }
+.modal-cancel { background: #0a1e36; border-color: #1a3a5c; color: #5090b0; }
+.modal-confirm { background: #0d3060; border-color: #1e5080; color: #7ed4f0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 頂部資源欄 -->
+  <div id="topbar">
+    <div id="game-title">🌊 深海秘境</div>
+    <div class="res-item"><span class="res-icon">💎</span><div><div class="res-val" id="res-pearls">0</div><div class="res-rate" id="rate-pearls">+0/s</div></div></div>
+    <div class="res-item"><span class="res-icon">🪸</span><div><div class="res-val" id="res-coral">0</div><div class="res-rate" id="rate-coral">+0/s</div></div></div>
+    <div class="res-item"><span class="res-icon">⚗️</span><div><div class="res-val" id="res-essence">0</div><div class="res-rate" id="rate-essence">+0/s</div></div></div>
+    <div class="res-item"><span class="res-icon">⚡</span><div><div class="res-val" id="res-energy">100</div><div class="res-rate">/ 100</div></div></div>
+    <div style="margin-left:auto; font-size:13px; color:#4a7a9a" id="offline-label"></div>
+  </div>
+
+  <!-- 左側：潛艇 + 探索區域 -->
+  <div id="left-panel">
+    <div class="panel-title">🚢 潛艇指揮</div>
+    <div id="sub-status">
+      <div class="sub-name" id="sub-name">海底先鋒號 Lv.1</div>
+      <div class="bar-row"><span class="bar-label">燃料</span><div class="bar-bg"><div class="bar-fill bar-fuel" id="bar-fuel" style="width:100%"></div></div><span id="txt-fuel" style="font-size:12px;color:#4a9ab8">100%</span></div>
+      <div class="bar-row"><span class="bar-label">耐久</span><div class="bar-bg"><div class="bar-fill bar-hp" id="bar-hp" style="width:100%"></div></div><span id="txt-hp" style="font-size:12px;color:#4a9ab8">100%</span></div>
+      <div class="bar-row"><span class="bar-label">貨艙</span><div class="bar-bg"><div class="bar-fill bar-cargo" id="bar-cargo" style="width:0%"></div></div><span id="txt-cargo" style="font-size:12px;color:#4a9ab8">0/20</span></div>
+    </div>
+
+    <div class="panel-title">🗺️ 探索海域</div>
+    <div id="explore-list"></div>
+  </div>
+
+  <!-- 中央：海洋動畫 -->
+  <div id="center-panel">
+    <div id="ocean-bg">
+      <canvas id="ocean-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- 右側：圖鑑 / 任務 / 升級 / 文物 -->
+  <div id="right-panel">
+    <div class="tabs" style="flex-wrap:wrap;">
+      <div class="tab active" onclick="switchTab('creatures')" id="tab-creatures">生物圖鑑</div>
+      <div class="tab" onclick="switchTab('quests')" id="tab-quests">任務</div>
+      <div class="tab" onclick="switchTab('upgrades')" id="tab-upgrades">升級</div>
+      <div class="tab" onclick="switchTab('artifacts')" id="tab-artifacts">🏺 文物館</div>
+    </div>
+    <div id="panel-creatures"></div>
+    <div id="panel-quests" style="display:none"></div>
+    <div id="panel-upgrades" style="display:none"></div>
+    <div id="panel-artifacts" style="display:none"></div>
+  </div>
+
+  <!-- 底部操作欄 -->
+  <div id="bottom-bar">
+    <button class="action-btn" onclick="repairSub()">🔧 修復潛艇 <span id="repair-cost" style="font-size:12px;color:#4a7a9a">(10💎)</span></button>
+    <button class="action-btn" onclick="refuelSub()">⛽ 補充燃料 <span id="refuel-cost" style="font-size:12px;color:#4a7a9a">(5💎)</span></button>
+    <button class="action-btn" onclick="collectAll()">📦 收取全部</button>
+    <div style="margin-left:auto; font-size:12px; color:#3a7a9a">深度探索：開啟離線收益 | 遊戲自動存檔</div>
+    <button class="action-btn" style="background:linear-gradient(135deg,#601010,#480808);border-color:#a02020;color:#f08080;margin-left:8px" onclick="resetGame()">🔄 重置</button>
+  </div>
+</div>
+
+<div id="global-tooltip"></div>
+<div id="notif-container"></div>
+
+<div id="ad-overlay">
+  <div class="ad-box">
+    <div class="ad-title">📺 觀看廣告</div>
+    <div class="ad-sub">觀看完整廣告以解鎖功能</div>
+    <div class="ad-screen">[ 廣告畫面 ]<br><span style="font-size:11px;margin-top:4px;display:block">（上架後替換為真實廣告）</span></div>
+    <div class="ad-timer" id="ad-countdown">5</div>
+    <div class="ad-skip" id="ad-skip-txt">請觀看完整廣告...</div>
+    <button class="ad-close-btn" id="ad-close-btn" onclick="onAdComplete()">✅ 領取獎勵</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <div class="modal-title">⚠️ 確認重置</div>
+    <div class="modal-desc">確定要重置所有遊戲進度嗎？此操作無法復原。</div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-cancel" onclick="document.getElementById('reset-modal').classList.remove('show')">取消</button>
+      <button class="modal-btn" style="background:#601010;border-color:#a02020;color:#f08080" onclick="doReset()">確認重置</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="creature-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-creature-name"></div>
+    <div style="font-size:48px;text-align:center;margin:12px 0" id="modal-creature-icon"></div>
+    <div class="modal-desc" id="modal-creature-desc"></div>
+    <div id="modal-creature-stats" style="font-size:13px;color:#4a9ab8;margin-bottom:16px"></div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-cancel" onclick="closeModal()">關閉</button>
+      <button class="modal-btn modal-confirm" id="modal-upgrade-btn" onclick="upgradeCreature()">升級 (100💎)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  遊戲資料
+// ══════════════════════════════════════════
+const ZONES = [
+  { id:'shallow', name:'淺海珊瑚礁', depth:'0-200m', icon:'🐠', desc:'五彩繽紛的珊瑚礁，豐富的初級資源。', duration:10, rewards:{pearls:8,coral:12,essence:0}, unlockAt:0, locked:false },
+  { id:'mid',     name:'中層迷霧帶', depth:'200-500m', icon:'🦑', desc:'神秘的中層海域，能量精華的來源。', duration:25, rewards:{pearls:15,coral:20,essence:5}, unlockAt:50, locked:true },
+  { id:'abyss',   name:'深淵裂谷',   depth:'500-1000m', icon:'🦈', desc:'危機四伏的深淵，蘊藏稀有礦石。', duration:60, rewards:{pearls:40,coral:35,essence:20}, unlockAt:200, locked:true },
+  { id:'hadal',   name:'超深淵帶',   depth:'1000m+', icon:'🫧', desc:'傳說中的海底世界，最頂級的探索目標。', duration:180, rewards:{pearls:150,coral:100,essence:80}, unlockAt:800, locked:true },
+];
+
+// zone: 可在哪個海域發現, rarity: common=3% / rare=0.5%
+const CREATURES = [
+  { id:'clownfish',  name:'小丑魚',  icon:'🐠', desc:'珊瑚礁的守護者，每秒產出珍珠。',   baseRate:{pearls:0.2}, zone:'shallow', rarity:'common',    maxLv:10 },
+  { id:'seahorse',   name:'海馬',    icon:'🐡', desc:'善於隱身，提高探索獎勵。',          baseRate:{pearls:0.3}, zone:'shallow', rarity:'common',    maxLv:10 },
+  { id:'turtle',     name:'海龜',    icon:'🐢', desc:'古老而智慧的航行者，生產珊瑚。',   baseRate:{coral:0.3},  zone:'shallow', rarity:'rare',      maxLv:10 },
+  { id:'octopus',    name:'章魚',    icon:'🐙', desc:'神秘智者，降低潛艇損耗。',          baseRate:{pearls:0.8}, zone:'mid',     rarity:'common',    maxLv:10 },
+  { id:'crab',       name:'帝王蟹',  icon:'🦀', desc:'底棲清道夫，定期爆發掉落。',        baseRate:{coral:0.6},  zone:'mid',     rarity:'common',    maxLv:10 },
+  { id:'shark',      name:'鯊魚',    icon:'🦈', desc:'海洋頂級掠食者，加速探索返回。',   baseRate:{pearls:0.5}, zone:'mid',     rarity:'rare',      maxLv:10 },
+  { id:'anglerfish', name:'鮟鱇魚',  icon:'🐟', desc:'深淵黑暗獵手，產出能量精華。',     baseRate:{essence:0.4},zone:'abyss',  rarity:'common',    maxLv:10 },
+  { id:'whale',      name:'抹香鯦',  icon:'🐋', desc:'深海巨獈，大量產出能量精華。',     baseRate:{essence:0.2},zone:'abyss',  rarity:'rare',      maxLv:10 },
+  { id:'jellyfish',  name:'發光水母',icon:'🪼', desc:'深海之光，大幅提升離線收益。',     baseRate:{essence:0.1},zone:'hadal',  rarity:'rare',      maxLv:10 },
+];
+
+// 文物資料：zone=發現海域, rarity=common(2%)/rare(0.3%)/legendary(0.1%)
+const ARTIFACTS = [
+  { id:'shell',   name:'古貝殼',   icon:'🐚', zone:'shallow', rarity:'common',    bonus:'珍珠產出 +10%', effect:'pearls_rate', val:0.1  },
+  { id:'anchor',  name:'鏽鐵錠',   icon:'⚓', zone:'shallow', rarity:'common',    bonus:'探索速度 +5%',  effect:'speed',       val:0.05 },
+  { id:'bottle',  name:'漂流瓶',   icon:'🍾', zone:'shallow', rarity:'rare',      bonus:'珊瑚產出 +20%', effect:'coral_rate',  val:0.2  },
+  { id:'compass', name:'神秘羅盤', icon:'🧭', zone:'mid',     rarity:'common',    bonus:'所有收益 +8%',  effect:'all_rate',    val:0.08 },
+  { id:'lantern', name:'深海燈籠', icon:'🏮', zone:'mid',     rarity:'common',    bonus:'離線時間+1hr',  effect:'offline_hr',  val:1    },
+  { id:'idol',    name:'海神像',   icon:'🗿', zone:'mid',     rarity:'rare',      bonus:'精華產出 +25%', effect:'essence_rate',val:0.25 },
+  { id:'trident', name:'海王戟',   icon:'🔱', zone:'abyss',   rarity:'rare',      bonus:'燃料消耗 -20%', effect:'fuel_save',   val:0.2  },
+  { id:'skull',   name:'海盜頭骨', icon:'💀', zone:'abyss',   rarity:'common',    bonus:'貨艙容量 +5',   effect:'cargo',       val:5    },
+  { id:'gem',     name:'深淵寶石', icon:'💠', zone:'abyss',   rarity:'rare',      bonus:'珍珠產出 +30%', effect:'pearls_rate', val:0.3  },
+  { id:'crown',   name:'深海王冠', icon:'👑', zone:'hadal',   rarity:'legendary', bonus:'全資源 +50%',   effect:'all_rate',    val:0.5  },
+  { id:'crystal', name:'時光水欶', icon:'🔮', zone:'hadal',   rarity:'legendary', bonus:'離線收益 ×2',   effect:'offline_x2',  val:2    },
+  { id:'map',     name:'失落海圖', icon:'🗺️', zone:'hadal',   rarity:'rare',      bonus:'掉落率 +40%',   effect:'drop_rate',   val:0.4  },
+];
+
+const QUESTS = [
+  { id:'q1', name:'初次下潛', desc:'完成首次探索', type:'explore', target:1,    progress:0, reward:{pearls:50},  done:false, claimed:false },
+  { id:'q2', name:'珊瑚收藏家', desc:'收集 100 珊瑚', type:'coral',   target:100,  progress:0, reward:{pearls:80,essence:10}, done:false, claimed:false },
+  { id:'q3', name:'深淵召喚',  desc:'完成深淵探索',  type:'abyss',   target:1,    progress:0, reward:{pearls:200,essence:30}, done:false, claimed:false },
+  { id:'q4', name:'生物學家',  desc:'解鎖 5 種生物', type:'creatures',target:5,   progress:0, reward:{pearls:150,coral:100},  done:false, claimed:false },
+  { id:'q5', name:'百萬珍珠',  desc:'累積 1000 珍珠', type:'pearls',  target:1000, progress:0, reward:{essence:50,coral:200},  done:false, claimed:false },
+];
+
+const UPGRADES = [
+  { id:'u1', name:'強化引擎', desc:'探索速度 +20%', cost:80,  level:0, maxLv:5, effect:'speed' },
+  { id:'u2', name:'擴容貨艙', desc:'貨艙容量 +10',  cost:60,  level:0, maxLv:5, effect:'cargo' },
+  { id:'u3', name:'節能系統', desc:'燃料消耗 -15%', cost:120, level:0, maxLv:3, effect:'fuel'  },
+  { id:'u4', name:'防壓強化', desc:'耐久損耗 -20%', cost:100, level:0, maxLv:3, effect:'hp'    },
+  { id:'u5', name:'離線加速', desc:'離線收益 +50%', cost:200, level:0, maxLv:5, effect:'offline'},
+];
+
+// ══════════════════════════════════════════
+//  遊戲狀態
+// ══════════════════════════════════════════
+let G = {
+  pearls: 0, coral: 0, essence: 0, energy: 100,
+  totalPearls: 0, totalCoral: 0, totalEssence: 0,
+  subLv: 1, subFuel: 100, subHp: 100, subCargo: 0, subMaxCargo: 20,
+  explorations: {},
+  autoExplore: {},    // zoneId -> true/false
+  autoRefuel: false,  // 付費解鎖自動補給
+  creatures: {},
+  upgrades: {},
+  questProgress: {},
+  unlockedCreatures: ['clownfish'],
+  artifacts: {},      // artifactId -> count (重複收集可疊加)
+  lastSave: Date.now(),
+};
+
+function resetGame() {
+  document.getElementById('reset-modal').classList.add('show');
+}
+
+function doReset() {
+  document.getElementById('reset-modal').classList.remove('show');
+  try {
+    localStorage.removeItem('deepSeaIdle');
+    localStorage.setItem('deepSeaReset', '1');
+  } catch(e) {}
+  // 直接重設狀態，不依賴 reload
+  G = {
+    pearls: 0, coral: 0, essence: 0, energy: 100,
+    totalPearls: 0, totalCoral: 0, totalEssence: 0,
+    subLv: 1, subFuel: 100, subHp: 100, subCargo: 0, subMaxCargo: 20,
+    explorations: {}, creatures: { clownfish: 1 }, upgrades: {}, autoExplore: {}, autoRefuel: false,
+    questProgress: {}, unlockedCreatures: ['clownfish'], artifacts: {},
+    lastSave: Date.now(),
+  };
+  ZONES.forEach(z => { z.locked = z.id !== 'shallow'; });
+  QUESTS.forEach(q => { q.progress = 0; q.done = false; q.claimed = false; });
+  renderExploreList();
+  renderCreatures();
+  renderQuests();
+  renderUpgrades();
+  renderArtifacts();
+  updateResources();
+  updateSubStatus();
+  document.getElementById('offline-label').textContent = '';
+  showNotif('✅ 遊戲已重置', true);
+}
+
+function initState() {
+  const saved = localStorage.getItem('deepSeaIdle');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      G = {...G, ...s};
+      handleOfflineGain();
+    } catch(e) { console.log('存檔讀取失敗'); }
+  }
+  // 初始生物
+  if (!G.creatures['clownfish']) G.creatures['clownfish'] = 1;
+  // 同步任務
+  QUESTS.forEach(q => {
+    if (!G.questProgress) G.questProgress = {};
+    if (G.questProgress[q.id] !== undefined) {
+      q.progress = G.questProgress[q.id];
+      q.done = q.progress >= q.target;
+    }
+  });
+}
+
+function saveState() {
+  const questProgress = {};
+  QUESTS.forEach(q => questProgress[q.id] = q.progress);
+  const s = {...G, questProgress, lastSave: Date.now()};
+  localStorage.setItem('deepSeaIdle', JSON.stringify(s));
+}
+
+function handleOfflineGain() {
+  const elapsed = (Date.now() - G.lastSave) / 1000;
+  if (elapsed < 5) return;
+  const gain = calcPassiveRate();
+  const offlineMulti = 1 + (G.upgrades['u5'] || 0) * 0.5;
+  const cappedSec = Math.min(elapsed, 8 * 3600); // 最多8小時
+  const pGain = Math.floor(gain.pearls * cappedSec * offlineMulti);
+  const cGain = Math.floor(gain.coral * cappedSec * offlineMulti);
+  const eGain = Math.floor(gain.essence * cappedSec * offlineMulti);
+  if (pGain + cGain + eGain > 0) {
+    G.pearls += pGain; G.coral += cGain; G.essence += eGain;
+    G.totalPearls += pGain; G.totalCoral += cGain;
+    const mins = Math.floor(elapsed / 60);
+    document.getElementById('offline-label').textContent = `⏰ 離線 ${mins} 分鐘，獲得 ${pGain}💎 ${cGain}🪸 ${eGain}⚗️`;
+    showNotif(`離線獎勵：+${pGain}💎 +${cGain}🪸 +${eGain}⚗️`, true);
+  }
+}
+
+// ══════════════════════════════════════════
+//  被動收益計算
+// ══════════════════════════════════════════
+function calcPassiveRate() {
+  let r = { pearls: 0, coral: 0, essence: 0 };
+  CREATURES.forEach(c => {
+    const lv = G.creatures[c.id] || 0;
+    if (lv > 0) {
+      Object.keys(c.baseRate).forEach(res => {
+        r[res] = (r[res] || 0) + c.baseRate[res] * lv;
+      });
+    }
+  });
+  return r;
+}
+
+// ══════════════════════════════════════════
+//  探索系統
+// ══════════════════════════════════════════
+function startExploration(zoneId) {
+  const zone = ZONES.find(z => z.id === zoneId);
+  if (!zone || zone.locked) return;
+  if (G.explorations[zoneId]?.active) return;
+  if (G.subFuel < 20) { showNotif('燃料不足！請先補充燃料。'); return; }
+  const speedMult = 1 + (G.upgrades['u1'] || 0) * 0.2;
+  const dur = zone.duration / speedMult;
+  G.explorations[zoneId] = { startTime: Date.now(), duration: dur * 1000, active: true };
+  const fuelCost = 20 * (1 - (G.upgrades['u3'] || 0) * 0.15);
+  G.subFuel = Math.max(0, G.subFuel - fuelCost);
+  const hpCost = 10 * (1 - (G.upgrades['u4'] || 0) * 0.2);
+  G.subHp = Math.max(0, G.subHp - hpCost);
+  updateQuestProgress('explore', 0);
+  showNotif(`開始探索：${zone.name}`);
+  renderExploreList();
+}
+
+function checkExplorations() {
+  let anyDone = false;
+  ZONES.forEach(zone => {
+    const exp = G.explorations[zone.id];
+    if (!exp || !exp.active) return;
+    const elapsed = Date.now() - exp.startTime;
+    if (elapsed >= exp.duration) {
+      // 完成
+      const cargoSpace = G.subMaxCargo - G.subCargo;
+      if (cargoSpace <= 0) { showNotif('貨艙已滿！請先收取。'); return; }
+      const mult = 1 + (G.creatures['seahorse'] || 0) * 0.1;
+      const pGain = Math.floor(zone.rewards.pearls * mult);
+      const cGain = Math.floor(zone.rewards.coral * mult);
+      const eGain = Math.floor(zone.rewards.essence * mult);
+      G.pearls += pGain; G.coral += cGain; G.essence += eGain;
+      G.totalPearls += pGain; G.totalCoral += cGain;
+      G.subCargo = Math.min(G.subMaxCargo, G.subCargo + 1);
+      G.explorations[zone.id] = { active: false };
+      showNotif(`${zone.name} 探索完成！+${pGain}💎 +${cGain}🪸 +${eGain}⚗️`, true);
+      updateQuestProgress('explore', 1);
+      if (zone.id === 'abyss') updateQuestProgress('abyss', 1);
+      checkUnlocks();
+      rollDiscoveries(zone.id);
+      // 自動重派
+      if (G.autoExplore && G.autoExplore[zone.id]) {
+        if (G.subFuel < 20) {
+          if (G.autoRefuel) {
+            const cost = 5 + G.subLv;
+            if (G.pearls >= cost) {
+              G.pearls -= cost;
+              G.subFuel = 100;
+              showNotif(`⛽ 自動補充燃料 (-${cost}💎)`);
+              setTimeout(() => startExploration(zone.id), 500);
+            } else {
+              showNotif(`⚠️ ${zone.name} 自動探索暫停：珍珠不足以自動補給`);
+              G.autoExplore[zone.id] = false;
+            }
+          } else {
+            showNotif(`⚠️ ${zone.name} 自動探索暫停：燃料不足`);
+            G.autoExplore[zone.id] = false;
+          }
+        } else if (G.subHp <= 10) {
+          if (G.autoRefuel) {
+            const cost = 10 + G.subLv * 2;
+            if (G.pearls >= cost) {
+              G.pearls -= cost;
+              G.subHp = 100;
+              showNotif(`🔧 自動修復潛艇 (-${cost}💎)`);
+              setTimeout(() => startExploration(zone.id), 500);
+            } else {
+              showNotif(`⚠️ ${zone.name} 自動探索暫停：珍珠不足以自動修復`);
+              G.autoExplore[zone.id] = false;
+            }
+          } else {
+            showNotif(`⚠️ ${zone.name} 自動探索暫停：耐久不足`);
+            G.autoExplore[zone.id] = false;
+          }
+        } else {
+          setTimeout(() => startExploration(zone.id), 500);
+        }
+      }
+      anyDone = true;
+    }
+  });
+  if (anyDone) renderExploreList();
+}
+
+// ══════════════════════════════════════════
+//  解鎖系統
+// ══════════════════════════════════════════
+function checkUnlocks() {
+  ZONES.forEach(z => {
+    if (z.locked && G.totalPearls >= z.unlockAt) {
+      z.locked = false;
+      showNotif(`🗺️ 解鎖新海域：${z.name}！`, true);
+    }
+  });
+  renderCreatures();
+  renderExploreList();
+}
+
+// 探索完成後觸發生物/文物隨機發現
+function rollDiscoveries(zoneId) {
+  const zoneCreatures = CREATURES.filter(c => c.zone === zoneId);
+  const zoneArtifacts = ARTIFACTS.filter(a => a.zone === zoneId);
+  if (!G.unlockedCreatures) G.unlockedCreatures = ['clownfish'];
+  if (!G.artifacts) G.artifacts = {};
+
+  // 生物發現
+  zoneCreatures.forEach(c => {
+    if (G.unlockedCreatures.includes(c.id)) return; // 已發現
+    const chance = c.rarity === 'common' ? 0.03 : 0.005;
+    if (Math.random() < chance) {
+      G.unlockedCreatures.push(c.id);
+      G.creatures[c.id] = 1;
+      showNotif(`🌊 發現新生物：${c.icon} ${c.name}！`, true);
+      updateQuestProgress('creatures', G.unlockedCreatures.length);
+      renderCreatures();
+    }
+  });
+
+  // 文物掉落
+  zoneArtifacts.forEach(a => {
+    const chance = a.rarity === 'legendary' ? 0.01 : a.rarity === 'rare' ? 0.03 : 0.08;
+    if (Math.random() < chance) {
+      G.artifacts[a.id] = (G.artifacts[a.id] || 0) + 1;
+      const rarityLabel = {common:'普通',rare:'稀有',legendary:'傳說'}[a.rarity];
+      showNotif(`🏺 發現文物：${a.icon} ${a.name}（${rarityLabel}）！`, true);
+      renderArtifacts();
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  任務系統
+// ══════════════════════════════════════════
+function updateQuestProgress(type, val) {
+  QUESTS.forEach(q => {
+    if (q.done || q.type !== type) return;
+    if (type === 'explore' || type === 'abyss') q.progress = Math.min(q.target, q.progress + val);
+    else q.progress = Math.min(q.target, val);
+    if (q.progress >= q.target) { q.done = true; showNotif(`✅ 任務完成：${q.name}`, true); }
+  });
+  // 珍珠任務即時更新
+  QUESTS.filter(q => q.type === 'pearls').forEach(q => {
+    q.progress = Math.min(q.target, G.totalPearls);
+    if (!q.done && q.progress >= q.target) { q.done = true; showNotif(`✅ 任務完成：${q.name}`, true); }
+  });
+  QUESTS.filter(q => q.type === 'coral').forEach(q => {
+    q.progress = Math.min(q.target, G.totalCoral);
+    if (!q.done && q.progress >= q.target) { q.done = true; showNotif(`✅ 任務完成：${q.name}`, true); }
+  });
+  renderQuests();
+}
+
+function claimQuest(qId) {
+  const q = QUESTS.find(q => q.id === qId);
+  if (!q || !q.done || q.claimed) return;
+  q.claimed = true;
+  if (q.reward.pearls)  G.pearls  += q.reward.pearls;
+  if (q.reward.coral)   G.coral   += q.reward.coral;
+  if (q.reward.essence) G.essence += q.reward.essence;
+  let msg = `領取獎勵：`;
+  if (q.reward.pearls)  msg += `+${q.reward.pearls}💎 `;
+  if (q.reward.coral)   msg += `+${q.reward.coral}🪸 `;
+  if (q.reward.essence) msg += `+${q.reward.essence}⚗️`;
+  showNotif(msg, true);
+  renderQuests();
+}
+
+// ══════════════════════════════════════════
+//  升級系統
+// ══════════════════════════════════════════
+function buyUpgrade(uId) {
+  const u = UPGRADES.find(u => u.id === uId);
+  if (!u) return;
+  const lv = G.upgrades[uId] || 0;
+  if (lv >= u.maxLv) { showNotif('已達最高等級'); return; }
+  const cost = Math.floor(u.cost * Math.pow(1.6, lv));
+  if (G.pearls < cost) { showNotif('珍珠不足！'); return; }
+  G.pearls -= cost;
+  G.upgrades[uId] = lv + 1;
+  if (u.effect === 'cargo') G.subMaxCargo += 10;
+  showNotif(`升級：${u.name} Lv.${lv+1}`);
+  renderUpgrades();
+}
+
+// ══════════════════════════════════════════
+//  潛艇操作
+// ══════════════════════════════════════════
+function repairSub() {
+  const cost = 10 + G.subLv * 2;
+  if (G.pearls < cost) { showNotif('珍珠不足！'); return; }
+  G.pearls -= cost;
+  G.subHp = 100;
+  showNotif('✅ 潛艇已修復');
+  updateSubStatus();
+}
+
+function refuelSub() {
+  const cost = 5 + G.subLv;
+  if (G.pearls < cost) { showNotif('珍珠不足！'); return; }
+  G.pearls -= cost;
+  G.subFuel = 100;
+  showNotif('✅ 燃料已補充');
+  updateSubStatus();
+}
+
+function collectAll() {
+  if (G.subCargo <= 0) { showNotif('貨艙是空的'); return; }
+  const msg = `收取貨艙：${G.subCargo} 份貨物已卸載`;
+  G.subCargo = 0;
+  showNotif(msg);
+  updateSubStatus();
+}
+
+// ══════════════════════════════════════════
+//  生物升級
+// ══════════════════════════════════════════
+let selectedCreature = null;
+function openCreatureModal(cId) {
+  const c = CREATURES.find(c => c.id === cId);
+  const lv = G.creatures[cId] || 0;
+  if (!G.unlockedCreatures?.includes(cId)) return;
+  selectedCreature = cId;
+  document.getElementById('modal-creature-name').textContent = `${c.icon} ${c.name} Lv.${lv}`;
+  document.getElementById('modal-creature-icon').textContent = c.icon;
+  document.getElementById('modal-creature-desc').textContent = c.desc;
+  const upgradeCost = lv * 100;
+  const rateDesc = Object.entries(c.baseRate).map(([k,v]) => `${resName(k)}: +${(v*lv).toFixed(1)}/s → +${(v*(lv+1)).toFixed(1)}/s`).join(' | ');
+  document.getElementById('modal-creature-stats').innerHTML = `等級：${lv} / ${c.maxLv}<br>產出：${rateDesc}`;
+  const btn = document.getElementById('modal-upgrade-btn');
+  if (lv >= c.maxLv) { btn.textContent = '已達頂級'; btn.disabled = true; }
+  else { btn.textContent = `升級 (${upgradeCost}💎)`; btn.disabled = false; }
+  document.getElementById('creature-modal').classList.add('show');
+}
+
+function upgradeCreature() {
+  if (!selectedCreature) return;
+  const c = CREATURES.find(c => c.id === selectedCreature);
+  const lv = G.creatures[selectedCreature] || 1;
+  const cost = lv * 100;
+  if (G.pearls < cost) { showNotif('珍珠不足！'); return; }
+  if (lv >= c.maxLv) return;
+  G.pearls -= cost;
+  G.creatures[selectedCreature] = lv + 1;
+  showNotif(`${c.icon} ${c.name} 升至 Lv.${lv+1}！`, true);
+  closeModal();
+  renderCreatures();
+}
+
+function closeModal() { document.getElementById('creature-modal').classList.remove('show'); }
+
+// ══════════════════════════════════════════
+//  廣告系統（模擬版，上架時替換 SDK）
+// ══════════════════════════════════════════
+let _adCallback = null;
+let _adTimer = null;
+
+function showRewardedAd(callback) {
+  // TODO: 上架 CrazyGames 時替換為：
+  // CrazyGames.SDK.ad.requestAd('rewarded', {
+  //   adFinished: () => callback(true),
+  //   adError: () => callback(false),
+  // });
+  _adCallback = callback;
+  const overlay = document.getElementById('ad-overlay');
+  const countdown = document.getElementById('ad-countdown');
+  const skipTxt = document.getElementById('ad-skip-txt');
+  const closeBtn = document.getElementById('ad-close-btn');
+  overlay.classList.add('show');
+  closeBtn.classList.remove('show');
+  skipTxt.textContent = '請觀看完整廣告...';
+  let sec = 5;
+  countdown.textContent = sec;
+  clearInterval(_adTimer);
+  _adTimer = setInterval(() => {
+    sec--;
+    countdown.textContent = sec;
+    if (sec <= 0) {
+      clearInterval(_adTimer);
+      skipTxt.textContent = '廣告已結束！';
+      closeBtn.classList.add('show');
+      countdown.textContent = '✓';
+    }
+  }, 1000);
+}
+
+function onAdComplete() {
+  document.getElementById('ad-overlay').classList.remove('show');
+  clearInterval(_adTimer);
+  if (_adCallback) { _adCallback(true); _adCallback = null; }
+}
+function resName(r) { return {pearls:'💎珍珠',coral:'🪸珊瑚',essence:'⚗️精華'}[r] || r; }
+
+// ══════════════════════════════════════════
+//  渲染函數
+// ══════════════════════════════════════════
+function renderExploreList() {
+  const container = document.getElementById('explore-list');
+  container.innerHTML = '';
+  ZONES.forEach(zone => {
+    const div = document.createElement('div');
+    const exp = G.explorations[zone.id];
+    const active = exp?.active;
+    const isLocked = zone.locked;
+    div.className = `explore-card${active ? ' active' : ''}${isLocked ? ' locked' : ''}`;
+    let progressHTML = '';
+    if (active) {
+      const elapsed = Date.now() - exp.startTime;
+      const pct = Math.min(100, (elapsed / exp.duration) * 100);
+      const remaining = Math.max(0, (exp.duration - elapsed) / 1000);
+      progressHTML = `<div class="ec-progress"><div class="ec-progress-bar"><div class="ec-progress-fill" style="width:${pct}%"></div></div><div class="ec-time">${remaining > 60 ? Math.ceil(remaining/60)+'分鐘' : Math.ceil(remaining)+'秒'} 後返回</div></div>`;
+    }
+    const rewardTags = Object.entries(zone.rewards).filter(([,v])=>v>0).map(([k,v])=>`<span class="ec-tag">${resName(k)} +${v}</span>`).join('');
+    div.innerHTML = `
+      <div class="ec-name">${zone.icon} ${zone.name}</div>
+      <div class="ec-depth">${zone.depth}</div>
+      <div class="ec-desc">${isLocked ? `🔒 需要累積 ${zone.unlockAt} 💎 珍珠` : zone.desc}</div>
+      <div class="ec-rewards">${rewardTags}</div>
+      ${progressHTML}
+    `;
+    if (!isLocked && !active) {
+      div.onclick = () => startExploration(zone.id);
+    }
+    if (!isLocked) {
+      const autoRow = document.createElement('div');
+      autoRow.className = 'ec-auto-row';
+      const isAuto = G.autoExplore && G.autoExplore[zone.id];
+      const sw = document.createElement('div');
+      sw.className = 'auto-switch' + (isAuto ? ' on' : '');
+      const label = document.createElement('div');
+      label.className = 'auto-toggle';
+      label.appendChild(sw);
+      const txt = document.createElement('span');
+      txt.textContent = isAuto ? '自動探索：開' : '自動探索：關';
+      label.appendChild(txt);
+      label.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!G.autoExplore) G.autoExplore = {};
+        G.autoExplore[zone.id] = !G.autoExplore[zone.id];
+        renderExploreList();
+      });
+      autoRow.appendChild(label);
+      div.appendChild(autoRow);
+    }
+    container.appendChild(div);
+  });
+}
+
+// 全域 Tooltip 系統
+const gtt = document.getElementById('global-tooltip');
+document.addEventListener('mousemove', function(e) {
+  if (gtt.style.display === 'block') {
+    const r = document.body.getBoundingClientRect();
+    let x = e.clientX - r.left + 12;
+    let y = e.clientY - r.top - gtt.offsetHeight - 8;
+    if (x + 200 > document.body.clientWidth) x = e.clientX - r.left - 200 - 12;
+    if (y < 0) y = e.clientY - r.top + 16;
+    gtt.style.left = x + 'px';
+    gtt.style.top = y + 'px';
+  }
+});
+
+function renderCreatures() {
+  const grid = document.getElementById('panel-creatures');
+  grid.innerHTML = '<div class="panel-title">🐠 海洋生物</div><div class="creature-grid" id="creature-grid-inner"></div>';
+  const inner = document.getElementById('creature-grid-inner');
+  const zoneNames = {shallow:'淺海珊瑚礁', mid:'中層迷霧帶', abyss:'深淵裂谷', hadal:'超深淵帶'};
+  CREATURES.forEach(c => {
+    const unlocked = G.unlockedCreatures?.includes(c.id);
+    const lv = G.creatures[c.id] || 0;
+    const rarityLabel = c.rarity === 'common' ? '普通 (3%)' : '稀有 (0.5%)';
+    const rarityColor = c.rarity === 'common' ? '#4a9ab8' : '#e0a040';
+    const rateDesc = Object.entries(c.baseRate).map(([k,v])=>`${resName(k)} +${(v*(lv||1)).toFixed(1)}/s`).join('<br>');
+    const ttContent = unlocked
+      ? `<div class="tt-zone">📍 ${zoneNames[c.zone]}</div>
+         <div class="tt-rate" style="color:${rarityColor}">${rarityLabel}</div>
+         <div class="tt-desc">${c.desc}</div>
+         <div class="tt-desc" style="color:#3aaa80;margin-top:4px">${rateDesc}</div>`
+      : `<div class="tt-zone">📍 ${zoneNames[c.zone]}</div>
+         <div class="tt-rate" style="color:${rarityColor}">${rarityLabel}</div>
+         <div class="tt-lock">探索該海域後有機率發現</div>`;
+    const div = document.createElement('div');
+    div.className = `creature-card${unlocked ? '' : ' locked-card'}`;
+    div.innerHTML = `<div class="creature-icon">${unlocked ? c.icon : '❓'}</div><div class="creature-name">${unlocked ? c.name : '???'}</div><div class="creature-lvl">${unlocked ? 'Lv.'+lv : c.rarity === 'rare' ? '稀有' : '普通'}</div>`;
+    div.addEventListener('mouseenter', () => { gtt.innerHTML = ttContent; gtt.style.display = 'block'; });
+    div.addEventListener('mouseleave', () => { gtt.style.display = 'none'; });
+    if (unlocked) div.onclick = () => openCreatureModal(c.id);
+    inner.appendChild(div);
+  });
+}
+
+function renderArtifacts() {
+  if (!G.artifacts) G.artifacts = {};
+  const container = document.getElementById('panel-artifacts');
+  if (!container) return;
+  const zoneNames = {shallow:'淺海珊瑚礁', mid:'中層迷霧帶', abyss:'深淵裂谷', hadal:'超深淵帶'};
+  const rarityLabels = {common:'普通', rare:'稀有', legendary:'傳說'};
+
+  // 計算套裝加成
+  const foundCount = ARTIFACTS.filter(a => (G.artifacts[a.id]||0) > 0).length;
+  const setBonus = foundCount >= 6 ? '全資源 +15%' : foundCount >= 3 ? '珍珠產出 +10%' : null;
+
+  let html = '<div class="panel-title">🏺 文物館</div>';
+  if (setBonus) {
+    html += `<div class="set-bonus-bar"><div class="set-bonus-title">✨ 套裝加成（${foundCount}/12）</div><div class="set-bonus-desc">${setBonus}</div></div>`;
+  } else {
+    html += `<div style="font-size:11px;color:#3a6080;margin-bottom:8px">收集文物可獲得套裝加成（${foundCount}/12）</div>`;
+  }
+  html += '<div class="artifact-grid">';
+  ARTIFACTS.forEach(a => {
+    const count = G.artifacts[a.id] || 0;
+    const found = count > 0;
+    const rarityClass = `rarity-${a.rarity}`;
+    html += `<div class="artifact-card ${found ? 'found' : 'not-found'} ${a.rarity === 'legendary' ? 'legendary' : ''}">
+      <div class="artifact-icon">${found ? a.icon : '🔒'}</div>
+      <div class="artifact-name">${found ? a.name : '???'}</div>
+      <div class="artifact-rarity ${rarityClass}">${rarityLabels[a.rarity]}</div>
+      ${found ? `<div class="artifact-bonus">${a.bonus}</div><div class="artifact-source">📍${zoneNames[a.zone]}</div>` : `<div class="artifact-source">📍${zoneNames[a.zone]}</div>`}
+      ${count > 1 ? `<div class="artifact-count">×${count}</div>` : ''}
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderQuests() {
+  const container = document.getElementById('panel-quests');
+  container.innerHTML = '<div class="panel-title">📋 每日任務</div>';
+  QUESTS.forEach(q => {
+    const pct = Math.min(100, (q.progress / q.target) * 100);
+    const div = document.createElement('div');
+    div.className = `quest-item${q.claimed ? ' quest-claimed' : q.done ? ' quest-complete' : ''}`;
+    const rewardText = Object.entries(q.reward).map(([k,v])=>`+${v}${resName(k).split('').slice(-1)}`).join(' ');
+    div.innerHTML = `
+      <div class="quest-name">${q.claimed ? '✅ ' : q.done ? '🎯 ' : ''}${q.name}</div>
+      <div class="quest-desc">${q.desc}</div>
+      <div class="quest-bar-bg"><div class="quest-bar-fill" style="width:${pct}%"></div></div>
+      <div class="quest-reward">進度：${Math.floor(q.progress)}/${q.target} | 獎勵：${rewardText}</div>
+      ${q.done && !q.claimed ? '<button class="btn-claim">🎁 領取獎勵</button>' : ''}
+      ${q.claimed ? '<div style="font-size:12px;color:#2a7050;margin-top:5px;padding:4px 8px;background:#061812;border-radius:4px;display:inline-block">已領取</div>' : ''}
+    `;
+    if (q.done && !q.claimed) {
+      div.querySelector('.btn-claim').addEventListener('click', () => claimQuest(q.id));
+    }
+    container.appendChild(div);
+  });
+}
+
+function renderUpgrades() {
+  const container = document.getElementById('panel-upgrades');
+  container.innerHTML = '<div class="panel-title">🔬 研究升級</div>';
+  // 自動補給解鎖
+  const autoDiv = document.createElement('div');
+  autoDiv.className = 'upgrade-item';
+  autoDiv.style.borderColor = G.autoRefuel ? '#1a7050' : '#122a44';
+  autoDiv.innerHTML = `
+    <div class="upgrade-name">⚙️ 自動補給系統 ${G.autoRefuel ? '<span style="font-size:11px;color:#40d090">已解鎖</span>' : ''}
+    </div>
+    <div class="upgrade-desc">自動探索暫停時自動花費珍珠補充燃料與修復耐久，維持循環不中斷。</div>
+  `;
+  if (!G.autoRefuel) {
+    const btn = document.createElement('button');
+    btn.className = 'upgrade-btn';
+    btn.textContent = '📺 看廣告解鎖';
+    btn.addEventListener('click', () => {
+      showRewardedAd((success) => {
+        if (!success) { showNotif('廣告載入失敗，請稍後再試'); return; }
+        G.autoRefuel = true;
+        showNotif('✅ 自動補給系統已解鎖！', true);
+        renderUpgrades();
+      });
+    });
+    autoDiv.appendChild(btn);
+  }
+  container.appendChild(autoDiv);
+  UPGRADES.forEach(u => {
+    const lv = G.upgrades[u.id] || 0;
+    const cost = Math.floor(u.cost * Math.pow(1.6, lv));
+    const div = document.createElement('div');
+    div.className = 'upgrade-item';
+    div.innerHTML = `
+      <div class="upgrade-name">${u.name} <span style="font-size:12px;color:#3a8ab0">Lv.${lv}/${u.maxLv}</span></div>
+      <div class="upgrade-desc">${u.desc}</div>
+      <button class="upgrade-btn" onclick="buyUpgrade('${u.id}')" ${lv >= u.maxLv ? 'disabled' : ''}>
+        ${lv >= u.maxLv ? '已滿級' : `研究 (${cost}💎)`}
+      </button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function updateSubStatus() {
+  document.getElementById('bar-fuel').style.width = G.subFuel + '%';
+  document.getElementById('bar-hp').style.width = G.subHp + '%';
+  const cargoPct = (G.subCargo / G.subMaxCargo) * 100;
+  document.getElementById('bar-cargo').style.width = cargoPct + '%';
+  document.getElementById('txt-fuel').textContent = Math.round(G.subFuel) + '%';
+  document.getElementById('txt-hp').textContent = Math.round(G.subHp) + '%';
+  document.getElementById('txt-cargo').textContent = `${G.subCargo}/${G.subMaxCargo}`;
+  document.getElementById('sub-name').textContent = `海底先鋒號 Lv.${G.subLv}`;
+}
+
+function updateResources() {
+  document.getElementById('res-pearls').textContent = fmtNum(Math.floor(G.pearls));
+  document.getElementById('res-coral').textContent = fmtNum(Math.floor(G.coral));
+  document.getElementById('res-essence').textContent = fmtNum(Math.floor(G.essence));
+  document.getElementById('res-energy').textContent = G.energy;
+  const rate = calcPassiveRate();
+  document.getElementById('rate-pearls').textContent = `+${rate.pearls.toFixed(1)}/s`;
+  document.getElementById('rate-coral').textContent = `+${rate.coral.toFixed(1)}/s`;
+  document.getElementById('rate-essence').textContent = `+${rate.essence.toFixed(2)}/s`;
+}
+
+function fmtNum(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toString();
+}
+
+// ══════════════════════════════════════════
+//  標籤切換
+// ══════════════════════════════════════════
+function switchTab(tab) {
+  ['creatures','quests','upgrades','artifacts'].forEach(t => {
+    document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+  });
+  if (tab === 'artifacts') renderArtifacts();
+}
+
+// ══════════════════════════════════════════
+//  通知系統
+// ══════════════════════════════════════════
+function showNotif(msg, special = false) {
+  const c = document.getElementById('notif-container');
+  const n = document.createElement('div');
+  n.className = 'notif' + (special ? ' notif-special' : '');
+  n.textContent = msg;
+  c.appendChild(n);
+  setTimeout(() => { if (n.parentNode) n.parentNode.removeChild(n); }, 3000);
+}
+
+// ══════════════════════════════════════════
+//  海洋動畫 Canvas
+// ══════════════════════════════════════════
+function initOceanCanvas() {
+  const canvas = document.getElementById('ocean-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const particles = [];
+  const bubbles = [];
+  const fish = [];
+
+  function resize() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // 光線粒子
+  for (let i = 0; i < 60; i++) {
+    particles.push({ x: Math.random()*1000, y: Math.random()*600, speed: 0.2+Math.random()*0.5, size: 1+Math.random()*2, alpha: Math.random() });
+  }
+  // 氣泡
+  for (let i = 0; i < 20; i++) {
+    bubbles.push({ x: Math.random()*1000, y: Math.random()*600, r: 2+Math.random()*6, speed: 0.5+Math.random()*1.5 });
+  }
+  // 魚群
+  const FISH_ICONS = ['🐠','🐟','🐡','🦑','🐙'];
+  for (let i = 0; i < 8; i++) {
+    fish.push({ x: Math.random()*1000, y: 100+Math.random()*400, speed: 0.4+Math.random()*0.8, icon: FISH_ICONS[Math.floor(Math.random()*FISH_ICONS.length)], dir: Math.random() > 0.5 ? 1 : -1, wave: Math.random()*Math.PI*2 });
+  }
+
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    // 海底光線
+    ctx.save();
+    for (let i = 0; i < 5; i++) {
+      const gx = W * (0.1 + i * 0.2) + Math.sin(t * 0.001 + i) * 30;
+      const grad = ctx.createLinearGradient(gx, 0, gx + 20, H);
+      grad.addColorStop(0, 'rgba(80,180,255,0.04)');
+      grad.addColorStop(1, 'rgba(80,180,255,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(gx - 40, 0); ctx.lineTo(gx + 40, 0); ctx.lineTo(gx + 80, H); ctx.lineTo(gx, H);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+
+    // 光點粒子
+    particles.forEach(p => {
+      p.y += p.speed;
+      if (p.y > H) p.y = -10;
+      const alpha = 0.1 + Math.sin(t * 0.002 + p.x) * 0.1;
+      ctx.fillStyle = `rgba(120,200,255,${alpha})`;
+      ctx.beginPath(); ctx.arc(p.x % W, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    });
+
+    // 氣泡
+    bubbles.forEach(b => {
+      b.y -= b.speed;
+      b.x += Math.sin(t * 0.01 + b.y) * 0.3;
+      if (b.y < -20) { b.y = H + 20; b.x = Math.random() * W; }
+      ctx.strokeStyle = 'rgba(160,220,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.stroke();
+    });
+
+    // 魚群（Emoji）
+    ctx.font = '20px serif';
+    ctx.textBaseline = 'middle';
+    fish.forEach(f => {
+      f.x += f.speed * f.dir;
+      f.y += Math.sin(t * 0.005 + f.wave) * 0.4;
+      if (f.x > W + 40) f.x = -40;
+      if (f.x < -40) f.x = W + 40;
+      ctx.save();
+      if (f.dir < 0) { ctx.translate(f.x, f.y); ctx.scale(-1, 1); ctx.fillText(f.icon, 0, 0); }
+      else ctx.fillText(f.icon, f.x, f.y);
+      ctx.restore();
+    });
+
+    // 海底珊瑚裝飾
+    ctx.font = '24px serif';
+    const corals = ['🪸','🌿','⭐','🦀'];
+    for (let i = 0; i < 8; i++) {
+      ctx.fillText(corals[i%4], 50 + i * (W/8), H - 30);
+    }
+
+    // 深度標示
+    ctx.fillStyle = 'rgba(80,160,200,0.3)';
+    ctx.font = '11px Segoe UI';
+    ctx.textAlign = 'right';
+    for (let d = 1; d <= 4; d++) {
+      const y = d * (H/5);
+      ctx.fillText(`—${d*200}m`, W - 10, y);
+    }
+    ctx.textAlign = 'left';
+
+    t++;
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ══════════════════════════════════════════
+//  主遊戲循環
+// ══════════════════════════════════════════
+function gameLoop() {
+  // 被動收益
+  const rate = calcPassiveRate();
+  G.pearls  += rate.pearls  / 10;
+  G.coral   += rate.coral   / 10;
+  G.essence += rate.essence / 10;
+  G.totalPearls += rate.pearls / 10;
+  G.totalCoral  += rate.coral  / 10;
+
+  // 探索進度
+  checkExplorations();
+
+  // 任務進度更新
+  updateQuestProgress('pearls', G.totalPearls);
+  updateQuestProgress('coral', G.totalCoral);
+  updateQuestProgress('creatures', G.unlockedCreatures?.length || 1);
+
+  // 區域解鎖檢查（每5秒）
+  if (Date.now() % 5000 < 100) checkUnlocks();
+
+  // UI 更新
+  updateResources();
+  updateSubStatus();
+
+  // 自動存檔（每30秒）
+  if (Date.now() - G.lastSave > 30000) saveState();
+}
+
+// 每100ms更新進度條
+function uiLoop() {
+  renderExploreList();
+}
+
+// ══════════════════════════════════════════
+//  初始化
+// ══════════════════════════════════════════
+initState();
+initOceanCanvas();
+renderExploreList();
+renderCreatures();
+renderQuests();
+renderUpgrades();
+renderArtifacts();
+updateResources();
+updateSubStatus();
+
+setInterval(gameLoop, 100);
+setInterval(uiLoop, 1000);
+
+// 離開前存檔
+window.addEventListener('beforeunload', saveState);
+
+showNotif('🌊 歡迎來到深海秘境！點擊海域開始探索', true);
+</script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+</body>
+  </html>
