@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Hole Swallow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Arial', '微軟正黑體', sans-serif;
+            background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            background: #0a0a2e; border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden; width: 100%; max-width: 700px;
+            border: 2px solid #e94560;
+        }
+        .start-screen {
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: linear-gradient(135deg, #0a0a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 60px 40px; text-align: center;
+        }
+        .start-screen.hidden { display: none; }
+        .game-title { font-size: 48px; font-weight: bold; color: #e94560; margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.5); }
+        .start-screen p { font-size: 16px; color: #ffffff; margin-bottom: 40px; line-height: 1.6; }
+        .start-btn {
+            padding: 16px 50px; font-size: 20px; font-weight: bold;
+            color: #000; background: linear-gradient(135deg, #00ff88, #00cc66);
+            border: none; border-radius: 30px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .start-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(0,255,136,0.4); }
+        .start-btn:active { transform: scale(0.98); }
+        .header { background: linear-gradient(135deg, #e94560 0%, #c7254e 100%); color: white; padding: 20px; text-align: center; }
+        .game-screen.hidden { display: none; }
+        .title { font-size: 32px; font-weight: bold; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .stats-bar {
+            display: flex; justify-content: space-around;
+            background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 10px;
+        }
+        .stat { text-align: center; }
+        .stat-label { font-size: 14px; opacity: 0.9; margin-bottom: 5px; }
+        .stat-value { font-size: 18px; font-weight: bold; }
+        #gameCanvas {
+            display: block;
+            background: radial-gradient(circle at 30% 50%, #1a4d7a 0%, #0a0a2e 70%);
+            cursor: none; width: 100%; height: 600px; position: relative;
+        }
+        .game-area { position: relative; width: 100%; padding-bottom: 85.7%; }
+        .rank-item { font-size: 15px; }
+        .rank-first { color: #FFD700; }
+        .rank-second { color: #C0C0C0; }
+        .rank-third { color: #CD7F32; }
+        .shrink-warning {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px; color: #FF0000; font-weight: bold;
+            text-shadow: 0 0 10px #FF0000; opacity: 0; pointer-events: none;
+        }
+        .shrink-warning.show { animation: shrinkPulse 0.5s ease-in-out; }
+        @keyframes shrinkPulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+        .game-over-screen {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            justify-content: center; align-items: center; flex-direction: column;
+            z-index: 100; color: white; text-align: center;
+        }
+        .game-over-screen.show { display: flex; }
+        .game-over-screen h2 { font-size: 32px; margin-bottom: 20px; color: #e94560; }
+        .game-over-screen p { font-size: 16px; margin-bottom: 20px; color: #cccccc; }
+        .final-score { font-size: 24px; font-weight: bold; margin-bottom: 30px; color: #FFD700; }
+        .controls {
+            display: flex; align-items: center; justify-content: center;
+            gap: 20px; flex-wrap: wrap; padding: 15px;
+            background: #0a0a2e; border-top: 1px solid #e94560;
+        }
+        #rankingDisplay { display: flex; gap: 12px; font-size: 15px; font-weight: bold; color: white; }
+        button {
+            padding: 10px 20px; font-size: 14px;
+            background: linear-gradient(135deg, #e94560, #c7254e);
+            color: white; border: none; border-radius: 20px;
+            cursor: pointer; font-weight: bold; transition: transform 0.2s;
+        }
+        button:hover { transform: scale(1.05); }
+        button:active { transform: scale(0.98); }
+        .next-stage-btn { background: linear-gradient(135deg, #00ff88, #00cc66) !important; color: #000 !important; }
+        .size-display {
+            position: absolute; bottom: 15px; right: 15px;
+            background: rgba(0,0,0,0.7); color: white;
+            padding: 8px 15px; border-radius: 15px; font-size: 14px; z-index: 10;
+        }
+        .lang-btn {
+            position: absolute; top: 15px; right: 15px;
+            padding: 6px 14px; font-size: 13px;
+            background: rgba(255,255,255,0.15); color: #fff;
+            border: 1px solid rgba(255,255,255,0.3); border-radius: 15px;
+            cursor: pointer; z-index: 200; transition: background 0.2s;
+        }
+        .lang-btn:hover { background: rgba(255,255,255,0.3); }
+        @media (max-width: 600px) {
+            .game-title { font-size: 36px; }
+            .start-btn { padding: 14px 40px; font-size: 18px; }
+            .stat-value { font-size: 16px; }
+            #rankingDisplay { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container" style="position:relative;">
+    <button class="lang-btn" id="langBtn" onclick="toggleLang()">中文</button>
+
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+        <h1 class="game-title" id="titleMain">Black Hole Swallow</h1>
+        <p id="descText">Control your black hole to swallow objects and compete!<br>
+        Move mouse = Move black hole<br>
+        Eating danger objects will shrink you<br>
+        Reach 1st place in 25s to advance</p>
+        <button class="start-btn" onclick="startGame()" id="startBtn">Start Game</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div class="game-screen hidden" id="gameScreen">
+        <div class="header">
+            <div class="title" id="headerTitle">Black Hole Swallow</div>
+            <div class="stats-bar">
+                <div class="stat">
+                    <div class="stat-label" id="labelScore">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label" id="labelTime">Time Left</div>
+                    <div class="stat-value" id="timer">25</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label" id="labelStage">Stage</div>
+                    <div class="stat-value" id="level">1</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <canvas id="gameCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+            <div class="size-display" id="sizeDisplay">Size: 20</div>
+            <div class="shrink-warning" id="shrinkWarning">Eaten!</div>
+            <div class="game-over-screen" id="gameOverScreen">
+                <h2 id="resultTitle">Game Over</h2>
+                <p id="gameOverText"></p>
+                <div class="final-score" id="finalScore"></div>
+                <button class="next-stage-btn" onclick="nextStage()" id="nextStageBtn" style="display:none;margin-top:15px;padding:12px 30px;font-size:16px;">Next Stage ▶</button>
+                <button onclick="restartGame()" id="retryBtn" style="display:none;margin-top:10px;padding:10px 25px;font-size:16px;">Try Again</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div id="rankingDisplay" style="display:flex;gap:12px;font-size:15px;font-weight:bold;color:white;">
+                <span id="rank1" class="rank-first">1st: You</span>
+                <span id="rank2" class="rank-second">2nd: Rival A</span>
+                <span id="rank3" class="rank-third">3rd: Rival B</span>
+            </div>
+            <button onclick="restartGame()" id="restartBtn">Restart</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// === i18n ===
+let currentLang = 'en';
+const i18n = {
+    en: {
+        title: 'Black Hole Swallow',
+        desc: 'Control your black hole to swallow objects and compete!<br>Move mouse = Move black hole<br>Eating danger objects will shrink you<br>Reach 1st place in 25s to advance',
+        start: 'Start Game', score: 'Score', timeLeft: 'Time Left', stage: 'Stage',
+        size: 'Size', eaten: 'Eaten!', nextStage: 'Next Stage ▶', tryAgain: 'Try Again',
+        restart: 'Restart', you: 'You', rivalA: 'Rival A', rivalB: 'Rival B',
+        stagePassed: (s) => `Stage ${s} Passed!`,
+        stageFailed: (s) => `Stage ${s} Failed...`,
+        winner: (name) => `${name} wins!`,
+        rank: (r) => `Rank: ${r}/3`,
+        stageScore: (s) => `Stage Score: ${s}`,
+        combo: (n) => `Combo x${n}!`,
+        langBtn: '中文',
+        levelDisplay: (s) => `${s}`
+    },
+    zh: {
+        title: '黑洞吞噬',
+        desc: '控制黑洞吞噬物體，與對手競爭！<br>滑鼠移動 = 黑洞移動<br>吃到危險物體會縮小<br>25秒內達到第1名才能進入下一關',
+        start: '開始遊戲', score: '得分', timeLeft: '剩餘時間', stage: '關卡',
+        size: '大小', eaten: '被吃掉了！', nextStage: '下一關 ▶', tryAgain: '重新挑戰',
+        restart: '重新開始', you: '你', rivalA: '對手A', rivalB: '對手B',
+        stagePassed: (s) => `第${s}關 通過！`,
+        stageFailed: (s) => `第${s}關 失敗...`,
+        winner: (name) => `${name} 贏了！`,
+        rank: (r) => `排名: ${r}/3`,
+        stageScore: (s) => `本關得分: ${s}`,
+        combo: (n) => `連擊 x${n}!`,
+        langBtn: 'EN',
+        levelDisplay: (s) => `${s}`
+    }
+};
+
+function t(key, ...args) {
+    const val = i18n[currentLang][key];
+    return typeof val === 'function' ? val(...args) : val;
+}
+
+function applyLang() {
+    document.getElementById('titleMain').textContent = t('title');
+    document.getElementById('descText').innerHTML = t('desc');
+    document.getElementById('startBtn').textContent = t('start');
+    document.getElementById('headerTitle').textContent = t('title');
+    document.getElementById('labelScore').textContent = t('score');
+    document.getElementById('labelTime').textContent = t('timeLeft');
+    document.getElementById('labelStage').textContent = t('stage');
+    document.getElementById('shrinkWarning').textContent = t('eaten');
+    document.getElementById('nextStageBtn').textContent = t('nextStage');
+    document.getElementById('retryBtn').textContent = t('tryAgain');
+    document.getElementById('restartBtn').textContent = t('restart');
+    document.getElementById('langBtn').textContent = t('langBtn');
+    document.documentElement.lang = currentLang === 'en' ? 'en' : 'zh-TW';
+    // BUG FIX #2: level只顯示數字，避免 "Stage Stage 1"
+    document.getElementById('level').textContent = t('levelDisplay', stage);
+}
+
+function toggleLang() {
+    currentLang = currentLang === 'en' ? 'zh' : 'en';
+    applyLang();
+    updateRanking();
+}
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// === Audio ===
+const sounds = {};
+const foodImageList = [];
+const gemImages = [];
+let bgm = null;
+let bgmPlaying = false;
+
+function preloadAssets() {
+    const soundFiles = ['eat','gem','crunch','danger','pop','stageclear','fail','warning','combo1','combo2','combo3'];
+    for (const name of soundFiles) {
+        const audio = new Audio(`assets/sfx/${name}.wav`);
+        audio.preload = 'auto';
+        sounds[name] = audio;
+    }
+    bgm = new Audio('assets/sfx/bgm.ogg');
+    bgm.loop = true;
+    bgm.volume = 0.3;
+
+    const foodNames = [
+        'banana','red_apple','strawberry','green_grape','watermelon1',
+        'milk_bottle','orange_juice','cookies','candy_bar','egg_box',
+        'sliced_bread_p','fish','meat1','wine_red','rubber_duck'
+    ];
+    for (let i = 0; i < foodNames.length; i++) {
+        const img = new Image();
+        img.src = `assets/img/${foodNames[i]}.png`;
+        foodImageList[i] = img;
+    }
+    const gemNames = ['gem_red','gem_gold'];
+    for (let i = 0; i < gemNames.length; i++) {
+        const img = new Image();
+        img.src = `assets/img/${gemNames[i]}.png`;
+        gemImages[i] = img;
+    }
+}
+
+function playSound(name, volume = 1.0) {
+    if (sounds[name]) {
+        try {
+            const s = sounds[name].cloneNode();
+            s.volume = volume;
+            s.play().catch(() => {});
+        } catch(e) {}
+    }
+}
+
+function startBGM() {
+    if (!bgmPlaying && bgm) {
+        bgm.currentTime = 0;
+        bgm.play().catch(() => {});
+        bgmPlaying = true;
+    }
+}
+
+function stopBGM() {
+    if (bgm) { bgm.pause(); bgmPlaying = false; }
+}
+
+// Game variables
+let score = 0;
+let timeLeft = 25;
+let gameRunning = true;
+let stage = 1;
+let frameCount = 0;
+let totalScore = 0;
+let lastComboTime = 0;
+let comboCount = 0;
+
+let hole = {
+    x: 400, y: 300,
+    radius: 20, targetX: 400, targetY: 300, maxRadius: 150
+};
+
+// BUG FIX #3: 初始 rivalHoles 加上 targetX/targetY/retargetCD
+let rivalHoles = [
+    { x: 175, y: 180, radius: 20, score: 0, nameKey: 'rivalA', color: '#FF6B6B', targetX: 175, targetY: 180, retargetCD: 0 },
+    { x: 525, y: 420, radius: 20, score: 0, nameKey: 'rivalB', color: '#4ECDC4', targetX: 525, targetY: 420, retargetCD: 0 }
+];
+
+let objects = [];
+let floatingTexts = [];
+let mouseX = 400, mouseY = 300;
+
+class FloatingText {
+    constructor(x, y, text, color) {
+        this.x = x; this.y = y; this.text = text; this.color = color;
+        this.life = 1; this.vy = -2;
+    }
+    update() { this.y += this.vy; this.life -= 0.02; return this.life > 0; }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.font = 'bold 22px Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 8;
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+    }
+}
+
+class GameObject {
+    constructor(type) {
+        this.type = type;
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.width = 20 + Math.random() * 30;
+        this.height = 20 + Math.random() * 30;
+        this.rotation = 0;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+        this.spawnTimer = 60;
+        this.active = false;
+
+        const rand = Math.random();
+        if (rand < 0.10) {
+            this.isDanger = true; this.isGem = false; this.imgIndex = -1;
+        } else if (rand < 0.25) {
+            this.isDanger = false; this.isGem = true;
+            this.width = 24 + Math.random() * 16;
+            this.height = this.width;
+            this.imgIndex = Math.random() > 0.5 ? 0 : 1;
+        } else {
+            this.isDanger = false; this.isGem = false;
+            this.imgIndex = Math.floor(Math.random() * 15);
+        }
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rotation += this.rotationSpeed;
+        if (this.x < -50) this.x = canvas.width + 50;
+        if (this.x > canvas.width + 50) this.x = -50;
+        if (this.y < -50) this.y = canvas.height + 50;
+        if (this.y > canvas.height + 50) this.y = -50;
+        if (this.spawnTimer > 0) {
+            this.spawnTimer--;
+            if (this.spawnTimer === 1) playSound('pop', 0.5);
+            if (this.spawnTimer <= 0) this.active = true;
+        }
+    }
+
+    // BUG FIX #1: 修正 draw() 括號結構，確保 ctx.save/restore 正確配對
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        if (this.spawnTimer > 0) {
+            ctx.globalAlpha = 0.4 + 0.6 * (Math.floor(this.spawnTimer / 6) % 2);
+        }
+
+        if (this.isDanger) {
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 4) * Math.PI;
+                const length = (i % 2) ? this.width * 0.6 : this.width;
+                const x = Math.cos(angle) * length;
+                const y = Math.sin(angle) * length;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#FF6666';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        } else if (this.isGem) {
+            const gemImg = gemImages[this.imgIndex];
+            if (gemImg && gemImg.complete && gemImg.naturalWidth > 0) {
+                ctx.drawImage(gemImg, -this.width / 2, -this.height / 2, this.width, this.height);
+            } else {
+                ctx.fillStyle = this.imgIndex === 0 ? '#FF4444' : '#FFD700';
+                ctx.beginPath();
+                ctx.moveTo(0, -this.height / 2);
+                ctx.lineTo(this.width / 2, 0);
+                ctx.lineTo(0, this.height / 2);
+                ctx.lineTo(-this.width / 2, 0);
+                ctx.closePath();
+                ctx.fill();
+            }
+        } else {
+            const img = foodImageList[this.imgIndex];
+            if (img && img.complete && img.naturalWidth > 0) {
+                ctx.drawImage(img, -this.width / 2, -this.height / 2, this.width, this.height);
+            } else {
+                const colors = ['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8','#F7DC6F','#BB8FCE','#85C1E9','#F0B27A','#AED6F1','#A3E4D7','#F9E79F','#FADBD8'];
+                ctx.fillStyle = colors[this.imgIndex % colors.length];
+                ctx.beginPath();
+                ctx.arc(0, 0, this.width / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        ctx.restore();
+    }
+}
+
+function spawnObjects() {
+    const spawnRate = Math.max(8, 20 - stage * 2);
+    if (frameCount % spawnRate === 0) objects.push(new GameObject('normal'));
+    if (stage >= 2 && frameCount % Math.max(10, 120 - stage * 10) === 0) {
+        const largeObject = new GameObject('large');
+        largeObject.width = 40 + stage * 15;
+        largeObject.height = 40 + stage * 15;
+        objects.push(largeObject);
+    }
+}
+
+function getRivalName(rival) { return t(rival.nameKey); }
+
+function updateRanking() {
+    const playerName = t('you');
+    const ranking = [
+        { name: playerName, score: score },
+        { name: getRivalName(rivalHoles[0]), score: rivalHoles[0].score },
+        { name: getRivalName(rivalHoles[1]), score: rivalHoles[1].score }
+    ].sort((a, b) => b.score - a.score);
+
+    document.getElementById('rank1').textContent = `1st: ${ranking[0].name}`;
+    document.getElementById('rank2').textContent = `2nd: ${ranking[1].name}`;
+    document.getElementById('rank3').textContent = `3rd: ${ranking[2].name}`;
+}
+
+function drawHole(holeObj = hole, isRival = false) {
+    if (!isFinite(holeObj.x) || !isFinite(holeObj.y) || !isFinite(holeObj.radius) || holeObj.radius <= 0) return;
+    ctx.save();
+    const gradient = ctx.createRadialGradient(holeObj.x, holeObj.y, 0, holeObj.x, holeObj.y, holeObj.radius);
+    gradient.addColorStop(0, 'rgba(255,255,255,0.3)');
+    gradient.addColorStop(0.7, isRival ? holeObj.color : 'rgba(0,0,0,0.1)');
+    gradient.addColorStop(1, isRival ? 'rgba(100,100,100,0)' : 'rgba(0,0,0,0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(holeObj.x, holeObj.y, holeObj.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = isRival ? holeObj.color : '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawRivalHoles() {
+    rivalHoles.forEach(rival => {
+        drawHole(rival, true);
+        ctx.fillStyle = rival.color;
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(getRivalName(rival), rival.x, rival.y - rival.radius - 6);
+    });
+}
+
+function drawCursor() {
+    const ringSize = hole.radius + 10;
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(mouseX, mouseY, ringSize, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = '#e94560';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(mouseX - 8, mouseY);
+    ctx.lineTo(mouseX + 8, mouseY);
+    ctx.moveTo(mouseX, mouseY - 8);
+    ctx.lineTo(mouseX, mouseY + 8);
+    ctx.stroke();
+}
+
+function endStage() {
+    gameRunning = false;
+    stopBGM();
+    const playerName = t('you');
+    const ranking = [
+        { name: playerName, score: score },
+        { name: getRivalName(rivalHoles[0]), score: rivalHoles[0].score },
+        { name: getRivalName(rivalHoles[1]), score: rivalHoles[1].score }
+    ].sort((a, b) => b.score - a.score);
+
+    const playerRank = ranking.findIndex(r => r.name === playerName);
+    const passed = playerRank === 0;
+
+    if (passed) {
+        playSound('stageclear');
+        document.getElementById('resultTitle').textContent = t('stagePassed', stage);
+    } else {
+        playSound('fail');
+        document.getElementById('resultTitle').textContent = t('stageFailed', stage);
+    }
+
+    document.getElementById('gameOverText').textContent =
+        `${t('winner', ranking[0].name)}  ${t('rank', playerRank + 1)}`;
+    document.getElementById('finalScore').textContent = t('stageScore', Math.floor(score));
+    document.getElementById('nextStageBtn').style.display = passed ? 'block' : 'none';
+    document.getElementById('retryBtn').style.display = passed ? 'none' : 'block';
+    document.getElementById('gameOverScreen').classList.add('show');
+}
+
+function nextStage() {
+    document.getElementById('gameOverScreen').classList.remove('show');
+    totalScore += score;
+    stage++;
+    resetStage();
+}
+
+function resetStage() {
+    score = 0;
+    timeLeft = 25;
+    gameRunning = true;
+    frameCount = 0;
+    objects = [];
+    floatingTexts = [];
+    hole.radius = 20;
+    hole.x = canvas.width / 2;
+    hole.y = canvas.height / 2;
+
+    const aiStartRadius = 15 + stage * 3;
+    // BUG FIX #3: 初始化時確保 targetX/targetY/retargetCD 都存在
+    rivalHoles = [
+        { x: canvas.width * 0.25, y: canvas.height * 0.3, radius: aiStartRadius, score: 0, nameKey: 'rivalA', color: '#FF6B6B', targetX: canvas.width * 0.25, targetY: canvas.height * 0.3, retargetCD: 0 },
+        { x: canvas.width * 0.75, y: canvas.height * 0.7, radius: aiStartRadius, score: 0, nameKey: 'rivalB', color: '#4ECDC4', targetX: canvas.width * 0.75, targetY: canvas.height * 0.7, retargetCD: 0 }
+    ];
+
+    // BUG FIX #2: level 只顯示數字
+    document.getElementById('level').textContent = t('levelDisplay', stage);
+    startBGM();
+    gameLoop();
+}
+
+function restartGame() {
+    document.getElementById('startScreen').classList.remove('hidden');
+    document.getElementById('gameScreen').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.remove('show');
+    score = 0; totalScore = 0; stage = 1;
+    stopBGM();
+}
+
+function startGame() {
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('gameScreen').classList.remove('hidden');
+    preloadAssets();
+    requestAnimationFrame(() => {
+        resizeCanvas();
+        mouseX = canvas.width / 2;
+        mouseY = canvas.height / 2;
+        resetStage();
+    });
+}
+
+document.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    mouseX = (e.clientX - rect.left) * scaleX;
+    mouseY = (e.clientY - rect.top) * scaleY;
+});
+
+function gameLoop() {
+    if (!gameRunning) return;
+    frameCount++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    hole.x = mouseX;
+    hole.y = mouseY;
+
+    spawnObjects();
+
+    for (let i = objects.length - 1; i >= 0; i--) {
+        objects[i].update();
+        if (objects[i].active) {
+            const dx = hole.x - objects[i].x;
+            const dy = hole.y - objects[i].y;
+            if (Math.hypot(dx, dy) < hole.radius) {
+                if (objects[i].isDanger) {
+                    hole.radius = Math.max(5, hole.radius - 15);
+                    playSound('danger');
+                    const sw = document.getElementById('shrinkWarning');
+                    sw.classList.remove('show');
+                    void sw.offsetWidth;
+                    sw.classList.add('show');
+                } else {
+                    const points = objects[i].isGem ? 30 : 10;
+                    // BUG FIX #4: 用整數累積避免浮點數顯示異常
+                    score += points;
+                    hole.radius = Math.min(hole.maxRadius, hole.radius + points * 0.06);
+
+                    const now = Date.now();
+                    if (now - lastComboTime < 2000) {
+                        comboCount++;
+                        if (comboCount === 3) {
+                            floatingTexts.push(new FloatingText(objects[i].x, objects[i].y, t('combo', 3), '#FFD700'));
+                            playSound('combo1');
+                        } else if (comboCount === 4) {
+                            playSound('combo2');
+                        } else if (comboCount >= 5) {
+                            playSound('combo3');
+                        }
+                    } else {
+                        comboCount = 1;
+                    }
+                    lastComboTime = now;
+
+                    if (objects[i].isGem) playSound('gem');
+                    else if (objects[i].width > 40) playSound('crunch');
+                    else playSound('eat');
+
+                    floatingTexts.push(new FloatingText(objects[i].x, objects[i].y, `+${points}`, '#00FF00'));
+                }
+                objects.splice(i, 1);
+            }
+        }
+    }
+
+    // AI rivals
+    const aiPower = Math.min(1, (stage - 1) / 8);
+    const aiSpeed = 0.03 + aiPower * 0.04;
+    rivalHoles.forEach(rival => {
+        rival.retargetCD--;
+        const atTarget = Math.hypot(rival.x - rival.targetX, rival.y - rival.targetY) < 30;
+
+        if (rival.retargetCD <= 0 || atTarget) {
+            const targets = objects.filter(obj => obj.active && !obj.isDanger && obj.width <= rival.radius * 1.5);
+            if (targets.length > 0) {
+                targets.sort((a, b) =>
+                    Math.hypot(rival.x - a.x, rival.y - a.y) - Math.hypot(rival.x - b.x, rival.y - b.y)
+                );
+                const pickRange = Math.max(1, Math.floor(targets.length * (1 - aiPower * 0.8)));
+                const pick = targets[Math.floor(Math.random() * pickRange)];
+                rival.targetX = pick.x;
+                rival.targetY = pick.y;
+            } else {
+                rival.targetX = 100 + Math.random() * (canvas.width - 200);
+                rival.targetY = 100 + Math.random() * (canvas.height - 200);
+            }
+            rival.retargetCD = 60 + Math.floor(Math.random() * 60);
+        }
+
+        rival.x += (rival.targetX - rival.x) * aiSpeed;
+        rival.y += (rival.targetY - rival.y) * aiSpeed;
+
+        for (let i = objects.length - 1; i >= 0; i--) {
+            if (!objects[i].active) continue;
+            if (Math.hypot(rival.x - objects[i].x, rival.y - objects[i].y) < rival.radius) {
+                if (objects[i].isDanger) {
+                    rival.radius = Math.max(5, rival.radius - 10);
+                } else {
+                    rival.score += objects[i].isGem ? 30 : 10;
+                    rival.radius = Math.min(150, rival.radius + (objects[i].isGem ? 1.8 : 0.6));
+                }
+                objects.splice(i, 1);
+            }
+        }
+    });
+
+    floatingTexts = floatingTexts.filter(ft => ft.update());
+
+    drawRivalHoles();
+    for (let obj of objects) obj.draw();
+    drawHole();
+    drawCursor();
+    for (let ft of floatingTexts) ft.draw();
+
+    timeLeft -= 1 / 60;
+    if (timeLeft <= 5 && timeLeft > 4.95) playSound('warning', 0.5);
+    if (timeLeft <= 0) { endStage(); return; }
+
+    if (timeLeft < 5) {
+        ctx.fillStyle = `rgba(255,0,0,${0.1 * (5 - timeLeft)})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // BUG FIX #4: Math.floor 避免浮點數顯示
+    document.getElementById('score').textContent = Math.floor(score);
+    document.getElementById('timer').textContent = Math.ceil(timeLeft);
+    document.getElementById('sizeDisplay').textContent = `${t('size')}: ${Math.floor(hole.radius)}`;
+    updateRanking();
+
+    requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener('click', () => { if (!bgmPlaying && gameRunning) startBGM(); }, { once: false });
+document.addEventListener('mousemove', () => { if (!bgmPlaying && gameRunning) startBGM(); }, { once: false });
+</script>
+</body>
+</html>
