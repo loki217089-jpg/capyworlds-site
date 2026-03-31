@@ -40,8 +40,8 @@ canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);touch-a
 <div class="top-bar">
 <a href="../" id="back-link">&larr; Back</a>
 <div class="btn-group">
-<button id="lang-btn" onclick="toggleLang()">繁中</button>
-<button id="mute-btn" onclick="toggleMute()">🔊</button>
+<button id="lang-btn" onclick="toggleLang()">ç¹ä¸­</button>
+<button id="mute-btn" onclick="toggleMute()">ð</button>
 </div>
 </div>
 <div class="game-area">
@@ -57,39 +57,39 @@ canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);touch-a
 <h2 id="go-title">Game Over</h2>
 <div class="score-big" id="go-score">0</div>
 <p id="go-best">Best: 0</p>
-<p id="go-coins" style="color:#ffd700;font-size:18px">+0 🪙</p>
+<p id="go-coins" style="color:#ffd700;font-size:18px">+0 ðª</p>
 <button class="obtn primary" onclick="startGame()" id="go-restart">&#9654; Play Again</button>
 <button class="obtn secondary" onclick="showShop()" id="go-shop">&#128663; Garage</button>
 </div>
 <!-- Shop -->
 <div class="overlay" id="ov-shop">
 <h2 id="shop-title">&#128663; Garage</h2>
-<p id="shop-coins">🪙 0</p>
+<p id="shop-coins">ðª 0</p>
 <div class="shop-grid" id="shop-grid"></div>
 <button class="obtn secondary" onclick="hideShop()" id="shop-close">&#10005; Close</button>
 </div>
 <!-- Tutorial -->
 <div class="overlay" id="ov-tut">
-<div class="tut-step"><div class="icon">👆</div><h3 id="t1h">Hold to Drift Right</h3><p id="t1p">Press and hold to steer right</p></div>
-<div class="tut-step"><div class="icon">✋</div><h3 id="t2h">Release to Drift Left</h3><p id="t2p">Let go to steer left</p></div>
-<div class="tut-step"><div class="icon">🛣️</div><h3 id="t3h">Stay on the Road!</h3><p id="t3p">Don't fall off the edge</p></div>
+<div class="tut-step"><div class="icon">ð</div><h3 id="t1h">Right → Drift Right</h3><p id="t1p">Press Right arrow or D to drift right</p></div>
+<div class="tut-step"><div class="icon">â</div><h3 id="t2h">Left ← Drift Left</h3><p id="t2p">Press Left arrow or A to drift left</p></div>
+<div class="tut-step"><div class="icon">ð£ï¸</div><h3 id="t3h">Stay on the Road!</h3><p id="t3p">Don't fall off the edge</p></div>
 <button class="obtn primary" onclick="closeTut()" id="tut-btn">&#9654; Start</button>
 </div>
 <!-- Start -->
 <div class="overlay active" id="ov-start">
-<h2 style="font-size:42px">🏎️</h2>
+<h2 style="font-size:42px">ðï¸</h2>
 <h2 id="s-title">Drift Boss</h2>
-<p id="s-desc" style="margin-bottom:14px;color:#bbb">One-button drifting challenge</p>
+<p id="s-desc" style="margin-bottom:14px;color:#bbb">Left/Right drifting challenge</p>
 <button class="obtn primary" onclick="tryStart()" id="s-btn">&#9654; Play</button>
 <button class="obtn secondary" onclick="showShop()" id="s-shop">&#128663; Garage</button>
 </div>
 <script>
 // === i18n ===
 const I={en:{back:'\u2190 Back',score:'Score',best:'Best',over:'Game Over',again:'\u25b6 Play Again',
-shop:'\ud83d\ude97 Garage',close:'\u2715 Close',hR:'Hold to Drift Right',hRd:'Press and hold to steer right',
-rL:'Release to Drift Left',rLd:'Let go to steer left',stay:'Stay on the Road!',
+shop:'\ud83d\ude97 Garage',close:'\u2715 Close',hR:'Right → Drift Right',hRd:'Press Right arrow or D to drift right',
+rL:'Left ← Drift Left',rLd:'Press Left arrow or A to drift left',stay:'Stay on the Road!',
 stayd:"Don't fall off the edge",play:'\u25b6 Play',title:'Drift Boss',
-desc:'One-button drifting challenge',owned:'Owned',buy:'Buy',sel:'Select',seld:'Using'},
+desc:'Left/Right drifting challenge',owned:'Owned',buy:'Buy',sel:'Select',seld:'Using'},
 zh:{back:'\u2190 \u8fd4\u56de',score:'\u5206\u6578',best:'\u6700\u4f73',over:'\u904a\u6232\u7d50\u675f',
 again:'\u25b6 \u518d\u73a9\u4e00\u6b21',shop:'\ud83d\ude97 \u8eca\u5eab',close:'\u2715 \u95dc\u9589',
 hR:'\u6309\u4f4f\u5411\u53f3\u6f02\u79fb',hRd:'\u6309\u4f4f\u87a2\u5e55\u5411\u53f3\u8f49',
@@ -117,7 +117,7 @@ let road=[],cns=[],pups=[],trails=[];
 let carX,carY,carAng,carVx,carVy,spd,alive;
 let sc,rCoins,bestSc,totCoins,actCar,unlocked;
 let dblT=0,rushT=0,xLives=0;
-let camX,camY,pressing=false,segI=0,fallT=0;
+let camX,camY,pressingLeft=false,pressingRight=false,segI=0,fallT=0;
 let gState='start';
 
 // === Save ===
@@ -168,7 +168,7 @@ const d=Math.hypot(carX-mx,carY-my);if(d<bd){bd=d;b=i;}}segI=b;}
 function update(dt){
 if(gState!=='play')return;
 if(fallT>0){fallT-=dt;if(fallT<=0)showOver();return;}
-if(pressing)carAng+=TURN_RATE*dt;else carAng-=TURN_RATE*dt;
+if(pressingRight)carAng+=TURN_RATE*dt;else if(pressingLeft)carAng-=TURN_RATE*dt;
 spd=Math.min(400,BASE_SPD+sc*.04);
 const tvx=Math.cos(carAng)*spd,tvy=Math.sin(carAng)*spd;
 carVx+=(tvx-carVx)*GRIP*dt;carVy+=(tvy-carVy)*GRIP*dt;
@@ -275,7 +275,7 @@ c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);
 function onDown(e){e.preventDefault();pressing=true;
 if(ACTX.state==='suspended')ACTX.resume();
 if(gState==='start')tryStart();}
-function onUp(e){e.preventDefault();pressing=false;}
+function onUp(e){e.preventDefault();pressingLeft=false;pressingRight=false;}
 cvs.addEventListener('mousedown',onDown);
 cvs.addEventListener('mouseup',onUp);
 cvs.addEventListener('mouseleave',onUp);
@@ -284,7 +284,7 @@ cvs.addEventListener('touchend',onUp,{passive:false});
 document.addEventListener('keydown',e=>{
 if(e.code==='Space'||e.code==='ArrowRight'){e.preventDefault();pressing=true;
 if(gState==='start')tryStart();}});
-document.addEventListener('keyup',e=>{if(e.code==='Space'||e.code==='ArrowRight')pressing=false;});
+document.addEventListener('keyup',e=>{if(e.code==='ArrowRight'||e.code==='KeyD')pressingRight=false;if(e.code==='ArrowLeft'||e.code==='KeyA')pressingLeft=false;});
 
 // === Game State ===
 function tryStart(){
@@ -297,7 +297,7 @@ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
 genRoad();carX=0;carY=-40;carAng=-Math.PI/2;carVx=0;carVy=-BASE_SPD;
 spd=BASE_SPD;sc=0;rCoins=0;alive=true;segI=0;fallT=0;
 dblT=0;rushT=0;xLives=0;trails=[];
-camX=carX;camY=carY-cvs.height*.3;pressing=false;gState='play';
+camX=carX;camY=carY-cvs.height*.3;pressingLeft=false;pressingRight=false;gState='play';
 if(!audioMuted&&!bgmLoaded)startBGM();}
 function showOver(){
 gState='over';const s=Math.floor(sc);
@@ -355,7 +355,7 @@ if(!audioMuted&&!bgmLoaded)startBGM();}
 function toggleLang(){lang=lang==='en'?'zh':'en';localStorage.setItem('driftLang',lang);applyLang();}
 function applyLang(){
 const $=id=>document.getElementById(id);
-$('lang-btn').textContent=lang==='en'?'繁中':'EN';
+$('lang-btn').textContent=lang==='en'?'ç¹ä¸­':'EN';
 $('back-link').textContent=t('back');
 $('go-title').textContent=t('over');$('go-restart').textContent=t('again');
 $('go-shop').textContent=t('shop');$('shop-title').textContent=t('shop');
