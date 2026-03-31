@@ -198,6 +198,27 @@
     .pts-popup{position:fixed;right:16px;bottom:110px;z-index:500;background:rgba(10,6,22,.85);border:1px solid rgba(var(--accent-rgb),.5);border-radius:8px;padding:6px 16px;font-size:13px;color:var(--accent);pointer-events:none;white-space:nowrap;animation:pts-up 2.2s ease forwards}
     @keyframes pts-up{0%{opacity:0;transform:translateY(10px)}12%{opacity:1;transform:translateY(0)}75%{opacity:1}100%{opacity:0;transform:translateY(-20px)}}
 
+    /* Auth */
+    .auth-btn{background:var(--accent);color:#fff;border:none;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+    .auth-btn:hover{opacity:.85}
+    .auth-btn.sm{background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 12px;font-size:12px}
+    .user-pill{display:flex;align-items:center;gap:6px}
+    .u-avatar{font-size:20px}
+    .u-name{font-size:13px;font-weight:600;color:var(--h1);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;display:flex;align-items:center;justify-content:center}
+    .auth-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px 24px;width:min(360px,calc(100vw - 32px));position:relative}
+    .auth-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border)}
+    .auth-tab{flex:1;background:none;border:none;color:var(--text3);font-size:14px;font-weight:600;padding:10px;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+    .auth-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+    #authForm{display:flex;flex-direction:column;gap:10px}
+    #authForm input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+    #authForm input:focus{border-color:var(--accent)}
+    .auth-err{color:#ff4444;font-size:13px;min-height:18px}
+    .auth-submit{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s}
+    .auth-submit:hover{opacity:.85}
+    .auth-submit:disabled{opacity:.5}
+    .auth-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer}
+
     /* Overlay for mobile sidebar */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:85;display:none}
     .overlay.show{display:block}
@@ -228,6 +249,12 @@
       <div class="search-results" id="searchResults"></div>
     </div>
     <div class="header-right">
+      <button class="auth-btn" id="loginBtn" onclick="showAuthModal()">登入</button>
+      <div class="user-pill" id="userPill" style="display:none">
+        <span class="u-avatar" id="uAvatar">🦫</span>
+        <span class="u-name" id="uName"></span>
+        <button class="auth-btn sm" onclick="capyLogout()">登出</button>
+      </div>
       <div class="theme-dots">
         <button class="theme-dot active" data-t="dark" title="Dark" onclick="setTheme('dark')"></button>
         <button class="theme-dot" data-t="light" title="Light" onclick="setTheme('light')"></button>
@@ -235,6 +262,24 @@
       </div>
     </div>
   </header>
+
+  <!-- Auth Modal -->
+  <div class="auth-overlay" id="authOverlay" style="display:none" onclick="if(event.target===this)hideAuthModal()">
+    <div class="auth-modal">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">登入</button>
+        <button class="auth-tab" id="tabReg" onclick="switchAuthTab('register')">註冊</button>
+      </div>
+      <form id="authForm" onsubmit="submitAuth(event)">
+        <input type="email" id="authEmail" placeholder="Email" required autocomplete="email">
+        <input type="text" id="authUsername" placeholder="名稱（2-20字）" minlength="2" maxlength="20" style="display:none">
+        <input type="password" id="authPwd" placeholder="密碼（至少6位）" required minlength="6" autocomplete="current-password">
+        <div class="auth-err" id="authErr"></div>
+        <button type="submit" class="auth-submit" id="authSubmit">登入</button>
+      </form>
+      <button class="auth-close" onclick="hideAuthModal()">✕</button>
+    </div>
+  </div>
 
   <!-- ═══ SIDEBAR ═══ -->
   <nav class="sidebar" id="sidebar">
@@ -271,6 +316,14 @@
   <!-- ═══ MAIN ═══ -->
   <div class="main">
     <div class="content">
+
+      <!-- Favorites (logged in only) -->
+      <div class="row-section" id="favRow" style="display:none">
+        <div class="row-header">
+          <div class="row-title">❤️ 我的收藏</div>
+        </div>
+        <div class="row-scroll" id="favList"></div>
+      </div>
 
       <!-- Featured -->
       <div class="featured">
@@ -522,6 +575,138 @@
     }
     window.setTheme = setTheme;
     setTheme(saved);
+  })();
+
+  /* ── Auth System ── */
+  const AUTH_API = 'https://capyworlds-comments.loki217089.workers.dev';
+  let authMode = 'login';
+  let currentUser = null;
+  let userFavs = new Set();
+
+  // Games registry for favorites rendering
+  const GAME_REG = {
+    'hero':{t:'勇者傳說',e:'⚔️',c:'放置 RPG',bg:'#2a1a3a,#1a0a28'},
+    'zombie-idle':{t:'殭屍蔓延',e:'🧟',c:'放置 / 點擊',bg:'#1a2a1a,#0a1a0a'},
+    'sea-route':{t:'世界航道',e:'⛵',c:'放置 / 探索',bg:'#0a1a3a,#081028'},
+    'mosquito':{t:'進化蚊子',e:'🦟',c:'點擊 / 進化',bg:'#3a2a0a,#281a08'},
+    'deep-diggers':{t:'深地探掘者',e:'⛏️',c:'挖礦 / 升級',bg:'#3a2a0a,#281a08'},
+    'space-roguelike':{t:'虛空領航員',e:'🚀',c:'太空 Roguelike',bg:'#0a1a3a,#081028'},
+    'virus':{t:'VIRUS.EXE',e:'🦠',c:'賽博朋克',bg:'#0a2a1a,#081a10'},
+    'capy-runner':{t:'水豚跑酷',e:'🦫',c:'跑酷 / 手機',bg:'#3a2a0a,#281a08'},
+    'beat-warrior':{t:'節拍戰士',e:'🎵',c:'節奏 RPG',bg:'#2a1a3a,#1a0a28'},
+    'zombie-spread':{t:'末日求生',e:'☣️',c:'生存射擊',bg:'#1a2a1a,#0a1a0a'},
+    'slash-monsters':{t:'斬魔忍者',e:'⚔️',c:'動作 RPG',bg:'#3a1a0a,#281008'},
+    'drift-boss':{t:'甩尾大師',e:'🏎️',c:'競速',bg:'#3a1a1a,#280a0a'},
+    'black-hole':{t:'黑洞收割者',e:'🕳️',c:'休閒動作',bg:'#0a0a2a,#1a0a3a'},
+    'black-hole-swallow':{t:'黑洞吞噬',e:'🕳️',c:'動作',bg:'#0a0a2a,#1a0a3a'},
+    'farm-match':{t:'寶石三消',e:'💎',c:'三消 / 抽卡',bg:'#3a2a0a,#281a08'},
+    'village':{t:'水豚小村',e:'🦫',c:'生活模擬',bg:'#2a2a0a,#1a1a08'},
+    'sunnyside-farm':{t:'陽光農場',e:'🌾',c:'農場',bg:'#2a3a1a,#1a2a0a'},
+    'chat-room':{t:'情境聊天室',e:'💬',c:'社交',bg:'#1a1a3a,#0a0a28'},
+    'capy-tug':{t:'水豚拔河',e:'🦫',c:'對戰',bg:'#2a2a0a,#1a1a08'},
+    'capy-rps':{t:'水豚猜拳',e:'✂️',c:'對戰',bg:'#2a1a2a,#1a0a1a'},
+    'capy-quiz':{t:'水豚問答PK',e:'📚',c:'問答',bg:'#0a1a3a,#081028'},
+  };
+
+  function showAuthModal(){ document.getElementById('authOverlay').style.display='flex'; document.getElementById('authErr').textContent=''; }
+  function hideAuthModal(){ document.getElementById('authOverlay').style.display='none'; }
+  function switchAuthTab(mode){
+    authMode=mode;
+    document.getElementById('tabLogin').classList.toggle('active',mode==='login');
+    document.getElementById('tabReg').classList.toggle('active',mode==='register');
+    document.getElementById('authUsername').style.display=mode==='register'?'':'none';
+    document.getElementById('authSubmit').textContent=mode==='login'?'登入':'註冊';
+    document.getElementById('authErr').textContent='';
+  }
+  async function submitAuth(e){
+    e.preventDefault();
+    const btn=document.getElementById('authSubmit');
+    btn.disabled=true;
+    const email=document.getElementById('authEmail').value.trim();
+    const password=document.getElementById('authPwd').value;
+    const username=document.getElementById('authUsername').value.trim();
+    const errEl=document.getElementById('authErr');
+    errEl.textContent='';
+    try{
+      const body=authMode==='login'?{email,password}:{email,password,username};
+      const res=await fetch(AUTH_API+'/auth/'+authMode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const data=await res.json();
+      if(data.ok){
+        localStorage.setItem('capyToken',data.token);
+        localStorage.setItem('capyUser',JSON.stringify(data.user));
+        currentUser=data.user;
+        updateAuthUI();
+        hideAuthModal();
+        loadFavorites();
+      } else { errEl.textContent=data.error||'失敗'; }
+    }catch{ errEl.textContent='網路錯誤'; }
+    btn.disabled=false;
+  }
+  function capyLogout(){
+    localStorage.removeItem('capyToken');
+    localStorage.removeItem('capyUser');
+    currentUser=null;
+    userFavs.clear();
+    updateAuthUI();
+    document.getElementById('favRow').style.display='none';
+  }
+  function updateAuthUI(){
+    const loggedIn=!!currentUser;
+    document.getElementById('loginBtn').style.display=loggedIn?'none':'';
+    document.getElementById('userPill').style.display=loggedIn?'flex':'none';
+    if(loggedIn){
+      document.getElementById('uAvatar').textContent=currentUser.avatar||'🦫';
+      document.getElementById('uName').textContent=currentUser.username;
+    }
+  }
+  async function loadFavorites(){
+    if(!currentUser) return;
+    const token=localStorage.getItem('capyToken');
+    try{
+      const res=await fetch(AUTH_API+'/favorites',{headers:{'Authorization':'Bearer '+token}});
+      const data=await res.json();
+      if(Array.isArray(data)){
+        userFavs=new Set(data.map(f=>f.game_slug));
+        renderFavorites(data);
+      }
+    }catch{}
+  }
+  function renderFavorites(favs){
+    const row=document.getElementById('favRow');
+    const list=document.getElementById('favList');
+    if(!favs.length){row.style.display='none';return;}
+    row.style.display='';
+    list.innerHTML=favs.map(f=>{
+      const g=GAME_REG[f.game_slug];
+      if(!g) return '';
+      const href=f.game_slug==='deep-diggers'?'games/deep-diggers.html':'games/'+f.game_slug+'/';
+      return `<a class="g-card" href="${href}"><div class="g-card-banner" style="background:linear-gradient(135deg,${g.bg})">${g.e}</div><div class="g-card-body"><div class="g-card-title">${g.t}</div><div class="g-card-sub">${g.c}</div></div></a>`;
+    }).join('');
+  }
+  async function toggleFav(slug){
+    if(!currentUser){showAuthModal();return;}
+    const token=localStorage.getItem('capyToken');
+    if(userFavs.has(slug)){
+      await fetch(AUTH_API+'/favorites/'+slug,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+      userFavs.delete(slug);
+    } else {
+      await fetch(AUTH_API+'/favorites',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({game_slug:slug})});
+      userFavs.add(slug);
+    }
+    loadFavorites();
+  }
+  // Init auth on load
+  (function(){
+    try{
+      const u=JSON.parse(localStorage.getItem('capyUser'));
+      const t=localStorage.getItem('capyToken');
+      if(u&&t){currentUser=u;updateAuthUI();loadFavorites();
+        // Validate token
+        fetch(AUTH_API+'/auth/me',{headers:{'Authorization':'Bearer '+t}}).then(r=>r.json()).then(d=>{
+          if(!d.ok){capyLogout();}
+        }).catch(()=>{});
+      }
+    }catch{}
   })();
 
   /* ── Comments ── */
