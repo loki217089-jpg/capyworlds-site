@@ -9,61 +9,40 @@
   <style>
     /* ── Theme Variables ── */
     :root {
-      --bg: #13100c;
-      --bg-hero: #2d1e0e;
-      --bg2: #1e1812;
-      --bg3: #13100c;
-      --bg4: #191410;
-      --border: #3d3020;
-      --border2: #2a1e14;
-      --border3: #2a2016;
-      --accent: #c8a456;
-      --accent-rgb: 200, 164, 86;
-      --text: #e8ddd0;
-      --text2: #907a60;
-      --text3: #7a6a58;
-      --text4: #4a3828;
-      --text5: #c8b89a;
+      --bg: #0a0a12; --bg2: #12121e; --bg3: #0a0a12; --bg4: #0e0e18;
+      --bg-hero: #0f0f22;
+      --border: #1e1e3a; --border2: #181830; --border3: #1a1a34;
+      --accent: #00e5ff; --accent-rgb: 0,229,255;
+      --accent2: #ff3c8e; --accent2-rgb: 255,60,142;
+      --text: #d0d8e8; --text2: #6878a0; --text3: #4a5880; --text4: #2a3450; --text5: #b0bcd0;
       --h1: #ffffff;
-      --cancel-bg: #2a1e14;
+      --cancel-bg: #1a1a2e;
+      --card-glow: rgba(0,229,255,0.08);
+      --card-glow2: rgba(255,60,142,0.08);
     }
     [data-theme="light"] {
-      --bg: #f5f0e8;
-      --bg-hero: #e0d0a8;
-      --bg2: #ffffff;
-      --bg3: #f0ebe0;
-      --bg4: #faf6f0;
-      --border: #d4c4a0;
-      --border2: #e0d4b8;
-      --border3: #ddd0bc;
-      --accent: #9a6e1e;
-      --accent-rgb: 154, 110, 30;
-      --text: #2a1e0e;
-      --text2: #7a6a50;
-      --text3: #6a5a48;
-      --text4: #9a8a70;
-      --text5: #4a3828;
-      --h1: #1a0e06;
-      --cancel-bg: #e0d8c8;
+      --bg: #f0f2f8; --bg2: #ffffff; --bg3: #eaecf4; --bg4: #f5f6fa;
+      --bg-hero: #dde0f0;
+      --border: #c8cce0; --border2: #d4d8ea; --border3: #d0d4e4;
+      --accent: #0090b0; --accent-rgb: 0,144,176;
+      --accent2: #d02070; --accent2-rgb: 208,32,112;
+      --text: #1a1e2e; --text2: #5a6080; --text3: #7a80a0; --text4: #a0a4b8; --text5: #3a3e50;
+      --h1: #0a0e1e;
+      --cancel-bg: #e0e2ea;
+      --card-glow: rgba(0,144,176,0.06);
+      --card-glow2: rgba(208,32,112,0.06);
     }
     [data-theme="pink"] {
-      --bg: #1a0810;
-      --bg-hero: #3d0a22;
-      --bg2: #260a18;
-      --bg3: #1a0810;
-      --bg4: #200c14;
-      --border: #6a2050;
-      --border2: #4a1038;
-      --border3: #481840;
-      --accent: #e060a8;
-      --accent-rgb: 224, 96, 168;
-      --text: #f8d8ec;
-      --text2: #c06898;
-      --text3: #a05880;
-      --text4: #704060;
-      --text5: #e8b8d4;
+      --bg: #12081a; --bg2: #1e0e28; --bg3: #12081a; --bg4: #180c22;
+      --bg-hero: #200e30;
+      --border: #3a1850; --border2: #2e1240; --border3: #321446;
+      --accent: #e060a8; --accent-rgb: 224,96,168;
+      --accent2: #a040ff; --accent2-rgb: 160,64,255;
+      --text: #f0d8e8; --text2: #b068a0; --text3: #905888; --text4: #604060; --text5: #dcc0d4;
       --h1: #fff0f8;
-      --cancel-bg: #3a1028;
+      --cancel-bg: #2a1038;
+      --card-glow: rgba(224,96,168,0.08);
+      --card-glow2: rgba(160,64,255,0.08);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -74,433 +53,288 @@
       color: var(--text);
       min-height: 100vh;
       transition: background 0.3s, color 0.3s;
+      overflow-x: hidden;
     }
 
     /* ── Theme Switcher ── */
     .theme-switcher {
-      position: fixed;
-      top: 14px; right: 14px;
-      z-index: 200;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      padding: 6px 12px;
+      position: fixed; top: 14px; right: 14px; z-index: 200;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 28px; padding: 6px 12px;
       box-shadow: 0 2px 16px rgba(0,0,0,0.35);
       transition: background 0.3s, border-color 0.3s;
     }
-    .theme-switcher-label {
-      font-size: 11px;
-      color: var(--text3);
-      letter-spacing: 0.5px;
-      margin-right: 2px;
-      user-select: none;
-    }
+    .theme-switcher-label { font-size: 11px; color: var(--text3); letter-spacing: 0.5px; margin-right: 2px; user-select: none; }
     .theme-dot {
-      width: 20px; height: 20px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
-      outline: none;
+      width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; outline: none;
       transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-      position: relative;
     }
     .theme-dot:hover { transform: scale(1.2); }
-    .theme-dot.active {
-      border-color: var(--text);
-      box-shadow: 0 0 0 1px var(--bg2);
-      transform: scale(1.1);
-    }
-    .theme-dot[data-t="dark"]  { background: radial-gradient(circle at 35% 35%, #c8a456, #5a3c10); }
+    .theme-dot.active { border-color: var(--text); box-shadow: 0 0 0 1px var(--bg2); transform: scale(1.1); }
+    .theme-dot[data-t="dark"]  { background: radial-gradient(circle at 35% 35%, #00e5ff, #0a2040); }
     .theme-dot[data-t="light"] { background: radial-gradient(circle at 35% 35%, #f5f0d8, #c8b480); }
     .theme-dot[data-t="pink"]  { background: radial-gradient(circle at 35% 35%, #f880c0, #8a1858); }
 
+    /* ── Scanline overlay ── */
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    }
+
     /* ── Hero ── */
     .hero {
-      text-align: center;
-      padding: 52px 24px 44px;
-      background: radial-gradient(ellipse at 50% -10%, var(--bg-hero) 0%, var(--bg) 68%);
-      position: relative;
-      overflow: hidden;
-      transition: background 0.3s;
+      text-align: center; padding: 80px 24px 60px;
+      background: radial-gradient(ellipse at 50% 20%, var(--bg-hero) 0%, var(--bg) 70%);
+      position: relative; overflow: hidden;
     }
     .hero::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 10%; right: 10%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent);
-    }
-
-    .capy-mascot {
-      width: 190px;
-      height: 170px;
-      margin: 0 auto 28px;
-      display: block;
-      filter: drop-shadow(0 8px 24px rgba(var(--accent-rgb), 0.22));
-    }
-
-    .hero h1 {
-      font-size: clamp(36px, 7vw, 58px);
-      font-weight: 900;
-      color: var(--h1);
-      letter-spacing: 4px;
-      text-shadow: 0 0 50px rgba(var(--accent-rgb), 0.35);
-    }
-    .hero h1 .accent { color: var(--accent); }
-
-    .hero .tagline {
-      margin-top: 12px;
-      color: var(--text2);
-      font-size: 15px;
-      letter-spacing: 1px;
-    }
-
-    /* ── Nav Grid ── */
-    .nav-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 20px;
-      max-width: 840px;
-      margin: 52px auto 0;
-      padding: 0 24px;
-    }
-
-    .nav-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 32px 20px;
-      text-decoration: none;
-      color: inherit;
-      text-align: center;
-      transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s, background 0.3s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      position: relative;
-      overflow: hidden;
-    }
-    .nav-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
       background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      opacity: 0;
-      transition: opacity 0.22s;
     }
-    .nav-card:hover {
-      transform: translateY(-6px);
-      border-color: var(--accent);
-      box-shadow: 0 10px 32px rgba(var(--accent-rgb), 0.18);
+    /* 網格背景 */
+    .hero::before {
+      content: ''; position: absolute; inset: 0; opacity: 0.04;
+      background-image:
+        linear-gradient(var(--accent) 1px, transparent 1px),
+        linear-gradient(90deg, var(--accent) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
     }
-    .nav-card:hover::before { opacity: 1; }
 
-    .nav-card .card-icon {
-      font-size: 42px;
-      line-height: 1;
-      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+    .hero-logo {
+      font-size: clamp(42px, 8vw, 72px); font-weight: 900; color: var(--h1);
+      letter-spacing: 6px; position: relative; z-index: 1;
+      text-shadow: 0 0 60px rgba(var(--accent-rgb), 0.3), 0 0 120px rgba(var(--accent-rgb), 0.1);
     }
-    .nav-card .card-label {
-      font-size: 19px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: 1px;
+    .hero-logo .cyber { color: var(--accent); }
+    .hero-tagline {
+      margin-top: 16px; color: var(--text2); font-size: 16px;
+      letter-spacing: 2px; position: relative; z-index: 1;
     }
-    .nav-card .card-desc {
-      font-size: 12px;
-      color: var(--text3);
-      line-height: 1.5;
+
+    /* 水豚吉祥物 */
+    .capy-mascot {
+      width: 160px; height: 140px; margin: 0 auto 24px; display: block;
+      filter: drop-shadow(0 0 30px rgba(var(--accent-rgb), 0.25));
+      position: relative; z-index: 1;
     }
+
+    /* ── Section ── */
+    .section { max-width: 1100px; margin: 0 auto; padding: 60px 24px 0; }
+
+    .section-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
+    }
+    .section-icon { font-size: 32px; line-height: 1; }
+    .section-label {
+      font-size: 14px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase;
+    }
+    .section-label.cyan { color: var(--accent); }
+    .section-label.pink { color: var(--accent2); }
+    .section-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+    .section-line.cyan { background: linear-gradient(90deg, rgba(var(--accent-rgb),0.4), transparent); }
+    .section-line.pink { background: linear-gradient(90deg, rgba(var(--accent2-rgb),0.4), transparent); }
+
+    /* ── Game Cards Grid ── */
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .game-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px 20px; text-decoration: none; color: inherit;
+      display: flex; flex-direction: column; gap: 10px;
+      position: relative; overflow: hidden;
+      transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+    }
+    .game-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      opacity: 0; transition: opacity 0.22s;
+    }
+    .game-card.cyan-glow::before { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+    .game-card.pink-glow::before { background: linear-gradient(90deg, transparent, var(--accent2), transparent); }
+    .game-card:hover {
+      transform: translateY(-6px);
+    }
+    .game-card.cyan-glow:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.15), inset 0 0 60px var(--card-glow);
+    }
+    .game-card.pink-glow:hover {
+      border-color: var(--accent2);
+      box-shadow: 0 8px 32px rgba(var(--accent2-rgb), 0.15), inset 0 0 60px var(--card-glow2);
+    }
+    .game-card:hover::before { opacity: 1; }
+
+    .card-emoji { font-size: 36px; line-height: 1; }
+    .card-title { font-size: 18px; font-weight: 800; color: var(--h1); }
+    .card-desc { font-size: 14px; color: var(--text2); line-height: 1.5; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .card-tag {
+      font-size: 11px; padding: 3px 10px; border-radius: 20px;
+      border: 1px solid rgba(var(--accent-rgb), 0.25); color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.06);
+    }
+    .card-tag.pink {
+      border-color: rgba(var(--accent2-rgb), 0.25); color: var(--accent2);
+      background: rgba(var(--accent2-rgb), 0.06);
+    }
+    .card-play {
+      margin-top: auto; padding-top: 8px;
+      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+    }
+    .card-play.cyan { color: var(--accent); }
+    .card-play.pink { color: var(--accent2); }
+
+    /* ── More Games (collapsible) ── */
+    .more-games-toggle {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin: 40px auto 0; padding: 12px 28px;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 30px;
+      color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .more-games-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .more-games-toggle .arrow { transition: transform 0.3s; }
+    .more-games-toggle.open .arrow { transform: rotate(180deg); }
+    .more-games-area {
+      max-height: 0; overflow: hidden; transition: max-height 0.5s ease;
+    }
+    .more-games-area.open { max-height: 2000px; }
+    .more-games-inner { padding-top: 24px; }
 
     /* ── Contact ── */
     .contact-section {
-      max-width: 840px;
-      margin: 52px auto 0;
-      padding: 0 24px;
-      text-align: center;
+      max-width: 1100px; margin: 60px auto 0; padding: 0 24px; text-align: center;
     }
     .contact-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
+      font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
     }
-    .contact-title::before,
-    .contact-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
+    .contact-title::before, .contact-title::after {
+      content: ''; flex: 1; height: 1px;
       background: linear-gradient(90deg, transparent, var(--border));
     }
-    .contact-title::after {
-      background: linear-gradient(90deg, var(--border), transparent);
-    }
-    .contact-links {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
+    .contact-title::after { background: linear-gradient(90deg, var(--border), transparent); }
+    .contact-links { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
     .contact-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 50px;
-      padding: 11px 22px;
-      text-decoration: none;
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 600;
-      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.3s;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 50px;
+      padding: 11px 22px; text-decoration: none; color: var(--text);
+      font-size: 14px; font-weight: 600;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
     }
     .contact-link:hover {
-      transform: translateY(-3px);
-      border-color: var(--accent);
+      transform: translateY(-3px); border-color: var(--accent);
       box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.18);
     }
     .contact-link svg { flex-shrink: 0; }
 
-    /* ── Footer ── */
-    footer {
-      text-align: center;
-      padding: 36px 24px;
-      margin-top: 60px;
-      color: var(--text4);
-      font-size: 13px;
-      border-top: 1px solid var(--border2);
-      transition: color 0.3s, border-color 0.3s;
-    }
-    footer span { color: var(--accent); }
-
     /* ── Comments ── */
-    .comments-section {
-      max-width: 840px;
-      margin: 0 auto;
-      padding: 0 24px 60px;
-    }
+    .comments-section { max-width: 840px; margin: 0 auto; padding: 60px 24px 60px; }
     .comments-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
     }
-    .comments-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: linear-gradient(90deg, var(--border), transparent);
-    }
+    .comments-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
     .comment-form {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      margin-bottom: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: background 0.3s;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+      padding: 20px; margin-bottom: 28px; display: flex; flex-direction: column; gap: 12px;
     }
-    .comment-form input,
-    .comment-form textarea {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      color: var(--text);
-      font-family: inherit;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s, background 0.3s;
+    .comment-form input, .comment-form textarea {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 14px; color: var(--text); font-family: inherit; font-size: 14px; outline: none;
+      transition: border-color 0.2s;
     }
-    .comment-form input:focus,
-    .comment-form textarea:focus { border-color: var(--accent); }
+    .comment-form input:focus, .comment-form textarea:focus { border-color: var(--accent); }
     .comment-form textarea { resize: vertical; min-height: 80px; }
     .comment-form button {
-      align-self: flex-end;
-      background: var(--accent);
-      color: var(--bg);
-      border: none;
-      border-radius: 8px;
-      padding: 9px 24px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      transition: opacity 0.2s;
+      align-self: flex-end; background: var(--accent); color: var(--bg); border: none;
+      border-radius: 8px; padding: 9px 24px; font-weight: 700; font-size: 14px; cursor: pointer;
     }
     .comment-form button:hover { opacity: 0.85; }
     .comment-form button:disabled { opacity: 0.5; cursor: not-allowed; }
     .comment-list { display: flex; flex-direction: column; gap: 14px; }
-    .comment-item {
-      background: var(--bg2);
-      border: 1px solid var(--border2);
-      border-radius: 12px;
-      padding: 14px 18px;
-      transition: background 0.3s;
-    }
-    .comment-item.reply {
-      background: var(--bg4);
-      border-color: var(--border3);
-      margin-left: 28px;
-      margin-top: 8px;
-      border-left: 2px solid rgba(var(--accent-rgb), 0.25);
-    }
-    .comment-meta {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 6px;
-      flex-wrap: wrap;
-    }
+    .comment-item { background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 14px 18px; }
+    .comment-item.reply { background: var(--bg4); border-color: var(--border3); margin-left: 28px; margin-top: 8px; border-left: 2px solid rgba(var(--accent-rgb),0.25); }
+    .comment-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
     .comment-name { font-weight: 700; color: var(--accent); font-size: 14px; }
     .comment-date { color: var(--text4); font-size: 12px; }
     .comment-content { color: var(--text5); font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
     .comment-actions { margin-top: 8px; display: flex; gap: 8px; }
-    .btn-reply {
-      background: none; border: 1px solid var(--border); border-radius: 6px;
-      color: var(--text3); font-size: 12px; padding: 3px 10px; cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
-    }
+    .btn-reply { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text3); font-size: 12px; padding: 3px 10px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
     .btn-reply:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-delete {
-      background: none; border: 1px solid #5a2020; border-radius: 6px;
-      color: #7a4040; font-size: 12px; padding: 3px 10px; cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
-    }
+    .btn-delete { background: none; border: 1px solid #5a2020; border-radius: 6px; color: #7a4040; font-size: 12px; padding: 3px 10px; cursor: pointer; }
     .btn-delete:hover { border-color: #c45050; color: #c45050; }
-    .inline-reply-form {
-      margin-top: 10px; display: flex; flex-direction: column; gap: 8px;
-    }
-    .inline-reply-form input,
-    .inline-reply-form textarea {
+    .inline-reply-form { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .inline-reply-form input, .inline-reply-form textarea {
       background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
       padding: 8px 12px; color: var(--text); font-family: inherit; font-size: 13px; outline: none;
-      transition: background 0.3s;
     }
     .inline-reply-form textarea { min-height: 60px; resize: vertical; }
-    .inline-reply-form input:focus,
-    .inline-reply-form textarea:focus { border-color: var(--accent); }
+    .inline-reply-form input:focus, .inline-reply-form textarea:focus { border-color: var(--accent); }
     .inline-reply-btns { display: flex; gap: 8px; justify-content: flex-end; }
-    .inline-reply-btns button {
-      border: none; border-radius: 6px; padding: 6px 16px;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-    }
+    .inline-reply-btns button { border: none; border-radius: 6px; padding: 6px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
     .btn-cancel { background: var(--cancel-bg); color: var(--text3); }
     .btn-send { background: var(--accent); color: var(--bg); }
     .admin-bar {
-      display: none; background: var(--bg4); border: 1px solid #5a2020;
-      border-radius: 10px; padding: 10px 16px; margin-bottom: 16px;
-      font-size: 13px; color: #c45050; align-items: center; gap: 10px;
+      display: none; background: var(--bg4); border: 1px solid #5a2020; border-radius: 10px;
+      padding: 10px 16px; margin-bottom: 16px; font-size: 13px; color: #c45050; align-items: center; gap: 10px;
     }
     .admin-bar.show { display: flex; }
-    .admin-bar input {
-      background: var(--bg3); border: 1px solid #5a2020; border-radius: 6px;
-      padding: 5px 10px; color: var(--text); font-size: 13px; outline: none; flex: 1;
-    }
-    .admin-bar button {
-      background: #5a2020; border: none; border-radius: 6px;
-      color: var(--text); font-size: 13px; padding: 5px 14px; cursor: pointer;
-    }
+    .admin-bar input { background: var(--bg3); border: 1px solid #5a2020; border-radius: 6px; padding: 5px 10px; color: var(--text); font-size: 13px; outline: none; flex: 1; }
+    .admin-bar button { background: #5a2020; border: none; border-radius: 6px; color: var(--text); font-size: 13px; padding: 5px 14px; cursor: pointer; }
     .comment-msg { color: var(--text3); font-size: 13px; text-align: center; padding: 20px 0; }
 
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 36px 24px; margin-top: 20px;
+      color: var(--text4); font-size: 13px;
+      border-top: 1px solid var(--border2);
+    }
+    footer span { color: var(--accent); }
+    footer a { color: var(--accent); opacity: 0.6; text-decoration: none; font-size: 13px; transition: opacity 0.2s; }
+    footer a:hover { opacity: 1; }
+
     /* ── Danmaku & Points ── */
-    #danmaku-layer {
-      position:fixed; top:0; left:0; right:0; bottom:0;
-      pointer-events:none; overflow:hidden; z-index:200;
-    }
-    .dm {
-      position:absolute; white-space:nowrap;
-      font-size:17px; font-weight:700;
-      text-shadow: 0 1px 5px rgba(0,0,0,.98), 0 0 12px rgba(0,0,0,.7);
-      animation: dm-fly linear forwards;
-    }
-    @keyframes dm-fly {
-      from { transform: translateX(105vw); }
-      to   { transform: translateX(calc(-100% - 40px)); }
-    }
-    .pts-badge {
-      position:fixed; top:100px; right:14px; z-index:200;
-      background: var(--bg2);
-      border:1px solid rgba(var(--accent-rgb),.45); border-radius:20px;
-      padding:6px 14px; font-size:12px; color:var(--accent);
-      display:flex; align-items:center; gap:5px; user-select:none;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.35);
-      font-weight:600;
-      transition: background 0.3s, border-color 0.3s;
-    }
-    #dm-toggle {
-      position:fixed; top:58px; right:14px; z-index:200;
-      background: var(--bg2);
-      border:1px solid var(--border); border-radius:20px;
-      padding:6px 14px; font-size:12px; color:var(--text2);
-      cursor:pointer; transition:all .2s;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.35);
-      display:flex; align-items:center; gap:5px; font-weight:600;
-      letter-spacing:0.3px;
-    }
-    #dm-toggle:hover  { border-color:var(--accent); color:var(--accent); }
-    #dm-toggle.on     { border-color:var(--accent); color:var(--accent); background:rgba(var(--accent-rgb),.12); }
-    #danmaku-bar {
-      position:fixed; bottom:0; left:0; right:0; z-index:301;
-      background:rgba(8,5,18,.85); backdrop-filter:blur(14px);
-      border-top:1px solid rgba(255,255,255,.07);
-      padding:8px 16px; display:none; align-items:center; gap:10px;
-    }
+    #danmaku-layer { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; overflow:hidden; z-index:200; }
+    .dm { position:absolute; white-space:nowrap; font-size:17px; font-weight:700; text-shadow: 0 1px 5px rgba(0,0,0,.98), 0 0 12px rgba(0,0,0,.7); animation: dm-fly linear forwards; }
+    @keyframes dm-fly { from { transform: translateX(105vw); } to { transform: translateX(calc(-100% - 40px)); } }
+    .pts-badge { position:fixed; top:100px; right:14px; z-index:200; background: var(--bg2); border:1px solid rgba(var(--accent-rgb),.45); border-radius:20px; padding:6px 14px; font-size:12px; color:var(--accent); display:flex; align-items:center; gap:5px; user-select:none; box-shadow: 0 2px 16px rgba(0,0,0,0.35); font-weight:600; }
+    #dm-toggle { position:fixed; top:58px; right:14px; z-index:200; background: var(--bg2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; color:var(--text2); cursor:pointer; transition:all .2s; box-shadow: 0 2px 16px rgba(0,0,0,0.35); display:flex; align-items:center; gap:5px; font-weight:600; letter-spacing:0.3px; }
+    #dm-toggle:hover { border-color:var(--accent); color:var(--accent); }
+    #dm-toggle.on { border-color:var(--accent); color:var(--accent); background:rgba(var(--accent-rgb),.12); }
+    #danmaku-bar { position:fixed; bottom:0; left:0; right:0; z-index:301; background:rgba(8,5,18,.85); backdrop-filter:blur(14px); border-top:1px solid rgba(255,255,255,.07); padding:8px 16px; display:none; align-items:center; gap:10px; }
     #danmaku-bar.open { display:flex; }
-    .dm-pts  { font-size:12px; color:var(--accent); white-space:nowrap; flex-shrink:0; }
-    .dm-input {
-      flex:1; min-width:0; background:rgba(255,255,255,.07);
-      border:1px solid rgba(255,255,255,.13); border-radius:20px;
-      padding:7px 16px; font-size:14px; color:#fff; outline:none; transition:border-color .2s;
-    }
+    .dm-pts { font-size:12px; color:var(--accent); white-space:nowrap; flex-shrink:0; }
+    .dm-input { flex:1; min-width:0; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.13); border-radius:20px; padding:7px 16px; font-size:14px; color:#fff; outline:none; transition:border-color .2s; }
     .dm-input:focus { border-color:rgba(var(--accent-rgb),.5); }
     .dm-input::placeholder { color:rgba(255,255,255,.25); }
     .dm-colors { display:flex; gap:7px; align-items:center; flex-shrink:0; }
-    .dm-dot {
-      width:18px; height:18px; border-radius:50%; cursor:pointer;
-      border:2px solid transparent; transition:transform .15s, border-color .15s;
-    }
+    .dm-dot { width:18px; height:18px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:transform .15s, border-color .15s; }
     .dm-dot.sel { border-color:#fff; transform:scale(1.25); }
-    .dm-send {
-      background:rgba(var(--accent-rgb),.12); border:1px solid rgba(var(--accent-rgb),.4);
-      color:var(--accent); border-radius:20px; padding:7px 20px;
-      font-size:13px; cursor:pointer; white-space:nowrap; flex-shrink:0;
-      transition:background .15s;
-    }
-    .dm-send:hover   { background:rgba(var(--accent-rgb),.28); }
+    .dm-send { background:rgba(var(--accent-rgb),.12); border:1px solid rgba(var(--accent-rgb),.4); color:var(--accent); border-radius:20px; padding:7px 20px; font-size:13px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+    .dm-send:hover { background:rgba(var(--accent-rgb),.28); }
     .dm-send:disabled { opacity:.4; cursor:not-allowed; }
-    .pts-popup {
-      position:fixed; right:16px; bottom:110px; z-index:500;
-      background:rgba(10,6,22,.85); border:1px solid rgba(var(--accent-rgb),.5);
-      border-radius:8px; padding:6px 16px; font-size:13px; color:var(--accent);
-      pointer-events:none; white-space:nowrap;
-      animation: pts-up 2.2s ease forwards;
-    }
-    @keyframes pts-up {
-      0%   { opacity:0; transform:translateY(10px); }
-      12%  { opacity:1; transform:translateY(0); }
-      75%  { opacity:1; }
-      100% { opacity:0; transform:translateY(-20px); }
-    }
+    .pts-popup { position:fixed; right:16px; bottom:110px; z-index:500; background:rgba(10,6,22,.85); border:1px solid rgba(var(--accent-rgb),.5); border-radius:8px; padding:6px 16px; font-size:13px; color:var(--accent); pointer-events:none; white-space:nowrap; animation: pts-up 2.2s ease forwards; }
+    @keyframes pts-up { 0%{opacity:0;transform:translateY(10px);} 12%{opacity:1;transform:translateY(0);} 75%{opacity:1;} 100%{opacity:0;transform:translateY(-20px);} }
 
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .hero { padding: 60px 16px 40px; }
+      .section { padding: 40px 16px 0; }
+      .game-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -513,164 +347,191 @@
     <button class="theme-dot"        data-t="pink"  title="粉色" onclick="setTheme('pink')"></button>
   </div>
 
+  <!-- ══ HERO ══ -->
   <div class="hero">
-    <!-- Capybara mascot -->
     <svg class="capy-mascot" viewBox="0 0 190 170" xmlns="http://www.w3.org/2000/svg">
-      <!-- Ground -->
       <ellipse cx="95" cy="160" rx="82" ry="14" fill="#2d4a1e" opacity="0.45"/>
-      <!-- Grass blades -->
       <path d="M18 158 Q14 142 22 132 Q26 143 18 158Z" fill="#3a6424" opacity="0.65"/>
       <path d="M32 156 Q30 144 37 136 Q39 145 32 156Z" fill="#4a7a30" opacity="0.55"/>
       <path d="M160 156 Q163 141 156 132 Q153 143 160 156Z" fill="#3a6424" opacity="0.65"/>
       <path d="M172 158 Q175 143 168 133 Q165 144 172 158Z" fill="#4a7a30" opacity="0.55"/>
-      <!-- Body -->
       <ellipse cx="95" cy="128" rx="55" ry="36" fill="#b8955a"/>
-      <!-- Tail bump -->
       <ellipse cx="145" cy="133" rx="15" ry="13" fill="#a8854e"/>
-      <!-- Head -->
       <ellipse cx="95" cy="80" rx="42" ry="38" fill="#c09a62"/>
-      <!-- Snout -->
       <ellipse cx="95" cy="95" rx="26" ry="18" fill="#d4aa78"/>
-      <!-- Ears -->
       <ellipse cx="63" cy="50" rx="14" ry="16" fill="#b8955a"/>
       <ellipse cx="127" cy="50" rx="14" ry="16" fill="#b8955a"/>
       <ellipse cx="63" cy="50" rx="9" ry="11" fill="#d0a874"/>
       <ellipse cx="127" cy="50" rx="9" ry="11" fill="#d0a874"/>
-      <!-- Eyes -->
       <circle cx="79" cy="72" r="9" fill="#1a0e06"/>
       <circle cx="111" cy="72" r="9" fill="#1a0e06"/>
       <circle cx="76" cy="69" r="3.5" fill="white"/>
       <circle cx="108" cy="69" r="3.5" fill="white"/>
       <circle cx="77" cy="70" r="1.5" fill="#3d2a10" opacity="0.5"/>
       <circle cx="109" cy="70" r="1.5" fill="#3d2a10" opacity="0.5"/>
-      <!-- Nostrils -->
       <ellipse cx="87" cy="95" rx="4" ry="3" fill="#7a5035"/>
       <ellipse cx="103" cy="95" rx="4" ry="3" fill="#7a5035"/>
-      <!-- Smile -->
       <path d="M 80 104 Q 95 115 110 104" stroke="#7a5035" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      <!-- Paws -->
       <ellipse cx="56" cy="153" rx="20" ry="11" fill="#b8955a"/>
       <ellipse cx="134" cy="153" rx="20" ry="11" fill="#b8955a"/>
-      <!-- Paw toes -->
       <path d="M49 152 L48 160 M56 151 L55 160 M63 152 L62 160" stroke="#8a6a40" stroke-width="1.5" stroke-linecap="round"/>
       <path d="M127 152 L126 160 M134 151 L133 160 M141 152 L140 160" stroke="#8a6a40" stroke-width="1.5" stroke-linecap="round"/>
-      <!-- Yellow flower left -->
       <circle cx="14" cy="144" r="5" fill="#ffd700" opacity="0.85"/>
       <circle cx="14" cy="136" r="4" fill="#ffd700" opacity="0.65"/>
       <circle cx="20" cy="140" r="4" fill="#ffd700" opacity="0.65"/>
       <circle cx="8"  cy="140" r="4" fill="#ffd700" opacity="0.65"/>
       <circle cx="14" cy="144" r="2.5" fill="#e07800"/>
-      <!-- Pink flower right -->
       <circle cx="176" cy="142" r="5" fill="#ffb6d9" opacity="0.9"/>
       <circle cx="176" cy="134" r="4" fill="#ffb6d9" opacity="0.65"/>
       <circle cx="182" cy="138" r="4" fill="#ffb6d9" opacity="0.65"/>
       <circle cx="170" cy="138" r="4" fill="#ffb6d9" opacity="0.65"/>
       <circle cx="176" cy="142" r="2.5" fill="#d4609a"/>
-      <!-- Sparkles -->
       <text x="158" y="68" font-size="12" opacity="0.6">✦</text>
       <text x="22" y="80" font-size="10" opacity="0.5">✦</text>
     </svg>
-
-    <h1>Capy<span class="accent">Worlds</span></h1>
-    <p class="tagline">我的創作小宇宙 &nbsp;·&nbsp; Welcome to my creative world</p>
+    <h1 class="hero-logo">Capy<span class="cyber">Worlds</span></h1>
+    <p class="hero-tagline">遊戲創作宇宙 &nbsp;·&nbsp; Indie Game Portal</p>
   </div>
 
-  <nav class="nav-grid">
-    <a class="nav-card" href="games/">
-      <div class="card-icon">🎮</div>
-      <div class="card-label">Games</div>
-      <div class="card-desc">獨立小遊戲收藏</div>
-    </a>
-    <a class="nav-card" href="games/mobile.html">
-      <div class="card-icon">📱</div>
-      <div class="card-label">手遊專區</div>
-      <div class="card-desc">觸控優化手機遊戲</div>
-    </a>
-    <a class="nav-card" href="games/battle.html">
-      <div class="card-icon">⚔️</div>
-      <div class="card-label">對戰遊戲</div>
-      <div class="card-desc">即時 1v1 連線對戰</div>
-    </a>
-    <a class="nav-card" href="games/chat-room/">
-      <div class="card-icon">💬</div>
-      <div class="card-label">情境聊天室</div>
-      <div class="card-desc">配對異性・5分鐘聊天</div>
-    </a>
-    <a class="nav-card" href="blog.html">
-      <div class="card-icon">📝</div>
-      <div class="card-label">Blog</div>
-      <div class="card-desc">文章與想法</div>
-    </a>
-    <a class="nav-card" href="fortune/">
-      <div class="card-icon">🌟</div>
-      <div class="card-label">每日運勢</div>
-      <div class="card-desc">輸入生日查看今日星座運勢</div>
-    </a>
-    <a class="nav-card" href="tarot/">
-      <div class="card-icon">🃏</div>
-      <div class="card-label">塔羅抽牌</div>
-      <div class="card-desc">三牌陣·探索過去現在未來</div>
-    </a>
-    <a class="nav-card" href="soul-match/">
-      <div class="card-icon">🌀</div>
-      <div class="card-label">靈魂配對</div>
-      <div class="card-desc">測試你與對方的靈魂契合度</div>
-    </a>
-    <a class="nav-card" href="books.html">
-      <div class="card-icon">📚</div>
-      <div class="card-label">Books</div>
-      <div class="card-desc">遊戲・書・影視推薦</div>
-    </a>
-    <a class="nav-card" href="tools.html">
-      <div class="card-icon">🛠</div>
-      <div class="card-label">Tools</div>
-      <div class="card-desc">常用工具與資源</div>
-    </a>
-    <a class="nav-card" href="about.html">
-      <div class="card-icon">🦫</div>
-      <div class="card-label">About</div>
-      <div class="card-desc">關於我</div>
-    </a>
-  </nav>
+  <!-- ══ SECTION 1: 放置類 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🏰</span>
+      <span class="section-label cyan">放置類 · Idle</span>
+      <div class="section-line cyan"></div>
+    </div>
+    <div class="game-grid">
+      <a class="game-card cyan-glow" href="games/hero/">
+        <div class="card-emoji">⚔️</div>
+        <div class="card-title">勇者傳說</div>
+        <div class="card-desc">職業、技能、裝備、天賦、地城、Boss 全配齊的放置 RPG</div>
+        <div class="card-tags"><span class="card-tag">放置RPG</span><span class="card-tag">裝備</span><span class="card-tag">地城</span></div>
+        <div class="card-play cyan">▶ 開始遊戲</div>
+      </a>
+      <a class="game-card cyan-glow" href="games/zombie-idle/">
+        <div class="card-emoji">🧟</div>
+        <div class="card-title">殭屍蔓延 Zombie Idle</div>
+        <div class="card-desc">點擊 + 放置雙核心、DNA Prestige 無限輪迴</div>
+        <div class="card-tags"><span class="card-tag">放置</span><span class="card-tag">點擊</span><span class="card-tag">Prestige</span></div>
+        <div class="card-play cyan">▶ 開始遊戲</div>
+      </a>
+    </div>
+  </div>
 
-  <!-- Contact -->
+  <!-- ══ SECTION 2: 動作類 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">⚡</span>
+      <span class="section-label pink">動作類 · Action</span>
+      <div class="section-line pink"></div>
+    </div>
+    <div class="game-grid">
+      <a class="game-card pink-glow" href="games/capy-runner/">
+        <div class="card-emoji">🦫</div>
+        <div class="card-title">水豚跑酷</div>
+        <div class="card-desc">直式觸控跑酷，護盾 + 磁鐵道具，速度漸增</div>
+        <div class="card-tags"><span class="card-tag pink">跑酷</span><span class="card-tag pink">手機</span><span class="card-tag pink">觸控</span></div>
+        <div class="card-play pink">▶ 開始遊戲</div>
+      </a>
+      <a class="game-card pink-glow" href="games/beat-warrior/">
+        <div class="card-emoji">🎵</div>
+        <div class="card-title">節拍戰士</div>
+        <div class="card-desc">跟著節奏攻擊，Perfect / Good / Miss 判定</div>
+        <div class="card-tags"><span class="card-tag pink">節奏</span><span class="card-tag pink">RPG</span><span class="card-tag pink">動作</span></div>
+        <div class="card-play pink">▶ 開始遊戲</div>
+      </a>
+      <a class="game-card pink-glow" href="games/fps/">
+        <div class="card-emoji">🔫</div>
+        <div class="card-title">FPS 射擊</div>
+        <div class="card-desc">光線追蹤引擎、爆頭機制、3 種武器</div>
+        <div class="card-tags"><span class="card-tag pink">射擊</span><span class="card-tag pink">FPS</span><span class="card-tag pink">爆頭</span></div>
+        <div class="card-play pink">▶ 開始遊戲</div>
+      </a>
+      <a class="game-card pink-glow" href="games/zombie-spread/">
+        <div class="card-emoji">☣</div>
+        <div class="card-title">末日求生</div>
+        <div class="card-desc">PostApocalypse 波次生存射擊、3 種殭屍</div>
+        <div class="card-tags"><span class="card-tag pink">生存</span><span class="card-tag pink">射擊</span><span class="card-tag pink">波次</span></div>
+        <div class="card-play pink">▶ 開始遊戲</div>
+      </a>
+      <a class="game-card pink-glow" href="games/mosquito/">
+        <div class="card-emoji">🦟</div>
+        <div class="card-title">進化蚊子</div>
+        <div class="card-desc">吸血點擊升級、進化路線分歧、Boss 戰</div>
+        <div class="card-tags"><span class="card-tag pink">進化</span><span class="card-tag pink">Boss</span><span class="card-tag pink">點擊</span></div>
+        <div class="card-play pink">▶ 開始遊戲</div>
+      </a>
+      <a class="game-card pink-glow" href="games/virus/">
+        <div class="card-emoji">🦠</div>
+        <div class="card-title">VIRUS.EXE 系統清除</div>
+        <div class="card-desc">賽博朋克風格、多層防禦，清除入侵病毒</div>
+        <div class="card-tags"><span class="card-tag pink">防禦</span><span class="card-tag pink">賽博朋克</span><span class="card-tag pink">策略</span></div>
+        <div class="card-play pink">▶ 開始遊戲</div>
+      </a>
+      <a class="game-card pink-glow" href="games/space-roguelike/">
+        <div class="card-emoji">🚀</div>
+        <div class="card-title">虛空領航員</div>
+        <div class="card-desc">太空探索 + 採礦、燃料管理、Meta 升級</div>
+        <div class="card-tags"><span class="card-tag pink">Roguelike</span><span class="card-tag pink">太空</span><span class="card-tag pink">探索</span></div>
+        <div class="card-play pink">▶ 開始遊戲</div>
+      </a>
+      <a class="game-card pink-glow" href="games/deep-diggers.html">
+        <div class="card-emoji">⛏️</div>
+        <div class="card-title">Deep Diggers</div>
+        <div class="card-desc">500 層縱向地城、5 種生物群系、7 升級樹</div>
+        <div class="card-tags"><span class="card-tag pink">挖礦</span><span class="card-tag pink">Roguelike</span><span class="card-tag pink">升級</span></div>
+        <div class="card-play pink">▶ 開始遊戲</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ══ SECTION 3: 劇情類 ══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📖</span>
+      <span class="section-label cyan">劇情類 · Story</span>
+      <div class="section-line cyan"></div>
+    </div>
+    <div class="game-grid">
+      <a class="game-card cyan-glow" href="games/village/">
+        <div class="card-emoji">🦫</div>
+        <div class="card-title">水豚小村</div>
+        <div class="card-desc">收集採集、行為日誌，經營你的水豚村落</div>
+        <div class="card-tags"><span class="card-tag">村落模擬</span><span class="card-tag">收集</span><span class="card-tag">日誌</span></div>
+        <div class="card-play cyan">▶ 開始遊戲</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ══ CONTACT ══ -->
   <section class="contact-section">
     <div class="contact-title">聯絡我 · Contact</div>
     <div class="contact-links">
       <a class="contact-link" href="https://www.threads.com/@lokiweiwei" target="_blank" rel="noopener">
-        <svg width="20" height="20" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M141.537 88.988c-1.177-.546-2.377-1.07-3.595-1.573-2.033-17.419-12.713-27.373-28.715-27.471-9.593-.058-17.827 3.986-22.811 11.136l10.5 7.203c3.39-4.82 8.707-7.147 14.31-7.113 6.896.044 12.11 3.546 14.298 9.745-1.782-.315-3.619-.476-5.507-.476-11.443 0-22.505 3.963-30.45 11.158-8.62 7.793-12.823 18.714-11.49 29.95.68 5.714 2.858 10.93 6.397 15.35 4.19 5.198 10.004 8.856 17.285 10.874 3.765 1.047 7.72 1.573 11.754 1.573 8.684 0 17.207-2.35 23.886-6.657 8.68-5.607 13.797-14.194 14.403-24.189.293-4.782-.462-9.506-2.265-13.955zm-45.435 24.044c-1.082-8.895 4.658-17.14 13.457-19.977 2.818-.908 5.771-1.352 8.693-1.313.996.013 1.986.075 2.967.185.55 2.22.83 4.533.83 6.89 0 5.58-1.62 10.707-4.428 14.817-3.065 4.471-7.59 7.258-12.87 7.258-1.485 0-2.97-.205-4.404-.625-1.918-.56-3.245-1.56-4.245-3.235zm63.044-17.26c-.088-.81-.183-1.617-.285-2.421C153.688 61.44 127.7 42.29 95.955 42.29c-14.613 0-28.478 4.543-40.091 13.135-12.185 8.98-21.208 22.08-25.406 37.027-4.1 14.635-3.06 29.87 2.95 43.008 6.233 13.647 17.247 24.34 30.999 30.117 6.52 2.761 13.459 4.16 20.549 4.16 5.8 0 11.654-.91 17.36-2.72l-3.47-11.22c-4.53 1.402-9.2 2.113-13.89 2.113-5.624 0-11.119-1.1-16.344-3.277-10.822-4.584-19.52-13.014-24.518-23.846-4.775-10.457-5.602-22.427-2.326-33.69 3.375-12.04 10.645-22.45 20.48-29.384 9.408-6.628 20.5-10.126 32.117-10.126 26.252 0 47.273 16.083 51.988 39.155.133.645.254 1.292.364 1.942-2.553-.408-5.193-.613-7.879-.613-3.3 0-6.554.322-9.72.96l2.307 11.38c2.58-.523 5.22-.786 7.886-.786 2.43 0 4.827.228 7.168.677.204 1.343.372 2.696.5 4.058.257 2.748.258 5.502.004 8.243-.625 6.84-3.258 12.965-7.614 17.703-4.54 4.934-10.84 7.818-17.782 8.127-7.512.336-14.656-2.617-19.645-8.085-4.728-5.188-7.097-12.142-6.67-19.584.437-7.585 3.858-14.505 9.592-19.468 5.517-4.773 12.61-7.162 19.745-6.74l.657-11.624c-10.016-.566-19.862 2.79-27.702 9.434-8.116 6.867-13.094 16.52-13.677 26.918-.604 10.492 2.682 20.609 9.26 27.856 6.832 7.527 16.728 11.64 27.432 11.176 10.29-.46 19.704-4.762 26.505-11.997 6.33-6.716 9.985-15.515 10.836-25.483.264-3.077.25-6.16-.04-9.23z" fill="currentColor"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 192 192" fill="none"><path d="M141.537 88.988c-1.177-.546-2.377-1.07-3.595-1.573-2.033-17.419-12.713-27.373-28.715-27.471-9.593-.058-17.827 3.986-22.811 11.136l10.5 7.203c3.39-4.82 8.707-7.147 14.31-7.113 6.896.044 12.11 3.546 14.298 9.745-1.782-.315-3.619-.476-5.507-.476-11.443 0-22.505 3.963-30.45 11.158-8.62 7.793-12.823 18.714-11.49 29.95.68 5.714 2.858 10.93 6.397 15.35 4.19 5.198 10.004 8.856 17.285 10.874 3.765 1.047 7.72 1.573 11.754 1.573 8.684 0 17.207-2.35 23.886-6.657 8.68-5.607 13.797-14.194 14.403-24.189.293-4.782-.462-9.506-2.265-13.955zm-45.435 24.044c-1.082-8.895 4.658-17.14 13.457-19.977 2.818-.908 5.771-1.352 8.693-1.313.996.013 1.986.075 2.967.185.55 2.22.83 4.533.83 6.89 0 5.58-1.62 10.707-4.428 14.817-3.065 4.471-7.59 7.258-12.87 7.258-1.485 0-2.97-.205-4.404-.625-1.918-.56-3.245-1.56-4.245-3.235z" fill="currentColor"/></svg>
         Threads @lokiweiwei
       </a>
       <a class="contact-link" href="https://s.team/p/qch-rmmd/pmvwgwjg" target="_blank" rel="noopener">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.003.187.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.029 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.497 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z" fill="currentColor"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.003.187.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.029 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.497 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z" fill="currentColor"/></svg>
         Steam
       </a>
     </div>
   </section>
 
-
-  <!-- Comments -->
+  <!-- ══ COMMENTS ══ -->
   <section class="comments-section">
     <div class="comments-title" id="commentsTitle">💬 留言區 &nbsp; Comments</div>
-
-    <!-- 管理員登入列 -->
     <div class="admin-bar" id="adminBar">
       🔑 管理員密碼：
       <input type="password" id="adminKeyInput" placeholder="輸入密碼" />
       <button onclick="adminLogin()">登入</button>
       <button onclick="adminLogout()" id="adminLogoutBtn" style="display:none;background:#2a1e14;color:#c45050">登出</button>
     </div>
-
     <form class="comment-form" id="commentForm">
       <input type="text" id="commentName" placeholder="你的名稱" maxlength="50" required />
       <textarea id="commentContent" placeholder="留下你的想法..." maxlength="500" required></textarea>
       <button type="submit" id="submitBtn">送出留言</button>
     </form>
-
     <div class="comment-list" id="commentList">
       <div class="comment-msg">載入中...</div>
     </div>
@@ -730,7 +591,6 @@
           list.innerHTML = '<div class="comment-msg">還沒有留言，來說第一句話吧！</div>';
           return;
         }
-        // 分離頂層和回覆
         const top = data.filter(c => !c.parent_id);
         const replies = data.filter(c => c.parent_id);
         list.innerHTML = top.map(c => renderComment(c, replies)).join('');
@@ -822,16 +682,18 @@
       btn.disabled = false; btn.textContent = '送出留言';
     });
 
-    function esc(s) {
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-    function formatDate(iso) {
-      const d = new Date(iso);
-      return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
-    }
+    function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function formatDate(iso) { const d = new Date(iso); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
 
     if (adminKey) updateAdminUI();
     loadComments();
+
+    // ── More Games Toggle ──
+    function toggleMoreGames(btn) {
+      const area = document.getElementById('moreGamesArea');
+      btn.classList.toggle('open');
+      area.classList.toggle('open');
+    }
 
     // ── Theme Switcher ──
     (function() {
@@ -851,40 +713,31 @@
 
   <footer>
     © 2025 <span>CapyWorlds</span> &nbsp;·&nbsp; Made with 🦫 &amp; ❤️
-    &nbsp;·&nbsp; <a href="/privacy.html" style="color:var(--accent);opacity:0.6;text-decoration:none;font-size:13px;transition:opacity .2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">隱私權政策</a>
+    &nbsp;·&nbsp; <a href="/privacy.html">隱私權政策</a>
   </footer>
 
   <!-- ── Danmaku Layer ── -->
   <div id="danmaku-layer"></div>
-
-  <!-- ── Points Badge ── -->
-  <div class="pts-badge" title="積分：玩遊戲 +5 / 留言 +10 / 發彈幕 -8">
-    ✦ <span class="pts-val">0</span> 積分
-  </div>
-
-  <!-- ── Danmaku Toggle ── -->
+  <div class="pts-badge" title="積分：玩遊戲 +5 / 留言 +10 / 發彈幕 -8">✦ <span class="pts-val">0</span> 積分</div>
   <button id="dm-toggle" title="開啟彈幕">💬 彈幕</button>
-
-  <!-- ── Danmaku Input Bar ── -->
   <div id="danmaku-bar">
     <span class="dm-pts">✦ <span class="pts-val">0</span> 積分</span>
     <input class="dm-input" id="dm-input" placeholder="輸入彈幕（-8 積分）" maxlength="30" autocomplete="off">
     <div class="dm-colors">
       <div class="dm-dot sel" data-c="#ffffff" style="background:#fff"></div>
-      <div class="dm-dot"    data-c="#ffd700" style="background:#ffd700"></div>
-      <div class="dm-dot"    data-c="#00ffff" style="background:#0ff"></div>
-      <div class="dm-dot"    data-c="#ff69b4" style="background:#ff69b4"></div>
-      <div class="dm-dot"    data-c="#7fff00" style="background:#7fff00"></div>
-      <div class="dm-dot"    data-c="#ff6347" style="background:#ff6347"></div>
+      <div class="dm-dot" data-c="#ffd700" style="background:#ffd700"></div>
+      <div class="dm-dot" data-c="#00ffff" style="background:#0ff"></div>
+      <div class="dm-dot" data-c="#ff69b4" style="background:#ff69b4"></div>
+      <div class="dm-dot" data-c="#7fff00" style="background:#7fff00"></div>
+      <div class="dm-dot" data-c="#ff6347" style="background:#ff6347"></div>
     </div>
     <button class="dm-send" id="dm-send">發送</button>
   </div>
 
   <script>
-  // ── Points System ──────────────────────────────────────────
+  // ── Points System ──
   const PTS_KEY = 'capyPoints';
   const DM_COST = 8;
-
   function getPoints() { return parseInt(localStorage.getItem(PTS_KEY) || '0'); }
   function setPoints(n) {
     const v = Math.max(0, n);
@@ -892,37 +745,24 @@
     document.querySelectorAll('.pts-val').forEach(el => el.textContent = v);
     return v;
   }
-  function awardPoints(n, label) {
-    setPoints(getPoints() + n);
-    showPtsPopup('+' + n + ' ' + label);
-  }
-  function spendPoints(n) {
-    if (getPoints() < n) return false;
-    setPoints(getPoints() - n);
-    return true;
-  }
+  function awardPoints(n, label) { setPoints(getPoints() + n); showPtsPopup('+' + n + ' ' + label); }
+  function spendPoints(n) { if (getPoints() < n) return false; setPoints(getPoints() - n); return true; }
   function showPtsPopup(msg) {
     const el = document.createElement('div');
-    el.className = 'pts-popup';
-    el.textContent = msg;
+    el.className = 'pts-popup'; el.textContent = msg;
     document.body.appendChild(el);
     el.addEventListener('animationend', () => el.remove());
   }
-
-  // 回主頁時領取遊戲獎勵
   (function checkGameReward() {
     if (localStorage.getItem('capyPendingReward') === 'game') {
       localStorage.removeItem('capyPendingReward');
       setTimeout(() => awardPoints(5, '玩遊戲 🎮'), 1200);
     }
   })();
-
-  // 初始化顯示
   setPoints(getPoints());
 
-  // ── Danmaku System ─────────────────────────────────────────
+  // ── Danmaku System ──
   let dmOn = false, dmLastId = 0, dmPollTimer = null, dmColor = '#ffffff';
-
   const dmLayer  = document.getElementById('danmaku-layer');
   const dmToggle = document.getElementById('dm-toggle');
   const dmBar    = document.getElementById('danmaku-bar');
@@ -934,21 +774,14 @@
     dmToggle.classList.toggle('on', dmOn);
     dmToggle.textContent = dmOn ? '💬 彈幕 ON' : '💬 彈幕';
     dmBar.classList.toggle('open', dmOn);
-    if (dmOn) {
-      fetchDanmaku(true);
-      dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
-    } else {
-      clearInterval(dmPollTimer);
-      dmLayer.innerHTML = '';
-    }
+    if (dmOn) { fetchDanmaku(true); dmPollTimer = setInterval(() => fetchDanmaku(false), 15000); }
+    else { clearInterval(dmPollTimer); dmLayer.innerHTML = ''; }
   });
 
-  // 顏色選擇
   document.querySelectorAll('.dm-dot').forEach(dot => {
     dot.addEventListener('click', () => {
       document.querySelectorAll('.dm-dot').forEach(d => d.classList.remove('sel'));
-      dot.classList.add('sel');
-      dmColor = dot.dataset.c;
+      dot.classList.add('sel'); dmColor = dot.dataset.c;
     });
   });
 
@@ -965,67 +798,34 @@
 
   function dmShow(text, color) {
     if (!dmOn) return;
-    const el    = document.createElement('div');
-    el.className = 'dm';
-    el.textContent = text;
-    el.style.color = color || '#fff';
-    el.style.top   = (5 + Math.random() * 83) + 'vh';
-    const dur = (9 + Math.random() * 5).toFixed(1);
-    el.style.animationDuration = dur + 's';
+    const el = document.createElement('div');
+    el.className = 'dm'; el.textContent = text; el.style.color = color || '#fff';
+    el.style.top = (5 + Math.random() * 83) + 'vh';
+    el.style.animationDuration = (9 + Math.random() * 5).toFixed(1) + 's';
     dmLayer.appendChild(el);
     el.addEventListener('animationend', () => el.remove());
   }
 
-  // 管理員模式：點 "✦ X 積分" 徽章 5 下可輸入管理員密碼，解鎖免費彈幕
-  let dmAdminMode = false;
-  let dmBadgeClicks = 0, dmBadgeTimer = null;
-  document.querySelector('.pts-badge').addEventListener('click', () => {
-    dmBadgeClicks++;
-    clearTimeout(dmBadgeTimer);
-    dmBadgeTimer = setTimeout(() => { dmBadgeClicks = 0; }, 1800);
-    if (dmBadgeClicks >= 5) {
-      dmBadgeClicks = 0;
-      if (dmAdminMode) {
-        const action = prompt('管理員選項：\n1 → 退出管理員模式\n2 → 重置我的積分為 0\n\n輸入數字：');
-        if (action === '1') { dmAdminMode = false; showPtsPopup('已退出管理員模式'); }
-        else if (action === '2') { setPoints(0); showPtsPopup('積分已重置 ✓'); }
-      } else {
-        const pw = prompt('輸入管理員密碼：');
-        if (pw && pw === '66520') {
-          dmAdminMode = true;
-          showPtsPopup('管理員模式：彈幕免費 ✓');
-        } else if (pw !== null) {
-          showPtsPopup('密碼錯誤');
-        }
-      }
-    }
-  });
-
-  async function doSendDanmaku() {
-    const text = dmInput.value.trim();
-    if (!text) return;
-    if (!dmAdminMode && getPoints() < DM_COST) { showPtsPopup('積分不足（需 ' + DM_COST + ' 積分）'); return; }
+  async function sendDanmaku() {
+    const txt = dmInput.value.trim();
+    if (!txt) return;
+    if (!spendPoints(DM_COST)) { showPtsPopup('積分不足！需要 ' + DM_COST); return; }
     dmSend.disabled = true;
     try {
-      const res  = await fetch(API + '/danmaku', {
+      const res = await fetch(API + '/danmaku', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, color: dmColor }),
+        body: JSON.stringify({ text: txt, color: dmColor }),
       });
       const data = await res.json();
-      if (data.ok) {
-        if (!dmAdminMode) spendPoints(DM_COST);
-        dmInput.value = '';
-        dmShow(text, dmColor);
-      } else {
-        showPtsPopup(data.error || '發送失敗');
-      }
-    } catch { showPtsPopup('網路錯誤'); }
+      if (data.ok) { dmInput.value = ''; dmShow(txt, dmColor); }
+      else { awardPoints(DM_COST, '退還'); alert(data.error || '發送失敗'); }
+    } catch { awardPoints(DM_COST, '退還'); alert('網路錯誤'); }
     dmSend.disabled = false;
   }
 
-  dmSend.addEventListener('click', doSendDanmaku);
-  dmInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSendDanmaku(); });
+  dmSend.addEventListener('click', sendDanmaku);
+  dmInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendDanmaku(); });
   </script>
 
 </body>
