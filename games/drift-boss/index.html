@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Drift Boss - CapyWorlds</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#1a1a2e;font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;overflow:hidden;color:#fff}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(0,0,0,0.6);z-index:200;flex-shrink:0}
+.top-bar a{color:#fff;text-decoration:none;font-size:14px}
+.btn-group{display:flex;gap:6px}
+.btn-group button{background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;padding:4px 10px;border-radius:6px;font-size:13px;cursor:pointer}
+.game-area{flex:1;overflow:hidden;min-height:0;position:relative;background:#3a7d32}
+canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);touch-action:none;max-width:100%;max-height:100%}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.78);z-index:100}
+.overlay.active{display:flex}
+.overlay h2{font-size:28px;margin-bottom:10px;color:#ffd700}
+.overlay p{font-size:15px;margin:3px 0;color:#ccc}
+.score-big{font-size:52px;font-weight:bold;color:#fff;margin:6px 0}
+.obtn{padding:12px 32px;border:none;border-radius:12px;font-size:17px;font-weight:bold;cursor:pointer;margin:6px;transition:transform 0.1s}
+.obtn:active{transform:scale(0.95)}
+.obtn.primary{background:#ffd700;color:#1a1a2e}
+.obtn.secondary{background:rgba(255,255,255,0.15);color:#fff}
+.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;max-width:min(360px,calc(100vw - 32px))}
+.car-card{border:2px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:0.2s}
+.car-card:hover{border-color:rgba(255,215,0,0.5)}
+.car-card.selected{border-color:#ffd700;background:rgba(255,215,0,0.1)}
+.car-card .car-preview{width:36px;height:52px;margin:0 auto 6px;border-radius:6px}
+.car-card .car-cost{font-size:11px;color:#aaa;margin-top:2px}
+.tut-step{text-align:center;margin:12px 0}
+.tut-step .icon{font-size:44px}
+.tut-step h3{margin:6px 0 2px;font-size:17px}
+.tut-step p{font-size:13px;color:#bbb}
+.pup-ind{position:absolute;top:44px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:50}
+.pup-ind span{padding:2px 10px;border-radius:16px;font-size:12px;font-weight:bold;display:none}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<a href="../" id="back-link">&larr; Back</a>
+<div class="btn-group">
+<button id="lang-btn" onclick="toggleLang()">繁中</button>
+<button id="mute-btn" onclick="toggleMute()">🔊</button>
+</div>
+</div>
+<div class="game-area">
+<canvas id="game"></canvas>
+<div class="pup-ind">
+<span id="ind-double" style="background:#ffd700;color:#000">2X</span>
+<span id="ind-rush" style="background:#00e5ff;color:#000">RUSH</span>
+<span id="ind-life" style="background:#ff6b6b;color:#fff">+1</span>
+</div>
+</div>
+<!-- Game Over -->
+<div class="overlay" id="ov-over">
+<h2 id="go-title">Game Over</h2>
+<div class="score-big" id="go-score">0</div>
+<p id="go-best">Best: 0</p>
+<p id="go-coins" style="color:#ffd700;font-size:18px">+0 🪙</p>
+<button class="obtn primary" onclick="startGame()" id="go-restart">&#9654; Play Again</button>
+<button class="obtn secondary" onclick="showShop()" id="go-shop">&#128663; Garage</button>
+</div>
+<!-- Shop -->
+<div class="overlay" id="ov-shop">
+<h2 id="shop-title">&#128663; Garage</h2>
+<p id="shop-coins">🪙 0</p>
+<div class="shop-grid" id="shop-grid"></div>
+<button class="obtn secondary" onclick="hideShop()" id="shop-close">&#10005; Close</button>
+</div>
+<!-- Tutorial -->
+<div class="overlay" id="ov-tut">
+<div class="tut-step"><div class="icon">👆</div><h3 id="t1h">Hold to Drift Right</h3><p id="t1p">Press and hold to steer right</p></div>
+<div class="tut-step"><div class="icon">✋</div><h3 id="t2h">Release to Drift Left</h3><p id="t2p">Let go to steer left</p></div>
+<div class="tut-step"><div class="icon">🛣️</div><h3 id="t3h">Stay on the Road!</h3><p id="t3p">Don't fall off the edge</p></div>
+<button class="obtn primary" onclick="closeTut()" id="tut-btn">&#9654; Start</button>
+</div>
+<!-- Start -->
+<div class="overlay active" id="ov-start">
+<h2 style="font-size:42px">🏎️</h2>
+<h2 id="s-title">Drift Boss</h2>
+<p id="s-desc" style="margin-bottom:14px;color:#bbb">One-button drifting challenge</p>
+<button class="obtn primary" onclick="tryStart()" id="s-btn">&#9654; Play</button>
+<button class="obtn secondary" onclick="showShop()" id="s-shop">&#128663; Garage</button>
+</div>
+<script>
+// === i18n ===
+const I={en:{back:'\u2190 Back',score:'Score',best:'Best',over:'Game Over',again:'\u25b6 Play Again',
+shop:'\ud83d\ude97 Garage',close:'\u2715 Close',hR:'Hold to Drift Right',hRd:'Press and hold to steer right',
+rL:'Release to Drift Left',rLd:'Let go to steer left',stay:'Stay on the Road!',
+stayd:"Don't fall off the edge",play:'\u25b6 Play',title:'Drift Boss',
+desc:'One-button drifting challenge',owned:'Owned',buy:'Buy',sel:'Select',seld:'Using'},
+zh:{back:'\u2190 \u8fd4\u56de',score:'\u5206\u6578',best:'\u6700\u4f73',over:'\u904a\u6232\u7d50\u675f',
+again:'\u25b6 \u518d\u73a9\u4e00\u6b21',shop:'\ud83d\ude97 \u8eca\u5eab',close:'\u2715 \u95dc\u9589',
+hR:'\u6309\u4f4f\u5411\u53f3\u6f02\u79fb',hRd:'\u6309\u4f4f\u87a2\u5e55\u5411\u53f3\u8f49',
+rL:'\u653e\u958b\u5411\u5de6\u6f02\u79fb',rLd:'\u9b06\u624b\u5411\u5de6\u8f49',
+stay:'\u7559\u5728\u8def\u4e0a\uff01',stayd:'\u4e0d\u8981\u6389\u4e0b\u53bb',
+play:'\u25b6 \u958b\u59cb',title:'\u6f02\u79fb\u5927\u5e2b',
+desc:'\u4e00\u9375\u6f02\u79fb\u904a\u6232',owned:'\u5df2\u64c1\u6709',
+buy:'\u8cfc\u8cb7',sel:'\u9078\u64c7',seld:'\u4f7f\u7528\u4e2d'}};
+let lang=localStorage.getItem('driftLang')||'en';
+function t(k){return I[lang][k]||I.en[k]||k}
+
+// === Constants ===
+const ROAD_W0=82,CAR_W=18,CAR_H=28,TURN_RATE=3.0,GRIP=4.5,BASE_SPD=135;
+const CARS=[
+{id:'red',c:'#e74c3c',cost:0,n:'Red Racer'},
+{id:'blue',c:'#3498db',cost:300,n:'Blue Flash'},
+{id:'green',c:'#2ecc71',cost:600,n:'Green Machine'},
+{id:'gold',c:'#f1c40f',cost:1200,n:'Gold Rush'},
+{id:'purple',c:'#9b59b6',cost:2000,n:'Purple Night'},
+{id:'black',c:'#2c3e50',cost:3500,n:'Shadow'}];
+
+// === State ===
+const cvs=document.getElementById('game'),ctx=cvs.getContext('2d');
+let road=[],cns=[],pups=[],trails=[];
+let carX,carY,carAng,carVx,carVy,spd,alive;
+let sc,rCoins,bestSc,totCoins,actCar,unlocked;
+let dblT=0,rushT=0,xLives=0;
+let camX,camY,pressing=false,segI=0,fallT=0;
+let gState='start';
+
+// === Save ===
+bestSc=parseInt(localStorage.getItem('driftBest'))||0;
+totCoins=parseInt(localStorage.getItem('driftCoins'))||0;
+actCar=localStorage.getItem('driftCar')||'red';
+unlocked=JSON.parse(localStorage.getItem('driftUnlocked')||'["red"]');
+
+// === Road Gen ===
+function genRoad(){
+road=[];cns=[];pups=[];
+let cx=0,cy=0,nd=0;
+road.push({x1:0,y1:0,x2:0,y2:-400,dx:0,dy:-1,len:400,w:100});
+cx=0;cy=-400;nd=Math.random()<0.5?1:3;
+for(let i=1;i<500;i++){
+const len=80+Math.random()*180,w=Math.max(36,ROAD_W0-i*0.09);
+let dx=0,dy=0;
+if(nd===0)dy=-1;else if(nd===1)dx=1;else dx=-1;
+road.push({x1:cx,y1:cy,x2:cx+dx*len,y2:cy+dy*len,dx,dy,len,w});
+const nc=Math.floor(len/65);
+for(let j=1;j<=nc;j++){const ct=j/(nc+1);
+cns.push({x:cx+dx*len*ct+(dy!==0?(Math.random()-.5)*w*.3:0),
+y:cy+dy*len*ct+(dx!==0?(Math.random()-.5)*w*.3:0),alive:true});}
+if(i>4&&Math.random()<.06){const pt=.5;
+pups.push({x:cx+dx*len*pt,y:cy+dy*len*pt,
+type:['dbl','rush','life'][Math.floor(Math.random()*3)],alive:true});}
+cx+=dx*len;cy+=dy*len;
+nd=(nd===0)?(Math.random()<.5?1:3):0;
+}}
+</script>
+<script>
+// === Collision ===
+function onRoad(px,py){
+for(let i=Math.max(0,segI-3);i<Math.min(road.length,segI+6);i++){
+const s=road[i];
+if(s.dx===0){const my=Math.min(s.y1,s.y2)-s.w*.4,My=Math.max(s.y1,s.y2)+s.w*.4;
+if(py>=my&&py<=My&&Math.abs(px-s.x1)<=s.w/2+2)return true;}
+else{const mx=Math.min(s.x1,s.x2)-s.w*.4,Mx=Math.max(s.x1,s.x2)+s.w*.4;
+if(px>=mx&&px<=Mx&&Math.abs(py-s.y1)<=s.w/2+2)return true;}}
+return false;}
+
+function updSegI(){let b=segI,bd=1e9;
+for(let i=Math.max(0,segI-2);i<Math.min(road.length,segI+5);i++){
+const s=road[i],mx=(s.x1+s.x2)/2,my=(s.y1+s.y2)/2;
+const d=Math.hypot(carX-mx,carY-my);if(d<bd){bd=d;b=i;}}segI=b;}
+
+// === Update ===
+function update(dt){
+if(gState!=='play')return;
+if(fallT>0){fallT-=dt;if(fallT<=0)showOver();return;}
+if(pressing)carAng+=TURN_RATE*dt;else carAng-=TURN_RATE*dt;
+spd=Math.min(400,BASE_SPD+sc*.04);
+const tvx=Math.cos(carAng)*spd,tvy=Math.sin(carAng)*spd;
+carVx+=(tvx-carVx)*GRIP*dt;carVy+=(tvy-carVy)*GRIP*dt;
+carX+=carVx*dt;carY+=carVy*dt;
+sc+=spd*dt*.008*(dblT>0?2:1);
+updSegI();
+if(!onRoad(carX,carY)){
+if(xLives>0){xLives--;const s=road[segI];
+carX=(s.x1+s.x2)/2;carY=(s.y1+s.y2)/2;
+carVx=s.dx*spd;carVy=s.dy*spd;carAng=Math.atan2(s.dy,s.dx);
+}else{alive=false;fallT=.7;playA('fall',.8);}}
+for(const c of cns){if(c.alive&&Math.hypot(carX-c.x,carY-c.y)<20){
+c.alive=false;rCoins+=(rushT>0?3:1);playA('coin',.5,1,250);}}
+for(const p of pups){if(p.alive&&Math.hypot(carX-p.x,carY-p.y)<20){
+p.alive=false;playA('pup',.6,1,280);
+if(p.type==='dbl')dblT=6;else if(p.type==='rush')rushT=6;else xLives++;}}
+if(dblT>0)dblT-=dt;if(rushT>0)rushT-=dt;
+// Drift trails
+const slip=Math.abs(Math.atan2(carVy,carVx)-carAng);
+if(slip>.3&&alive)trails.push({x:carX,y:carY,a:1});
+trails=trails.filter(t=>{t.a-=dt*2.5;return t.a>0;});
+camX+=(carX-camX)*3.5*dt;camY+=(carY-cvs.height*.3-camY)*3.5*dt;
+document.getElementById('ind-double').style.display=dblT>0?'inline':'none';
+document.getElementById('ind-rush').style.display=rushT>0?'inline':'none';
+document.getElementById('ind-life').style.display=xLives>0?'inline':'none';
+if(xLives>0)document.getElementById('ind-life').textContent='\u2764\ufe0f\u00d7'+xLives;
+}
+
+// === Render ===
+function render(){
+const W=cvs.width,H=cvs.height;
+const grad=ctx.createLinearGradient(0,0,0,H);
+grad.addColorStop(0,'#2d8a4e');grad.addColorStop(1,'#3a7d32');
+ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+// Grass dots
+ctx.fillStyle='rgba(0,0,0,0.03)';
+for(let i=0;i<30;i++){const gx=((i*137+camX*.2)%W+W)%W,gy=((i*251+camY*.2)%H+H)%H;
+ctx.fillRect(gx,gy,3,3);}
+ctx.save();ctx.translate(W/2-camX,H*.7-camY);
+// Road
+for(let i=Math.max(0,segI-10);i<Math.min(road.length,segI+18);i++){
+const s=road[i];
+const sx=(s.x1+s.x2)/2-camX,sy=(s.y1+s.y2)/2-camY;
+if(Math.abs(sx)>W*1.2&&Math.abs(sy)>H*1.2)continue;
+// Shadow
+ctx.fillStyle='rgba(0,0,0,0.18)';
+if(s.dx===0)ctx.fillRect(s.x1-s.w/2+4,Math.min(s.y1,s.y2)+4,s.w,s.len);
+else ctx.fillRect(Math.min(s.x1,s.x2)+4,s.y1-s.w/2+4,s.len,s.w);
+// Surface
+ctx.fillStyle='#e8e4dc';
+if(s.dx===0)ctx.fillRect(s.x1-s.w/2,Math.min(s.y1,s.y2),s.w,s.len);
+else ctx.fillRect(Math.min(s.x1,s.x2),s.y1-s.w/2,s.len,s.w);
+// Edge
+ctx.strokeStyle='#ccc8c0';ctx.lineWidth=1;
+if(s.dx===0)ctx.strokeRect(s.x1-s.w/2,Math.min(s.y1,s.y2),s.w,s.len);
+else ctx.strokeRect(Math.min(s.x1,s.x2),s.y1-s.w/2,s.len,s.w);
+// Center dash
+ctx.strokeStyle='rgba(180,160,100,0.25)';ctx.lineWidth=2;ctx.setLineDash([8,10]);
+ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.stroke();ctx.setLineDash([]);
+}
+// Trails
+for(const tr of trails){ctx.beginPath();ctx.arc(tr.x,tr.y,3,0,Math.PI*2);
+ctx.fillStyle='rgba(50,50,50,'+tr.a*.5+')';ctx.fill();}
+// Coins
+for(const c of cns){if(!c.alive)continue;
+const dx=c.x-camX,dy=c.y-camY;if(Math.abs(dx)>W||Math.abs(dy)>H)continue;
+ctx.beginPath();ctx.arc(c.x,c.y,7,0,Math.PI*2);ctx.fillStyle='#ffd700';ctx.fill();
+ctx.strokeStyle='#b8860b';ctx.lineWidth=1.5;ctx.stroke();
+ctx.fillStyle='rgba(255,255,255,0.35)';ctx.beginPath();ctx.arc(c.x-2,c.y-2,2.5,0,Math.PI*2);ctx.fill();}
+// Powerups
+for(const p of pups){if(!p.alive)continue;
+const dx=p.x-camX,dy=p.y-camY;if(Math.abs(dx)>W||Math.abs(dy)>H)continue;
+ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);
+const pc=p.type==='dbl'?'#ffd700':p.type==='rush'?'#00e5ff':'#ff6b6b';
+ctx.fillStyle=pc;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+ctx.fillStyle='#fff';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText(p.type==='dbl'?'2X':p.type==='rush'?'$':'\u2764',p.x,p.y);}
+// Car
+ctx.save();ctx.translate(carX,carY);ctx.rotate(carAng+Math.PI/2);
+if(fallT>0){const fs=fallT/.7;ctx.scale(fs,fs);ctx.globalAlpha=fs;}
+ctx.fillStyle='rgba(0,0,0,0.18)';rRect(ctx,-CAR_W/2+3,-CAR_H/2+3,CAR_W,CAR_H,4);ctx.fill();
+const cc=CARS.find(c=>c.id===actCar);ctx.fillStyle=cc?cc.c:'#e74c3c';
+rRect(ctx,-CAR_W/2,-CAR_H/2,CAR_W,CAR_H,4);ctx.fill();
+ctx.fillStyle='rgba(140,200,255,0.5)';ctx.fillRect(-CAR_W/2+3,-CAR_H/2+3,CAR_W-6,7);
+ctx.fillStyle='#222';
+ctx.fillRect(-CAR_W/2-2,-CAR_H/2+2,3,7);ctx.fillRect(CAR_W/2-1,-CAR_H/2+2,3,7);
+ctx.fillRect(-CAR_W/2-2,CAR_H/2-9,3,7);ctx.fillRect(CAR_W/2-1,CAR_H/2-9,3,7);
+// Headlights
+ctx.fillStyle='rgba(255,255,200,0.7)';ctx.fillRect(-CAR_W/2+2,-CAR_H/2,4,2);ctx.fillRect(CAR_W/2-6,-CAR_H/2,4,2);
+ctx.restore();ctx.restore();
+// HUD
+ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(0,0,W,36);
+ctx.fillStyle='#fff';ctx.font='bold 18px sans-serif';ctx.textAlign='center';
+ctx.fillText(t('score')+': '+Math.floor(sc),W/2,25);
+ctx.font='14px sans-serif';ctx.textAlign='left';ctx.fillText('\ud83e\ude99 '+(totCoins+rCoins),10,25);
+ctx.textAlign='right';ctx.fillText(t('best')+': '+bestSc,W-10,25);
+}
+function rRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);
+c.arcTo(x+w,y,x+w,y+r,r);c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);
+c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath();}
+</script>
+<script>
+// === Input ===
+function onDown(e){e.preventDefault();pressing=true;
+if(ACTX.state==='suspended')ACTX.resume();
+if(gState==='start')tryStart();}
+function onUp(e){e.preventDefault();pressing=false;}
+cvs.addEventListener('mousedown',onDown);
+cvs.addEventListener('mouseup',onUp);
+cvs.addEventListener('mouseleave',onUp);
+cvs.addEventListener('touchstart',onDown,{passive:false});
+cvs.addEventListener('touchend',onUp,{passive:false});
+document.addEventListener('keydown',e=>{
+if(e.code==='Space'||e.code==='ArrowRight'){e.preventDefault();pressing=true;
+if(gState==='start')tryStart();}});
+document.addEventListener('keyup',e=>{if(e.code==='Space'||e.code==='ArrowRight')pressing=false;});
+
+// === Game State ===
+function tryStart(){
+if(!localStorage.getItem('driftTutSeen')){
+gState='tutorial';hide('ov-start');show('ov-tut');}
+else startGame();}
+function closeTut(){localStorage.setItem('driftTutSeen','1');hide('ov-tut');startGame();}
+function startGame(){
+document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
+genRoad();carX=0;carY=-40;carAng=-Math.PI/2;carVx=0;carVy=-BASE_SPD;
+spd=BASE_SPD;sc=0;rCoins=0;alive=true;segI=0;fallT=0;
+dblT=0;rushT=0;xLives=0;trails=[];
+camX=carX;camY=carY-cvs.height*.3;pressing=false;gState='play';
+if(!audioMuted&&!bgmLoaded)startBGM();}
+function showOver(){
+gState='over';const s=Math.floor(sc);
+if(s>bestSc){bestSc=s;localStorage.setItem('driftBest',''+bestSc);}
+totCoins+=rCoins;localStorage.setItem('driftCoins',''+totCoins);
+document.getElementById('go-score').textContent=s;
+document.getElementById('go-best').textContent=t('best')+': '+bestSc;
+document.getElementById('go-coins').textContent='+'+rCoins+' \ud83e\ude99';
+show('ov-over');}
+
+function showShop(){
+document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
+show('ov-shop');document.getElementById('shop-coins').textContent='\ud83e\ude99 '+totCoins;
+const g=document.getElementById('shop-grid');g.innerHTML='';
+CARS.forEach(c=>{const d=document.createElement('div');
+const own=unlocked.includes(c.id);
+d.className='car-card'+(c.id===actCar?' selected':'');
+d.innerHTML='<div class="car-preview" style="background:'+c.c+'"></div>'+
+'<div style="font-size:13px;font-weight:bold">'+c.n+'</div>'+
+'<div class="car-cost">'+(own?(c.id===actCar?t('seld'):t('sel')):'\ud83e\ude99 '+c.cost)+'</div>';
+d.onclick=()=>{if(own){actCar=c.id;localStorage.setItem('driftCar',actCar);showShop();}
+else if(totCoins>=c.cost){totCoins-=c.cost;unlocked.push(c.id);actCar=c.id;
+localStorage.setItem('driftCoins',''+totCoins);localStorage.setItem('driftCar',actCar);
+localStorage.setItem('driftUnlocked',JSON.stringify(unlocked));showShop();playA('pup',.7);}};
+g.appendChild(d);});}
+function hideShop(){hide('ov-shop');
+if(gState==='over')show('ov-over');else show('ov-start');}
+function show(id){document.getElementById(id).classList.add('active');}
+function hide(id){document.getElementById(id).classList.remove('active');}
+
+// === Audio ===
+const ACTX=new(window.AudioContext||window.webkitAudioContext)();
+const ABUFS={};let audioMuted=localStorage.getItem('driftMuted')==='1';
+let bgmSrc=null,bgmGain=null,bgmLoaded=false;
+function loadA(n,u){fetch(u).then(r=>r.arrayBuffer()).then(ab=>ACTX.decodeAudioData(ab)).then(b=>{ABUFS[n]=b}).catch(()=>{});}
+function playA(n,v=.7,r=1,ms=0){if(audioMuted)return;const b=ABUFS[n];if(!b)return;
+if(ACTX.state==='suspended')ACTX.resume();
+const s=ACTX.createBufferSource();s.buffer=b;s.playbackRate.value=r;
+const g=ACTX.createGain();g.gain.value=v;s.connect(g);g.connect(ACTX.destination);
+s.start(0,0,ms>0?ms/1000:b.duration);}
+function startBGM(){if(bgmLoaded||audioMuted)return;bgmLoaded=true;
+fetch('../../assets/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Beach Vibes.ogg')
+.then(r=>r.arrayBuffer()).then(ab=>ACTX.decodeAudioData(ab)).then(b=>{
+if(ACTX.state==='suspended')ACTX.resume();
+bgmSrc=ACTX.createBufferSource();bgmSrc.buffer=b;bgmSrc.loop=true;
+bgmGain=ACTX.createGain();bgmGain.gain.value=.18;
+bgmSrc.connect(bgmGain);bgmGain.connect(ACTX.destination);bgmSrc.start();}).catch(()=>{});}
+function toggleMute(){audioMuted=!audioMuted;
+if(bgmGain)bgmGain.gain.value=audioMuted?0:.18;
+document.getElementById('mute-btn').textContent=audioMuted?'\ud83d\udd07':'\ud83d\udd0a';
+localStorage.setItem('driftMuted',audioMuted?'1':'0');
+if(!audioMuted&&!bgmLoaded)startBGM();}
+
+// === Lang ===
+function toggleLang(){lang=lang==='en'?'zh':'en';localStorage.setItem('driftLang',lang);applyLang();}
+function applyLang(){
+const $=id=>document.getElementById(id);
+$('lang-btn').textContent=lang==='en'?'繁中':'EN';
+$('back-link').textContent=t('back');
+$('go-title').textContent=t('over');$('go-restart').textContent=t('again');
+$('go-shop').textContent=t('shop');$('shop-title').textContent=t('shop');
+$('shop-close').textContent=t('close');$('s-title').textContent=t('title');
+$('s-desc').textContent=t('desc');$('s-btn').textContent=t('play');
+$('s-shop').textContent=t('shop');$('t1h').textContent=t('hR');$('t1p').textContent=t('hRd');
+$('t2h').textContent=t('rL');$('t2p').textContent=t('rLd');$('t3h').textContent=t('stay');
+$('t3p').textContent=t('stayd');$('tut-btn').textContent=t('play');}
+
+// === Resize ===
+function resize(){const a=document.querySelector('.game-area');
+cvs.width=a.clientWidth;cvs.height=a.clientHeight;}
+let rsTO;window.addEventListener('resize',()=>{clearTimeout(rsTO);rsTO=setTimeout(resize,100);});
+
+// === Loop ===
+let lastT=0;
+function loop(ts){const dt=Math.min((ts-lastT)/1000,.05);lastT=ts;
+update(dt);render();requestAnimationFrame(loop);}
+
+// === Init ===
+function init(){resize();
+if(audioMuted)document.getElementById('mute-btn').textContent='\ud83d\udd07';
+loadA('coin','../../assets/sfx/400 Sounds Pack/Items/coin_collect.wav');
+loadA('fall','../../assets/sfx/GameSFX1/Explosion/Retro Explosion Short 01.wav');
+loadA('pup','../../assets/sfx/GameSFX3/PowerUp/Retro PowerUP 09.wav');
+applyLang();
+const go=()=>{startBGM();document.removeEventListener('click',go);document.removeEventListener('touchend',go);};
+document.addEventListener('click',go);document.addEventListener('touchend',go);
+requestAnimationFrame(loop);}
+init();
+</script>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+</body></html>
