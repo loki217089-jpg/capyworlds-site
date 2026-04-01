@@ -1113,9 +1113,14 @@ function recruitHero(id) {
   if (S.heroes.length >= S.maxParty) return;
   if (S.heroes.find(h => h.id === id)) return;
   const tmpl = HERO_TEMPLATES.find(ht => ht.id === id);
-  if (S.gold < tmpl.cost) return;
+  if (S.gold < tmpl.cost) {
+    addLog(lang==='zh' ? '金幣不足！需要 🪙'+tmpl.cost : 'Not enough gold! Need 🪙'+tmpl.cost);
+    return;
+  }
   S.gold -= tmpl.cost;
   S.heroes.push({id, level: 1});
+  addLog(lang==='zh' ? '招募了 '+t(tmpl.cls)+'！' : 'Recruited '+tmpl.cls+'!');
+  spawnParticles(GW/2, GH/2, '#ffe066', 15);
   renderTeamPanel();
   saveGame();
 }
@@ -1312,7 +1317,7 @@ function toggleMute(){
   localStorage.setItem('relicMuted',S.muted?'1':'0');
   if(!S.muted&&!bgmLoaded) startBGM(BGM_URL);
 }
-const BGM_URL = '../../assets/Fantasy RPG Music Pack Vol.3/Loops/ogg/Ambient 1 Loop.ogg';
+const BGM_URL = '../../assets/music/Fantasy RPG Music Pack Vol.3/Loops/ogg/Ambient 1 Loop.ogg';
 
 // Tutorial
 function showTutorial() {
