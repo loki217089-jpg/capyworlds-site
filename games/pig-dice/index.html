@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>🎲 貪婪骰子</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100dvh;overflow:hidden;touch-action:none;user-select:none;
+  font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#fff;
+  display:flex;align-items:center;justify-content:center}
+
+#wrap{width:100%;max-width:400px;height:100dvh;display:flex;
+  flex-direction:column;align-items:center;padding:0 14px;position:relative}
+
+/* ── 頂部 stage ── */
+#stageBar{width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0 4px;flex-shrink:0}
+#stageLbl{font-size:13px;color:#a78bfa;font-weight:bold}
+#streakLbl{font-size:13px;color:#fbbf24}
+#timerWrap{display:flex;align-items:center;gap:5px}
+#timerVal{font-size:18px;font-weight:900;color:#ef4444;min-width:24px;text-align:right}
+#timerBar{width:80px;height:5px;background:#1e1e1e;border-radius:3px;overflow:hidden}
+#timerFill{height:100%;background:#ef4444;transition:width .1s linear;border-radius:3px}
+
+/* ── VS 行 ── */
+#vsRow{width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:4px 0;flex-shrink:0}
+.sb{text-align:center}
+.sb .lbl{font-size:12px;color:#555;margin-bottom:1px}
+.sb .tot{font-size:26px;font-weight:900}
+.sb .banked{font-size:11px;color:#666}
+#vsIcon{font-size:20px;color:#333}
+
+/* ── 進度條 ── */
+#goalBar{width:100%;height:6px;background:#1a1a1a;border-radius:3px;
+  position:relative;margin:4px 0;flex-shrink:0;overflow:hidden}
+#myProg{position:absolute;left:0;top:0;height:100%;background:#7c3aed;border-radius:3px;transition:width .4s}
+#aiProg{position:absolute;left:0;top:0;height:100%;background:#ef4444;border-radius:3px;opacity:.45;transition:width .4s}
+#goalLbl{font-size:11px;color:#444;text-align:center;flex-shrink:0;margin-bottom:2px}
+
+/* ── 事件橫幅 ── */
+#eventBanner{width:100%;padding:5px 10px;border-radius:8px;font-size:12px;
+  text-align:center;min-height:26px;flex-shrink:0;display:none;margin-bottom:2px}
+#eventBanner.on{display:block}
+
+/* ── AI 狀態 ── */
+#aiStatus{font-size:12px;color:#555;text-align:center;min-height:18px;flex-shrink:0}
+
+/* ── 戰場 ── */
+#battleZone{flex:1;width:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:0;position:relative}
+
+/* 骰子 */
+#die{width:100px;height:100px;border-radius:18px;
+  background:linear-gradient(145deg,#1e1e1e,#2a2a2a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:64px;line-height:1;
+  box-shadow:0 4px 24px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);
+  border:2.5px solid #333;cursor:pointer;margin-bottom:8px;
+  transition:border-color .15s,box-shadow .15s}
+#die.rolling{animation:roll .08s linear infinite}
+@keyframes roll{0%{transform:rotate(-7deg) scale(1.06)}50%{transform:rotate(7deg) scale(1.06)}100%{transform:rotate(-7deg) scale(1.06)}}
+
+/* 爆炸全屏 */
+#bustScreen{position:fixed;inset:0;background:rgba(239,68,68,0);
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;z-index:200;transition:background .05s}
+#bustScreen.on{animation:burstFlash .5s ease-out forwards}
+@keyframes burstFlash{
+  0%{background:rgba(239,68,68,0)}
+  15%{background:rgba(239,68,68,.7)}
+  40%{background:rgba(239,68,68,.3)}
+  100%{background:rgba(239,68,68,0)}
+}
+#bustText{font-size:52px;font-weight:900;color:#fff;opacity:0;text-align:center;line-height:1.2}
+#bustScreen.on #bustText{animation:bustPop .5s ease-out forwards}
+@keyframes bustPop{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(1.5)}}
+
+/* 特殊骰標記 */
+#dieBadge{position:absolute;top:-8px;right:-8px;font-size:18px;
+  display:none;animation:badgePop .2s ease-out}
+@keyframes badgePop{from{transform:scale(0)}to{transform:scale(1)}}
+
+/* 本回合 */
+#turnScore{font-size:46px;font-weight:900;color:#fbbf24;
+  text-shadow:0 0 20px rgba(251,191,36,.4);min-height:54px;text-align:center}
+#turnScore.bump{animation:bump .15s ease-out}
+@keyframes bump{0%{transform:scale(1.3)}100%{transform:scale(1)}}
+#turnLbl{font-size:13px;color:#444;margin-bottom:10px}
+
+/* 骰歷史 */
+#history{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;
+  min-height:32px;margin-bottom:8px}
+.hd{width:28px;height:28px;border-radius:6px;background:#1e1e1e;
+  border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:16px}
+.hd.special{border-color:#fbbf24;background:rgba(251,191,36,.12)}
+
+/* 風險條 */
+#riskBar{width:100%;height:7px;background:#1e1e1e;border-radius:4px;
+  margin-bottom:4px;overflow:hidden}
+#riskFill{height:100%;border-radius:4px;transition:width .3s,background .3s;width:0%}
+#riskLbl{font-size:11px;color:#444;text-align:center;margin-bottom:12px}
+
+/* 特殊骰說明 */
+.sp-chip{font-size:11px;border:1px solid;border-radius:12px;padding:2px 8px;
+  background:rgba(255,255,255,.04);white-space:nowrap}
+
+/* 護盾 */
+#shieldBadge{display:none;font-size:13px;color:#3b82f6;text-align:center;margin-bottom:6px}
+
+/* ── 按鈕 ── */
+#btnRow{display:flex;gap:10px;width:100%;flex-shrink:0;padding-bottom:10px}
+#btnRoll,#btnBank{flex:1;padding:16px 0;border:none;border-radius:14px;
+  font-size:19px;font-weight:bold;cursor:pointer;transition:.12s}
+#btnRoll{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;
+  box-shadow:0 4px 20px rgba(124,58,237,.4)}
+#btnRoll:active{transform:scale(.94)}
+#btnRoll:disabled{background:#1e1e1e;color:#444;box-shadow:none;pointer-events:none}
+#btnBank{background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;
+  box-shadow:0 4px 16px rgba(22,163,74,.3)}
+#btnBank:active{transform:scale(.94)}
+#btnBank:disabled{background:#1e1e1e;color:#444;box-shadow:none;pointer-events:none}
+
+/* 底列 */
+#botRow{width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:10px;flex-shrink:0}
+
+/* float */
+.flt{position:fixed;font-size:22px;font-weight:bold;pointer-events:none;z-index:300;
+  animation:fu .85s ease-out forwards}
+@keyframes fu{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-55px) scale(1.3)}}
+
+/* ── OVERLAY ── */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.93);display:none;
+  flex-direction:column;align-items:center;justify-content:center;z-index:400;padding:20px}
+#overlay.on{display:flex}
+#overlay h1{font-size:36px;margin-bottom:4px;text-align:center}
+.ov-sub{font-size:14px;color:#777;margin-bottom:20px;text-align:center}
+.ostat{display:flex;justify-content:space-between;width:100%;max-width:300px;
+  padding:6px 0;border-bottom:1px solid #222;font-size:14px;color:#888}
+.ostat b{color:#fff}
+#btnNext{margin-top:20px;background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  border:none;color:#fff;border-radius:12px;padding:13px 44px;
+  font-size:18px;cursor:pointer;font-weight:bold;
+  box-shadow:0 4px 20px rgba(124,58,237,.4)}
+#btnNext:active{transform:scale(.95)}
+
+/* ── 事件彈窗 ── */
+#eventPopup{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;
+  align-items:center;justify-content:center;z-index:500;padding:20px}
+#eventPopup.on{display:flex}
+.epbox{background:#1a1a2e;border:2px solid rgba(251,191,36,.35);border-radius:16px;
+  padding:22px 20px;text-align:center;width:100%;max-width:300px}
+.epbox .ep-icon{font-size:50px;margin-bottom:8px}
+.epbox h2{font-size:20px;color:#fbbf24;margin-bottom:6px}
+.epbox p{font-size:14px;color:#aaa;line-height:1.6;margin-bottom:16px}
+#btnEpOk{background:#7c3aed;border:none;color:#fff;border-radius:10px;
+  padding:10px 32px;font-size:16px;cursor:pointer;font-weight:bold}
+</style>
+</head>
+<body>
+
+<!-- 爆炸全屏 -->
+<div id="bustScreen"><div id="bustText"></div></div>
+
+<div id="wrap">
+  <!-- 頂部 -->
+  <div id="stageBar">
+    <div id="stageLbl">⚔️ 關卡 1</div>
+    <div id="streakLbl"></div>
+    <div id="timerWrap">
+      <div id="timerVal">15</div>
+      <div id="timerBar"><div id="timerFill" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <!-- VS -->
+  <div id="vsRow">
+    <div class="sb">
+      <div class="lbl">🤖 對手</div>
+      <div class="tot" id="aiTot">0</div>
+      <div class="banked">已存 <span id="aiBankD">0</span></div>
+    </div>
+    <div id="vsIcon">⚔️</div>
+    <div class="sb" style="text-align:right">
+      <div class="lbl">👤 我</div>
+      <div class="tot" id="myTot">0</div>
+      <div class="banked">已存 <span id="myBankD">0</span></div>
+    </div>
+  </div>
+
+  <!-- 進度 -->
+  <div id="goalBar"><div id="myProg"></div><div id="aiProg"></div></div>
+  <div id="goalLbl">先到 <span id="goalVal">100</span> 分獲勝</div>
+
+  <!-- 事件橫幅 -->
+  <div id="eventBanner"></div>
+
+  <!-- AI 狀態 -->
+  <div id="aiStatus">準備開始…</div>
+
+  <!-- 戰場 -->
+  <div id="battleZone">
+    <div style="position:relative">
+      <div id="die">⚀</div>
+      <div id="dieBadge"></div>
+    </div>
+    <div id="turnScore">0</div>
+    <div id="turnLbl">本回合</div>
+    <div id="history"></div>
+    <div id="shieldBadge">🛡 護盾保護中，下一次爆掉無效！</div>
+    <!-- 特殊骰面說明 -->
+    <div id="specialLegend" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:6px"></div>
+    <div id="riskBar"><div id="riskFill"></div></div>
+    <div id="riskLbl">爆掉風險：—</div>
+  </div>
+
+  <!-- 按鈕 -->
+  <div id="btnRow">
+    <button id="btnRoll">🎲 擲骰</button>
+    <button id="btnBank" disabled>💰 存分</button>
+  </div>
+
+  <div id="botRow">
+    <div style="font-size:12px;color:#333">第 <span id="rndD">1</span> 輪</div>
+    <div style="font-size:12px;color:#444" id="eventHint"></div>
+  </div>
+</div>
+
+<!-- 過關/失敗 -->
+<div id="overlay">
+  <h1 id="ovTitle"></h1>
+  <div class="ov-sub" id="ovSub"></div>
+  <div class="ostat"><span>我的分數</span><b id="ovMy"></b></div>
+  <div class="ostat"><span>對手分數</span><b id="ovAi"></b></div>
+  <div class="ostat"><span>關卡</span><b id="ovStage"></b></div>
+  <div class="ostat"><span>連勝</span><b id="ovStreak"></b></div>
+  <button id="btnNext"></button>
+</div>
+
+<!-- 事件彈窗 -->
+<div id="eventPopup">
+  <div class="epbox">
+    <div class="ep-icon" id="epIcon"></div>
+    <h2 id="epTitle"></h2>
+    <p id="epDesc"></p>
+    <button id="btnEpOk">了解！開始！</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════
+// 音效
+// ══════════════════════════
+const AC=new(window.AudioContext||window.webkitAudioContext)();
+function beep(f,d,t='square',v=.12){
+  try{const o=AC.createOscillator(),g=AC.createGain();
+    o.connect(g);g.connect(AC.destination);o.type=t;o.frequency.value=f;
+    g.gain.setValueAtTime(v,AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);
+    o.start();o.stop(AC.currentTime+d);}catch(e){}
+}
+function sndRoll(){beep(200+Math.random()*200,.06,'square',.08)}
+function sndScore(){beep(440,.08,'sine',.12);setTimeout(()=>beep(660,.1,'sine',.1),60)}
+function sndBust(){beep(120,.35,'sawtooth',.25);setTimeout(()=>beep(80,.45,'sawtooth',.2),100)}
+function sndBank(){[523,659,784].forEach((f,i)=>setTimeout(()=>beep(f,.12,'sine',.15),i*70))}
+function sndDouble(){[880,1100,1320].forEach((f,i)=>setTimeout(()=>beep(f,.1,'sine',.2),i*50))}
+function sndShield(){beep(660,.15,'sine',.18);setTimeout(()=>beep(880,.2,'sine',.15),80)}
+function sndSteal(){beep(300,.08,'square',.15);setTimeout(()=>beep(200,.3,'sawtooth',.1),100)}
+function sndWin(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2,'sine',.2),i*90))}
+function sndLose(){[392,330,262,220].forEach((f,i)=>setTimeout(()=>beep(f,.25,'sawtooth',.15),i*110))}
+function sndTick(){beep(800,.04,'square',.06)}
+
+// ══════════════════════════
+// 關卡設定（目標分從30開始）
+// ══════════════════════════
+const STAGES=[
+  {name:'新手',     goal:30,  aiBase:8,  aiVar:3,  timer:15, special:.08, desc:'先到30分獲勝'},
+  {name:'學徒',     goal:40,  aiBase:10, aiVar:3,  timer:14, special:.12, desc:'先到40分獲勝'},
+  {name:'老手',     goal:50,  aiBase:12, aiVar:4,  timer:13, special:.15, desc:'先到50分獲勝'},
+  {name:'挑戰者',   goal:60,  aiBase:14, aiVar:4,  timer:12, special:.18, desc:'AI更積極'},
+  {name:'危險玩家', goal:75,  aiBase:16, aiVar:4,  timer:10, special:.22, desc:'限時更短'},
+  {name:'大師',     goal:90,  aiBase:18, aiVar:5,  timer:10, special:.25, desc:'AI幾乎不停手'},
+  {name:'傳奇',     goal:100, aiBase:20, aiVar:3,  timer:8,  special:.28, desc:'終極挑戰！'},
+];
+
+// 隨機事件池
+const EVENTS=[
+  {id:'double_turn',   icon:'⚡', title:'本輪加倍！',   color:'#fbbf24',bg:'rgba(251,191,36,.12)',
+   desc:'本輪你存入的分數全部×2！AI也一樣。把握機會多存點！'},
+  {id:'min_three',     icon:'🔒', title:'最低三次！',   color:'#a78bfa',bg:'rgba(167,139,250,.1)',
+   desc:'本輪雙方都必須至少擲3次才能存分，不能提前縮手！'},
+  {id:'steal_on_bust', icon:'😈', title:'爆掉偷分！',   color:'#ef4444',bg:'rgba(239,68,68,.1)',
+   desc:'本輪任何人爆掉，對方從他那裡偷走10分！謹慎行事！'},
+  {id:'shield_round',  icon:'🛡', title:'護盾回合！',   color:'#3b82f6',bg:'rgba(59,130,246,.1)',
+   desc:'本輪每人各有一次免死護盾，擲到1不爆掉！大膽一搏！'},
+  {id:'no_bank_first', icon:'🚫', title:'首輪不能存！', color:'#f97316',bg:'rgba(249,115,22,.1)',
+   desc:'本輪第一次行動不能存分，必須至少擲一次！'},
+];
+
+// 特殊骰面（apply 直接修改全域變數）
+const SPECIALS=[
+  {id:'x2',    emoji:'⭐', label:'×2 翻倍',  prob:.12, color:'#fbbf24', desc:'本輪累計分數翻兩倍！',
+   apply:(v)=>{ myTurn=(myTurn+v)*2; return `本輪翻倍！(×2)`; }},
+  {id:'shield',emoji:'🛡', label:'護盾',      prob:.08, color:'#3b82f6', desc:'下一次擲到1不爆掉！',
+   apply:(v)=>{ myShield=true; myTurn+=v; return '獲得護盾！'; }},
+  {id:'steal', emoji:'💀', label:'偷分',      prob:.08, color:'#ef4444', desc:'從對手存分中偷走10分！',
+   apply:(v)=>{ const stolen=Math.min(10,aiBank); aiBank=Math.max(0,aiBank-stolen); myTurn+=v+stolen; return `偷走對手 ${stolen} 分！`; }},
+  {id:'bonus', emoji:'💎', label:'+10 獎勵',  prob:.12, color:'#22c55e', desc:'額外加10分！',
+   apply:(v)=>{ myTurn+=v+10; return '+10 額外獎勵！'; }},
+];
+
+// ══════════════════════════
+// 狀態
+// ══════════════════════════
+let stage=0,streak=0,gameOver=false;
+let GOAL=100,TIME_LIMIT=15;
+let myBank=0,aiBank=0,myTurn=0,aiTurn=0;
+let myShield=false,aiShield=false;
+let history=[],specialHistory=[];
+let isMyTurn=true,rolling=false,round=1;
+let curEvent=null;
+let timerVal=15,timerInterval=null;
+let myRollCount=0; // 本輪擲了幾次
+
+// ══════════════════════════
+// 初始化關卡
+// ══════════════════════════
+function initStage(){
+  const st=STAGES[Math.min(stage,STAGES.length-1)];
+  GOAL=st.goal; TIME_LIMIT=st.timer;
+  myBank=0;aiBank=0;myTurn=0;aiTurn=0;
+  myShield=false;aiShield=false;
+  history=[];specialHistory=[];
+  isMyTurn=true;rolling=false;round=1;myRollCount=0;
+  gameOver=false;
+  document.getElementById('overlay').classList.remove('on');
+
+  // 抽隨機事件
+  curEvent=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  // 初始化事件效果
+  myShield = curEvent.id==='shield_round';
+  aiShield = curEvent.id==='shield_round';
+
+  updateStageLbl();
+  buildSpecialLegend();
+  renderAll();
+  setButtons(false,false);
+  document.getElementById('aiStatus').textContent='讀取本局事件…';
+  showEventPopup(curEvent, ()=>{
+    showEventBanner(curEvent);
+    setButtons(true,false);
+    document.getElementById('aiStatus').textContent='你先手！限時 '+TIME_LIMIT+' 秒！';
+    startTimer();
+  });
+}
+
+function buildSpecialLegend(){
+  const el=document.getElementById('specialLegend');
+  el.innerHTML=SPECIALS.map(s=>
+    `<div class="sp-chip" style="border-color:${s.color};color:${s.color}">
+      ${s.emoji} ${s.label} <span style="opacity:.45">${Math.round(s.prob*100)}%</span>
+    </div>`
+  ).join('');
+}
+
+function updateStageLbl(){
+  const st=STAGES[Math.min(stage,STAGES.length-1)];
+  document.getElementById('stageLbl').textContent=`⚔️ 關卡 ${stage+1}・${st.name}`;
+  document.getElementById('goalVal').textContent=GOAL;
+  document.getElementById('goalLbl').querySelector('span')||
+    (document.getElementById('goalLbl').innerHTML=`先到 <span id="goalVal">${GOAL}</span> 分獲勝`);
+}
+
+// ══════════════════════════
+// 事件彈窗
+// ══════════════════════════
+function showEventPopup(ev, cb){
+  document.getElementById('epIcon').textContent=ev.icon;
+  document.getElementById('epTitle').textContent=ev.title;
+  document.getElementById('epDesc').textContent=ev.desc;
+  document.getElementById('eventPopup').classList.add('on');
+  document.getElementById('btnEpOk')._cb=cb;
+}
+function closeEvent(){
+  document.getElementById('eventPopup').classList.remove('on');
+  const cb=document.getElementById('btnEpOk')._cb;
+  if(cb) cb();
+}
+function showEventBanner(ev){
+  const el=document.getElementById('eventBanner');
+  el.textContent=ev.icon+' '+ev.title+'：'+ev.desc.slice(0,28)+'…';
+  el.style.background=ev.bg||'rgba(255,255,255,.05)';
+  el.style.color=ev.color||'#ccc';
+  el.style.border='1px solid '+(ev.color||'#333');
+  el.classList.add('on');
+}
+
+// ══════════════════════════
+// 計時器
+// ══════════════════════════
+function startTimer(){
+  clearInterval(timerInterval);
+  timerVal=TIME_LIMIT;
+  updateTimerUI();
+  timerInterval=setInterval(()=>{
+    if(!isMyTurn||rolling||gameOver){updateTimerUI();return;}
+    timerVal--;
+    if(timerVal%3===0&&timerVal<=6) sndTick();
+    updateTimerUI();
+    if(timerVal<=0){
+      clearInterval(timerInterval);
+      // 時間到，強制存分（若有分）或跳過
+      if(myTurn>0){
+        floatMsg('⏰ 時間到！自動存分','#f59e0b');
+        playerBank(true);
+      } else {
+        floatMsg('⏰ 時間到！換手','#f97316');
+        setTimeout(()=>aiTakeTurn(),400);
+      }
+    }
+  },1000);
+}
+function updateTimerUI(){
+  document.getElementById('timerVal').textContent=timerVal;
+  const pct=(timerVal/TIME_LIMIT)*100;
+  const fill=document.getElementById('timerFill');
+  fill.style.width=pct+'%';
+  fill.style.background=pct>50?'#22c55e':pct>25?'#f59e0b':'#ef4444';
+}
+function stopTimer(){ clearInterval(timerInterval); }
+
+// ══════════════════════════
+// 玩家行動
+// ══════════════════════════
+function playerRoll(){
+  if(!isMyTurn||rolling||gameOver) return;
+  AC.resume();
+
+  // 事件：首輪不能存 → 第一次必須擲
+  if(curEvent.id==='no_bank_first' && myRollCount===0){
+    document.getElementById('btnBank').disabled=true;
+  }
+
+  setButtons(false,false);
+  stopTimer();
+  rollDie(result=>{
+    sndRoll();
+    myRollCount++;
+
+    if(result.type==='special'){
+      const sp=result.sp;
+      const msg=sp.apply(0); // val=0，特殊面不加普通點數
+      if(sp.id==='shield') document.getElementById('shieldBadge').style.display='block';
+      specialHistory.push(sp.id);
+      history.push({v:sp.emoji, special:true, color:sp.color});
+      floatMsg(sp.emoji+' '+msg, sp.color);
+      sndDouble();
+      renderHistory();
+      setTurnScore(myTurn);
+      updateRisk();
+      renderAll();
+      const minOk=curEvent.id==='min_three'?myRollCount>=3:true;
+      const nfOk=curEvent.id==='no_bank_first'?myRollCount>=1:true;
+      setButtons(true, myTurn>0&&minOk&&nfOk);
+      if(myShield) document.getElementById('shieldBadge').style.display='block';
+      startTimer();
+      return;
+    }
+
+    const val=result.val;
+      // 擲到1？
+      if(val===1){
+        showDieBadge('','');
+        if(myShield){
+          // 護盾擋掉
+          myShield=false;
+          sndShield();
+          floatMsg('🛡 護盾擋住了！','#3b82f6');
+          document.getElementById('shieldBadge').style.display='none';
+          history.push({v:1,special:true});
+          renderHistory();
+          updateRisk();
+          setButtons(true, canBank());
+          startTimer();
+          return;
+        }
+        // 真爆掉！
+        showBustScreen(isMyTurn);
+        setTimeout(()=>{
+          sndBust();
+          // 事件：爆掉偷分
+          if(curEvent.id==='steal_on_bust'){
+            aiBank=Math.min(aiBank+10,999);
+            floatMsg('😈 對手偷走10分！','#ef4444');
+          }
+          myTurn=0; history=[]; specialHistory=[];
+          setTurnScore(0);
+          renderHistory();
+          updateRisk();
+          renderAll();
+          setTimeout(()=>aiTakeTurn(), 700);
+        },400);
+        return;
+      }
+      sndScore();
+      myTurn+=val;
+      history.push({v:val,special:false});
+      floatMsg('+'+val,'#fbbf24');
+    renderHistory();
+    setTurnScore(myTurn);
+    updateRisk();
+    renderAll();
+    // 事件：min_three → 不能提早存
+    const minOk = curEvent.id==='min_three' ? myRollCount>=3 : true;
+    const nfOk  = curEvent.id==='no_bank_first' ? myRollCount>=1 : true;
+    setButtons(true, myTurn>0 && minOk && nfOk);
+    if(myShield) document.getElementById('shieldBadge').style.display='block';
+    startTimer();
+  });
+}
+
+function playerBank(auto=false){
+  if(!isMyTurn||rolling||myTurn===0||gameOver) return;
+  if(curEvent.id==='min_three'&&myRollCount<3){
+    floatMsg('⚠️ 至少要擲3次！','#f97316'); return;
+  }
+  stopTimer();
+  let pts=myTurn;
+  if(curEvent.id==='double_turn') pts*=2;
+  sndBank();
+  myBank+=pts;
+  if(pts!==myTurn) floatMsg(`💰 加倍！+${pts}`,'#fbbf24');
+  else floatMsg('💰 存入！','#22c55e');
+  myTurn=0; history=[]; specialHistory=[]; myRollCount=0;
+  myShield=false;
+  document.getElementById('shieldBadge').style.display='none';
+  setTurnScore(0); renderHistory(); updateRisk(); renderAll();
+  if(myBank>=GOAL){ endGame(true); return; }
+  setButtons(false,false);
+  setTimeout(()=>aiTakeTurn(),500);
+}
+
+// ══════════════════════════
+// AI 回合
+// ══════════════════════════
+function aiTakeTurn(){
+  if(gameOver) return;
+  isMyTurn=false; aiTurn=0; myRollCount=0;
+  stopTimer();
+  document.getElementById('aiStatus').textContent='🤖 對手擲骰中…';
+  // 重置AI護盾
+  if(curEvent.id==='shield_round') aiShield=true;
+  aiStep(0);
+}
+
+function aiStep(count){
+  if(gameOver) return;
+  rollDie(result=>{
+    sndRoll();
+    const st=STAGES[Math.min(stage,STAGES.length-1)];
+
+    if(result.type==='special'){
+      const sp=result.sp;
+      if(sp.id==='x2')     { aiTurn=aiTurn*2; }
+      else if(sp.id==='bonus')  { aiTurn+=10; }
+      else if(sp.id==='steal')  { const s=Math.min(10,myBank); myBank=Math.max(0,myBank-s); aiTurn+=s; floatMsg('😈 AI偷走你'+s+'分！','#ef4444'); }
+      else if(sp.id==='shield') { aiShield=true; }
+      document.getElementById('aiStatus').textContent=`🤖 對手骰到 ${sp.emoji} ${sp.label}！`;
+      renderAll();
+      const thr=st.aiBase+(Math.random()*st.aiVar|0);
+      const minOk=curEvent.id==='min_three'?count+1>=3:true;
+      if(aiBank+aiTurn>=GOAL) setTimeout(()=>doAiBank(),400);
+      else if(!minOk||aiTurn<thr) setTimeout(()=>aiStep(count+1),650);
+      else setTimeout(()=>doAiBank(),550);
+      return;
+    }
+
+    const val=result.val;
+    if(val===1){
+      if(aiShield){
+        aiShield=false;
+        document.getElementById('aiStatus').textContent='🤖 對手護盾擋住！';
+        setTimeout(()=>aiStep(count+1),700);
+        return;
+      }
+      setTimeout(()=>{
+        sndBust();
+        showBustScreen(false);
+        if(curEvent.id==='steal_on_bust'){
+          myBank=Math.min(myBank+10,999);
+          floatMsg('🎉 偷走對手10分！','#22c55e');
+        }
+        aiTurn=0;
+        document.getElementById('aiStatus').textContent='🤖 對手爆掉了！😂';
+        floatMsg('💥 對手爆掉！','#a3e635');
+        renderAll();
+        setTimeout(()=>startMyTurn(),900);
+      },300);
+    } else {
+      aiTurn+=val;
+      renderAll();
+      document.getElementById('aiStatus').textContent=`🤖 對手本輪：${aiTurn}分`;
+      const thr=st.aiBase+(Math.random()*st.aiVar|0);
+      const minOk=curEvent.id==='min_three'?count+1>=3:true;
+      if(aiBank+aiTurn>=GOAL) setTimeout(()=>doAiBank(),400);
+      else if(!minOk||aiTurn<thr) setTimeout(()=>aiStep(count+1),650);
+      else setTimeout(()=>doAiBank(),550);
+    }
+  });
+}
+
+function doAiBank(){
+  let pts=aiTurn;
+  if(curEvent.id==='double_turn') pts*=2;
+  sndBank();
+  aiBank+=pts;
+  aiTurn=0;
+  document.getElementById('aiStatus').textContent=`🤖 對手存入，累計 ${aiBank} 分`;
+  renderAll();
+  if(aiBank>=GOAL){ endGame(false); return; }
+  setTimeout(()=>startMyTurn(),700);
+}
+
+// ══════════════════════════
+// 我的回合
+// ══════════════════════════
+function startMyTurn(){
+  if(gameOver) return;
+  isMyTurn=true; round++;
+  myTurn=0; history=[]; specialHistory=[]; myRollCount=0;
+  if(curEvent.id==='shield_round') myShield=true;
+  document.getElementById('shieldBadge').style.display=myShield?'block':'none';
+  setTurnScore(0); renderHistory(); updateRisk(); renderAll();
+  document.getElementById('rndD').textContent=round;
+  document.getElementById('aiStatus').textContent='你的回合！限時 '+TIME_LIMIT+' 秒！';
+  hideDieBadge();
+  setButtons(true,false);
+  startTimer();
+}
+
+// ══════════════════════════
+// 骰子動畫（支援特殊骰面）
+// ══════════════════════════
+const FACES=['','⚀','⚁','⚂','⚃','⚄','⚅'];
+
+// 決定本次骰出什麼：{type:'special',sp} 或 {type:'normal',val}
+function pickResult(){
+  for(const sp of SPECIALS){
+    if(Math.random()<sp.prob) return {type:'special',sp};
+  }
+  return {type:'normal',val:Math.ceil(Math.random()*6)};
+}
+
+function rollDie(cb){
+  rolling=true;
+  const el=document.getElementById('die');
+  el.classList.add('rolling');
+  el.style.borderColor='#333';el.style.boxShadow='';
+  hideDieBadge();
+  const result=pickResult(); // 先決定結果
+  const st=STAGES[Math.min(stage,STAGES.length-1)];
+  let f=0;
+  const iv=setInterval(()=>{
+    // 動畫閃爍：偶爾閃特殊面增加期待感
+    const showSp=Math.random()<st.special*0.8;
+    const rndSp=SPECIALS[Math.floor(Math.random()*SPECIALS.length)];
+    if(showSp){ el.textContent=rndSp.emoji; el.style.fontSize='52px'; }
+    else{ el.textContent=FACES[Math.ceil(Math.random()*6)]; el.style.fontSize='64px'; }
+    f++;
+    if(f>=7){
+      clearInterval(iv);
+      el.classList.remove('rolling');
+      if(result.type==='special'){
+        el.textContent=result.sp.emoji;
+        el.style.fontSize='52px';
+        el.style.borderColor=result.sp.color;
+        el.style.boxShadow=`0 0 28px ${result.sp.color}99`;
+      } else {
+        el.textContent=FACES[result.val];
+        el.style.fontSize='64px';
+        if(result.val===1){
+          el.style.borderColor='#ef4444';
+          el.style.boxShadow='0 0 28px rgba(239,68,68,.5)';
+        } else {
+          el.style.borderColor='#22c55e';
+          el.style.boxShadow='0 0 16px rgba(34,197,94,.25)';
+        }
+      }
+      rolling=false;
+      cb(result);
+    }
+  },55);
+}
+
+// ══════════════════════════
+// 爆炸全屏
+// ══════════════════════════
+function showBustScreen(isPlayer){
+  const s=document.getElementById('bustScreen');
+  const t=document.getElementById('bustText');
+  t.textContent=isPlayer?'💥 爆掉了！':'😂 對手爆掉！';
+  s.classList.remove('on');
+  void s.offsetWidth;
+  s.classList.add('on');
+  setTimeout(()=>s.classList.remove('on'),550);
+}
+
+// ══════════════════════════
+// 特殊骰標
+// ══════════════════════════
+function showDieBadge(emoji,color){
+  const b=document.getElementById('dieBadge');
+  b.textContent=emoji;b.style.display=emoji?'block':'none';b.style.color=color||'#fff';
+}
+function hideDieBadge(){document.getElementById('dieBadge').style.display='none';}
+
+// ══════════════════════════
+// 風險條
+// ══════════════════════════
+function bustProb(n){return 1-Math.pow(5/6,n);}
+function updateRisk(){
+  const n=history.length+1;
+  const p=bustProb(n)*100;
+  const fill=document.getElementById('riskFill');
+  fill.style.width=Math.min(p,100)+'%';
+  fill.style.background=p<30?'#22c55e':p<60?'#f59e0b':'#ef4444';
+  const txt=p<25?'低風險 😊':p<50?'有點危險 😬':p<72?'高風險！⚠️':'非常危險！💀';
+  document.getElementById('riskLbl').textContent=`爆掉機率：${Math.round(p)}% — ${txt}`;
+}
+
+function canBank(){
+  if(curEvent.id==='min_three'&&myRollCount<3) return false;
+  if(curEvent.id==='no_bank_first'&&myRollCount<1) return false;
+  return myTurn>0;
+}
+
+// ══════════════════════════
+// 渲染
+// ══════════════════════════
+function setTurnScore(v){
+  const el=document.getElementById('turnScore');
+  el.textContent=v;
+  if(v>0){el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),150);}
+}
+function renderHistory(){
+  const el=document.getElementById('history');
+  el.innerHTML=history.map(h=>{
+    if(h.special && typeof h.v==='string'){
+      return `<div class="hd special" style="border-color:${h.color||'#fbbf24'};font-size:16px">${h.v}</div>`;
+    }
+    return `<div class="hd${h.special?' special':''}">${FACES[h.v]}</div>`;
+  }).join('');
+}
+function renderAll(){
+  document.getElementById('myTot').textContent=myBank+(isMyTurn?myTurn:0);
+  document.getElementById('aiTot').textContent=aiBank+(isMyTurn?0:aiTurn);
+  document.getElementById('myBankD').textContent=myBank;
+  document.getElementById('aiBankD').textContent=aiBank;
+  const mp=Math.min(myBank/GOAL*100,100);
+  const ap=Math.min(aiBank/GOAL*100,100);
+  document.getElementById('myProg').style.width=mp+'%';
+  document.getElementById('aiProg').style.width=ap+'%';
+  document.getElementById('streakLbl').textContent=streak>1?`🔥 ${streak}連勝`:'';
+}
+function setButtons(roll,bank){
+  document.getElementById('btnRoll').disabled=!roll;
+  document.getElementById('btnBank').disabled=!bank;
+}
+function floatMsg(text,color){
+  const el=document.createElement('div');
+  el.className='flt';el.textContent=text;el.style.color=color;
+  el.style.left='50%';el.style.top='42%';el.style.transform='translateX(-50%)';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
+
+// ══════════════════════════
+// 結局
+// ══════════════════════════
+function endGame(iWon){
+  gameOver=true;
+  stopTimer();
+  if(iWon){streak++;sndWin();}else{streak=0;sndLose();}
+  renderAll();
+  setTimeout(()=>{
+    document.getElementById('ovTitle').textContent=iWon?'🏆 過關！':'💀 落敗…';
+    document.getElementById('ovSub').textContent=iWon
+      ?`進入關卡 ${stage+2}！準備好了嗎？`
+      :'再試一次，這次別太貪心！';
+    document.getElementById('ovMy').textContent=myBank+'分';
+    document.getElementById('ovAi').textContent=aiBank+'分';
+    document.getElementById('ovStage').textContent=`關卡 ${stage+1}`;
+    document.getElementById('ovStreak').textContent=streak>0?streak+'連勝':'連勝中斷';
+    const nextBtn=document.getElementById('btnNext');
+    if(iWon){
+      nextBtn.textContent=stage<STAGES.length-1?`▶ 關卡 ${stage+2}`:'🏆 再挑戰！';
+    } else {
+      nextBtn.textContent='🔄 重試';
+    }
+    document.getElementById('overlay').classList.add('on');
+  },700);
+}
+
+function nextStage(){
+  const won=document.getElementById('ovTitle').textContent.includes('過關');
+  if(won && stage<STAGES.length-1) stage++;
+  initStage();
+}
+
+// ══════════════════════════
+// 啟動 + 事件綁定
+// ══════════════════════════
+document.getElementById('btnRoll').addEventListener('click', playerRoll);
+document.getElementById('btnBank').addEventListener('click', ()=>playerBank());
+document.getElementById('btnNext').addEventListener('click', nextStage);
+document.getElementById('btnEpOk').addEventListener('click', closeEvent);
+
+initStage();
+</script>
+</body>
+</html>

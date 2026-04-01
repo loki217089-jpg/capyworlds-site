@@ -117,5 +117,16 @@
       "arcade"
     ],
     "file": "games/black-hole-swallow/index.html"
+  },
+  {
+    "id": "pig-dice",
+    "name": "貪婪骰子",
+    "nameEn": "Pig Dice",
+    "type": [
+      "action",
+      "dice",
+      "strategy"
+    ],
+    "file": "games/pig-dice/index.html"
   }
 ]
