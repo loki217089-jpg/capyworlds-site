@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Relic Chronicle — Fantasy Idle RPG</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0e0c0a;--bg2:#1a1610;--bg3:#252015;--accent:#c8a456;--accent2:#e8c86a;--text:#e0d6c8;--text2:#a89880;--red:#e05040;--green:#50c060;--blue:#50a0e0;--purple:#a070e0;--ssr:#ff9900}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;user-select:none}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:var(--bg2);border-bottom:1px solid #333;flex-shrink:0;z-index:200;position:relative;min-height:44px}
+.top-bar a{color:var(--accent);text-decoration:none;font-size:14px}
+.player-info{display:flex;align-items:center;gap:8px;font-size:13px}
+.player-lv{color:var(--accent2);font-weight:bold}
+.resources{display:flex;gap:10px;font-size:12px;flex-wrap:wrap;justify-content:flex-end}
+.res-item{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.res-icon{font-size:14px}
+.res-val{font-weight:bold;color:var(--accent2);min-width:28px;text-align:right}
+.btn-group{display:flex;gap:6px;align-items:center}
+.btn-group button{background:none;border:1px solid #555;color:var(--text);border-radius:4px;padding:2px 8px;font-size:13px;cursor:pointer;min-width:32px;min-height:32px}
+.btn-group button:active{background:rgba(200,164,86,0.2)}
+.game-area{flex:1;overflow:hidden;min-height:0;position:relative;background:var(--bg)}
+.game-area canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:100%;max-height:100%}
+canvas{touch-action:none}
+.info-bar{flex-shrink:0;background:var(--bg2);border-top:1px solid #333;padding:6px 12px;font-size:12px;color:var(--text2);min-height:36px;display:flex;align-items:center;gap:8px;overflow:hidden;z-index:200;position:relative}
+.info-bar .log-text{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.progress-wrap{width:120px;height:10px;background:#222;border-radius:5px;overflow:hidden;flex-shrink:0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:5px;transition:width 0.3s}
+.tab-bar{display:flex;flex-shrink:0;background:var(--bg2);border-top:1px solid #333;z-index:200;position:relative}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;font-size:10px;color:var(--text2);cursor:pointer;border:none;background:none;gap:2px;min-height:52px;position:relative}
+.tab-btn .tab-icon{font-size:20px}
+.tab-btn.active{color:var(--accent2);background:rgba(200,164,86,0.08)}
+.tab-btn.active::after{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--accent)}
+.tab-btn .notif{position:absolute;top:4px;right:calc(50% - 16px);width:8px;height:8px;background:var(--red);border-radius:50%;display:none}
+.panel{display:none;position:absolute;bottom:0;left:0;right:0;top:0;background:var(--bg);z-index:100;overflow-y:auto;padding:12px}
+.panel.active{display:block}
+.panel h2{color:var(--accent2);font-size:16px;margin-bottom:10px;border-bottom:1px solid #333;padding-bottom:6px}
+.panel h3{color:var(--accent);font-size:13px;margin:10px 0 6px}
+.card{background:var(--bg2);border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:8px}
+.card.rarity-N{border-left:3px solid #888}
+.card.rarity-R{border-left:3px solid var(--blue)}
+.card.rarity-SR{border-left:3px solid var(--purple)}
+.card.rarity-SSR{border-left:3px solid var(--ssr)}
+.card-row{display:flex;align-items:center;gap:8px}
+.card-icon{font-size:28px;width:40px;text-align:center;flex-shrink:0}
+.card-info{flex:1;min-width:0}
+.card-name{font-weight:bold;font-size:13px}
+.card-desc{font-size:11px;color:var(--text2);margin-top:2px}
+.card-stats{font-size:11px;color:var(--green);margin-top:2px}
+.rarity-label{font-size:10px;font-weight:bold;padding:1px 6px;border-radius:3px;color:#fff}
+.rarity-N .rarity-label{background:#666}
+.rarity-R .rarity-label{background:var(--blue)}
+.rarity-SR .rarity-label{background:var(--purple)}
+.rarity-SSR .rarity-label{background:var(--ssr)}
+.btn{display:inline-block;padding:8px 16px;border-radius:6px;border:none;font-size:13px;font-weight:bold;cursor:pointer;transition:transform 0.1s}
+.btn:active{transform:scale(0.95)}
+.btn-gold{background:linear-gradient(135deg,#c8a456,#e8c86a);color:#1a1610}
+.btn-blue{background:linear-gradient(135deg,#4080c0,#50a0e0);color:#fff}
+.btn-green{background:linear-gradient(135deg,#40a050,#50c060);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn:disabled{opacity:0.4;cursor:default;transform:none}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.region-card{background:var(--bg3);border:1px solid #444;border-radius:8px;padding:12px;cursor:pointer;transition:border-color 0.2s;text-align:center}
+.region-card:hover{border-color:var(--accent)}
+.region-card.active{border-color:var(--accent2);box-shadow:0 0 12px rgba(200,164,86,0.2)}
+.region-card.locked{opacity:0.4;cursor:default}
+.region-card .r-emoji{font-size:32px;display:block;margin-bottom:4px}
+.region-card .r-name{font-size:12px;font-weight:bold;color:var(--accent2)}
+.region-card .r-req{font-size:10px;color:var(--text2);margin-top:2px}
+.hero-slot{background:var(--bg3);border:1px solid #444;border-radius:8px;padding:10px;text-align:center;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.hero-slot .h-emoji{font-size:28px}
+.hero-slot .h-name{font-size:11px;font-weight:bold}
+.hero-slot .h-lv{font-size:10px;color:var(--text2)}
+.hero-slot.empty{border-style:dashed;color:var(--text2);font-size:12px;cursor:pointer}
+.codex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.codex-item{background:var(--bg3);border:1px solid #444;border-radius:6px;padding:8px 4px;text-align:center;font-size:24px;min-height:56px;display:flex;align-items:center;justify-content:center;position:relative}
+.codex-item.found{border-color:var(--accent);background:rgba(200,164,86,0.05)}
+.codex-item.unfound{opacity:0.3;font-size:20px}
+.codex-item .ci-rarity{position:absolute;top:2px;right:2px;font-size:8px;font-weight:bold}
+.shop-item{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid #444;border-radius:6px;padding:8px 10px;margin-bottom:6px}
+.shop-item .si-info{flex:1}
+.shop-item .si-name{font-size:12px;font-weight:bold}
+.shop-item .si-desc{font-size:10px;color:var(--text2)}
+.shop-item .si-price{font-size:11px;color:var(--accent2);margin-right:8px;white-space:nowrap}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px}
+.overlay-box{background:var(--bg2);border:1px solid var(--accent);border-radius:12px;padding:20px;max-width:min(400px,calc(100vw - 32px));max-height:88vh;overflow-y:auto;text-align:center}
+.overlay-box h2{color:var(--accent2);margin-bottom:12px}
+.overlay-box p{font-size:13px;color:var(--text);margin-bottom:8px;line-height:1.5}
+.float-num{position:absolute;pointer-events:none;font-weight:bold;font-size:14px;z-index:300;animation:floatUp 1s ease-out forwards}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes glow{0%,100%{box-shadow:0 0 8px rgba(200,164,86,0.3)}50%{box-shadow:0 0 20px rgba(200,164,86,0.6)}}
+.found-anim{animation:pulse 0.5s ease}
+@media(min-width:768px){
+  .panel{max-width:480px;margin:0 auto;left:50%;transform:translateX(-50%)}
+  .top-bar,.info-bar,.tab-bar{max-width:600px;margin:0 auto}
+  body{align-items:center}
+  .top-bar,.info-bar,.tab-bar{width:100%}
+}
+</style>
+</head>
+<body>
+<!-- Top HUD -->
+<div class="top-bar">
+  <a href="../" id="back-btn">← Back</a>
+  <div class="player-info"><span class="player-lv" id="player-lv">Lv.1</span><span id="player-title">Relic Hunter</span></div>
+  <div class="resources">
+    <div class="res-item"><span class="res-icon">🪙</span><span class="res-val" id="res-gold">0</span></div>
+    <div class="res-item"><span class="res-icon">⭐</span><span class="res-val" id="res-exp">0</span></div>
+    <div class="res-item"><span class="res-icon">💎</span><span class="res-val" id="res-shards">0</span></div>
+  </div>
+  <div class="btn-group">
+    <button id="lang-btn">繁中</button>
+    <button id="mute-btn">🔊</button>
+  </div>
+</div>
+<!-- Canvas Scene -->
+<div class="game-area" id="game-area"><canvas id="game"></canvas></div>
+<!-- Info Bar -->
+<div class="info-bar">
+  <div class="progress-wrap"><div class="progress-fill" id="explore-progress" style="width:0%"></div></div>
+  <span class="log-text" id="log-text">Starting exploration...</span>
+</div>
+<!-- Tab Navigation -->
+<div class="tab-bar" id="tab-bar">
+  <button class="tab-btn active" data-tab="none"><span class="tab-icon">⚔️</span><span id="tab-explore-label">Explore</span></button>
+  <button class="tab-btn" data-tab="map"><span class="tab-icon">🗺️</span><span id="tab-map-label">Map</span></button>
+  <button class="tab-btn" data-tab="team"><span class="tab-icon">👥</span><span id="tab-team-label">Team</span></button>
+  <button class="tab-btn" data-tab="codex"><span class="tab-icon">📖</span><span id="tab-codex-label">Codex</span><span class="notif" id="codex-notif"></span></button>
+  <button class="tab-btn" data-tab="shop"><span class="tab-icon">🏪</span><span id="tab-shop-label">Shop</span></button>
+</div>
+<!-- Panels (overlay on game-area) -->
+<div class="panel" id="panel-map"></div>
+<div class="panel" id="panel-team"></div>
+<div class="panel" id="panel-codex"></div>
+<div class="panel" id="panel-shop"></div>
+<!-- Overlay (tutorial, relic found, etc.) -->
+<div class="overlay" id="overlay" style="display:none"><div class="overlay-box" id="overlay-box"></div></div>
+
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+
+<script>
+// ===== CHUNK 2: i18n + Game Data =====
+let lang = localStorage.getItem('relicLang') || 'en';
+const T = {
+  en: {
+    title: 'Relic Chronicle', back: '← Back', explore: 'Explore', map: 'Map',
+    team: 'Team', codex: 'Codex', shop: 'Shop', lv: 'Lv.', relicHunter: 'Relic Hunter',
+    gold: 'Gold', exp: 'EXP', shards: 'Shards',
+    exploring: 'Exploring', fighting: 'Fighting', found: 'Found',
+    defeated: 'Defeated', bossAppears: 'BOSS Appears!',
+    relicFound: 'Relic Discovered!', newRelic: 'NEW',
+    recruit: 'Recruit', upgrade: 'Upgrade', buy: 'Buy', maxed: 'MAX',
+    locked: 'Locked', unlockAt: 'Unlock at Lv.', equipped: 'Equipped',
+    partySlots: 'Party Slots', emptySlot: 'Empty Slot', tapToRecruit: 'Tap to recruit',
+    atkLabel: 'ATK', defLabel: 'DEF', hpLabel: 'HP',
+    regionComplete: 'Region Complete!', setBonus: 'Set Bonus Activated!',
+    tutTitle: 'Welcome, Relic Hunter!',
+    tut1: '🗺️ Explore 6 mystical regions',
+    tut2: '📖 Collect 48 lost relics',
+    tut3: '👥 Recruit a team of specialists',
+    tut4: '⚔️ Battle monsters automatically',
+    tut5: '🏪 Upgrade gear to go deeper',
+    tutStart: 'Start Adventure',
+    discoveryRate: 'Discovery Rate', combatPower: 'Combat Power',
+    offline: 'Welcome back! You earned while away:',
+    speed: 'Speed', power: 'Power', luck: 'Luck',
+    weapon: 'Weapon', armor: 'Armor', charm: 'Charm', scroll: 'Scroll',
+    selectRegion: 'Select Region', currentRegion: 'Current',
+    codexProgress: 'Collection Progress', total: 'Total',
+    heroRecruit: 'Recruit Hero', cost: 'Cost',
+    warrior: 'Warrior', ranger: 'Ranger', mage: 'Mage', scholar: 'Scholar', engineer: 'Engineer',
+    warriorDesc: 'Tank, +HP +DEF', rangerDesc: 'DPS, +ATK +Crit',
+    mageDesc: 'AOE Magic, +EXP', scholarDesc: '+Relic discovery rate',
+    engineerDesc: '+Gold, +Gear quality',
+    lvUp: 'Level Up!', newRegion: 'New Region Unlocked!',
+  },
+  zh: {
+    title: '遺跡紀行', back: '← 返回', explore: '探索', map: '地圖',
+    team: '隊伍', codex: '圖鑑', shop: '商店', lv: 'Lv.', relicHunter: '遺跡獵人',
+    gold: '金幣', exp: '經驗', shards: '碎片',
+    exploring: '探索中', fighting: '戰鬥中', found: '發現了',
+    defeated: '擊敗了', bossAppears: 'BOSS 出現了！',
+    relicFound: '發現遺物！', newRelic: '新發現',
+    recruit: '招募', upgrade: '升級', buy: '購買', maxed: '已滿',
+    locked: '未解鎖', unlockAt: '需要等級 ', equipped: '已裝備',
+    partySlots: '隊伍欄位', emptySlot: '空欄位', tapToRecruit: '點擊招募',
+    atkLabel: '攻擊', defLabel: '防禦', hpLabel: '生命',
+    regionComplete: '區域完成！', setBonus: '套裝加成已啟動！',
+    tutTitle: '歡迎，遺跡獵人！',
+    tut1: '🗺️ 探索六大神秘秘境',
+    tut2: '📖 蒐集 48 件失落遺物',
+    tut3: '👥 招募專業探險隊員',
+    tut4: '⚔️ 自動戰鬥擊敗怪物',
+    tut5: '🏪 升級裝備深入秘境',
+    tutStart: '開始冒險',
+    discoveryRate: '發現率', combatPower: '戰鬥力',
+    offline: '歡迎回來！離線期間獲得：',
+    speed: '速度', power: '力量', luck: '幸運',
+    weapon: '武器', armor: '護甲', charm: '護符', scroll: '卷軸',
+    selectRegion: '選擇秘境', currentRegion: '目前',
+    codexProgress: '蒐集進度', total: '合計',
+    heroRecruit: '招募英雄', cost: '費用',
+    warrior: '戰士', ranger: '弓手', mage: '法師', scholar: '學者', engineer: '工匠',
+    warriorDesc: '坦克，+生命+防禦', rangerDesc: '輸出，+攻擊+暴擊',
+    mageDesc: '魔法AOE，+經驗', scholarDesc: '+遺物發現率',
+    engineerDesc: '+金幣，+裝備品質',
+    lvUp: '升級了！', newRegion: '新秘境已解鎖！',
+  }
+};
+function t(k){ return T[lang][k] || T.en[k] || k; }
+
+// Regions
+const REGIONS = [
+  { id:'forest', emoji:'🌲', color:'#2d5a27', bg1:'#1a3a15', bg2:'#2d5a27', unlockLv:1,
+    monsters:[{name:'Goblin',nameZh:'哥布林',emoji:'👺',hp:20,atk:4,def:1,gold:5,exp:3},
+              {name:'Wolf',nameZh:'灰狼',emoji:'🐺',hp:30,atk:6,def:2,gold:7,exp:5},
+              {name:'Treant',nameZh:'樹人',emoji:'🌳',hp:50,atk:5,def:5,gold:10,exp:8}],
+    boss:{name:'Forest King',nameZh:'森林之王',emoji:'👑',hp:200,atk:15,def:8,gold:80,exp:50,shards:5},
+    relics:[
+      {id:'f1',emoji:'🗡️',name:'Moss Sword',nameZh:'苔蘚之劍',rarity:'N',desc:'Ancient sword covered in moss',descZh:'被苔蘚覆蓋的古代長劍'},
+      {id:'f2',emoji:'🏹',name:'Elven Bow',nameZh:'精靈弓',rarity:'N',desc:'Short bow with elvish runes',descZh:'刻有精靈文字的短弓'},
+      {id:'f3',emoji:'💛',name:'Heartwood Crystal',nameZh:'樹心結晶',rarity:'R',desc:'Amber crystal from an ancient tree',descZh:'千年古木核心的琥珀結晶'},
+      {id:'f4',emoji:'👑',name:'Forest Crown',nameZh:'森林王冠',rarity:'R',desc:'Flower wreath of the fairy queen',descZh:'森林精靈女王的花環'},
+      {id:'f5',emoji:'🗺️',name:'Ancient Map',nameZh:'古代地圖',rarity:'R',desc:'Tattered map marking all regions',descZh:'標記所有秘境的殘缺地圖'},
+      {id:'f6',emoji:'🌙',name:'Moonstone',nameZh:'月光寶石',rarity:'SR',desc:'Gem that glows under full moon',descZh:'只在滿月夜閃耀的寶石'},
+      {id:'f7',emoji:'🌿',name:'World Tree Branch',nameZh:'世界樹枝',rarity:'SR',desc:'A branch from the legendary tree',descZh:'傳說中世界樹的一根枝條'},
+      {id:'f8',emoji:'✨',name:'Fairy King Scepter',nameZh:'精靈王權杖',rarity:'SSR',desc:'Supreme scepter ruling the forest',descZh:'統治整片森林的至高權杖'}
+    ]},
+  { id:'desert', emoji:'🏜️', color:'#c4a35a', bg1:'#3a2a10', bg2:'#6a4a20', unlockLv:5,
+    monsters:[{name:'Scorpion',nameZh:'毒蠍',emoji:'🦂',hp:35,atk:7,def:3,gold:8,exp:6},
+              {name:'Mummy',nameZh:'木乃伊',emoji:'🧟',hp:45,atk:8,def:4,gold:10,exp:8},
+              {name:'Sand Golem',nameZh:'沙之魔像',emoji:'🗿',hp:70,atk:6,def:8,gold:14,exp:12}],
+    boss:{name:'Pharaoh',nameZh:'法老王',emoji:'🫅',hp:350,atk:22,def:12,gold:120,exp:80,shards:8},
+    relics:[
+      {id:'d1',emoji:'🏺',name:'Clay Jar',nameZh:'陶罐',rarity:'N',desc:'Container with hieroglyphs',descZh:'刻有象形文字的古代陶罐'},
+      {id:'d2',emoji:'📜',name:'Papyrus Scroll',nameZh:'莎草紙卷',rarity:'N',desc:'Scroll with ancient spells',descZh:'記載古代咒語的莎草紙'},
+      {id:'d3',emoji:'💍',name:'Scarab Ring',nameZh:'聖甲蟲戒指',rarity:'R',desc:'Golden ring with a scarab seal',descZh:'鑲嵌聖甲蟲的黃金戒指'},
+      {id:'d4',emoji:'🪬',name:'Eye of Ra',nameZh:'拉之眼',rarity:'R',desc:'Amulet channeling solar power',descZh:'引導太陽之力的護身符'},
+      {id:'d5',emoji:'⚱️',name:'Canopic Jar',nameZh:'卡諾卜罐',rarity:'R',desc:'Sacred vessel of the afterlife',descZh:'守護來世的神聖容器'},
+      {id:'d6',emoji:'🐍',name:'Serpent Staff',nameZh:'蛇杖',rarity:'SR',desc:'Staff that commands desert snakes',descZh:'能指揮沙漠毒蛇的權杖'},
+      {id:'d7',emoji:'🌅',name:'Sun Disc',nameZh:'太陽圓盤',rarity:'SR',desc:'Disc that never stops glowing',descZh:'永不熄滅的太陽圓盤'},
+      {id:'d8',emoji:'👁️',name:'Sphinx Riddle Stone',nameZh:'獅身謎石',rarity:'SSR',desc:'Answer it to gain infinite wisdom',descZh:'解開謎題即可獲得無限智慧'}
+    ]},
+  { id:'snow', emoji:'🏔️', color:'#a8c8e8', bg1:'#1a2a3a', bg2:'#3a5a7a', unlockLv:12,
+    monsters:[{name:'Ice Wolf',nameZh:'冰狼',emoji:'🐺',hp:55,atk:10,def:5,gold:12,exp:10},
+              {name:'Yeti',nameZh:'雪怪',emoji:'🦍',hp:80,atk:12,def:7,gold:16,exp:14},
+              {name:'Frost Wraith',nameZh:'霜魂',emoji:'👻',hp:60,atk:14,def:3,gold:14,exp:12}],
+    boss:{name:'Ice Dragon',nameZh:'冰龍',emoji:'🐉',hp:600,atk:30,def:18,gold:200,exp:120,shards:12},
+    relics:[
+      {id:'s1',emoji:'❄️',name:'Eternal Ice',nameZh:'永恆冰晶',rarity:'N',desc:'Ice that never melts',descZh:'永不融化的冰晶'},
+      {id:'s2',emoji:'🧣',name:'Yeti Fur',nameZh:'雪怪皮毛',rarity:'N',desc:'Warmest fur in the world',descZh:'世上最溫暖的毛皮'},
+      {id:'s3',emoji:'💠',name:'Frost Rune',nameZh:'霜之符文',rarity:'R',desc:'Rune carved by ice giants',descZh:'冰巨人刻下的符文'},
+      {id:'s4',emoji:'🔔',name:'Crystal Bell',nameZh:'水晶鈴',rarity:'R',desc:'Rings with the sound of winter',descZh:'響起冬季之聲的水晶鈴'},
+      {id:'s5',emoji:'⛏️',name:'Frozen Hammer',nameZh:'冰封之錘',rarity:'R',desc:'Hammer sealed in ancient ice',descZh:'封印在遠古冰層中的巨錘'},
+      {id:'s6',emoji:'🏔️',name:'Peak Crystal',nameZh:'巔峰結晶',rarity:'SR',desc:'Crystal from the highest summit',descZh:'最高峰頂端的結晶'},
+      {id:'s7',emoji:'🌨️',name:'Blizzard Core',nameZh:'暴風雪核心',rarity:'SR',desc:'Condensed essence of a blizzard',descZh:'暴風雪凝聚而成的核心'},
+      {id:'s8',emoji:'❆',name:'Aurora Crown',nameZh:'極光之冠',rarity:'SSR',desc:'Crown woven from northern lights',descZh:'由極光編織而成的王冠'}
+    ]},
+  { id:'ocean', emoji:'🌊', color:'#1a5276', bg1:'#0a1a2a', bg2:'#1a3a5a', unlockLv:20,
+    monsters:[{name:'Sea Serpent',nameZh:'海蛇',emoji:'🐍',hp:70,atk:14,def:6,gold:16,exp:14},
+              {name:'Kraken Spawn',nameZh:'海怪幼體',emoji:'🦑',hp:90,atk:16,def:8,gold:20,exp:18},
+              {name:'Drowned Knight',nameZh:'溺亡騎士',emoji:'🧟',hp:100,atk:18,def:10,gold:22,exp:20}],
+    boss:{name:'Leviathan',nameZh:'利維坦',emoji:'🐋',hp:1000,atk:40,def:22,gold:350,exp:200,shards:18},
+    relics:[
+      {id:'o1',emoji:'🐚',name:'Singing Shell',nameZh:'歌唱貝殼',rarity:'N',desc:'Shell that echoes ocean songs',descZh:'迴響著海洋之歌的貝殼'},
+      {id:'o2',emoji:'⚓',name:'Cursed Anchor',nameZh:'詛咒之錨',rarity:'N',desc:'Anchor from a ghost ship',descZh:'來自幽靈船的船錨'},
+      {id:'o3',emoji:'🔱',name:'Coral Trident',nameZh:'珊瑚三叉戟',rarity:'R',desc:'Trident grown from living coral',descZh:'由活珊瑚生長而成的三叉戟'},
+      {id:'o4',emoji:'🧜',name:'Mermaid Mirror',nameZh:'人魚之鏡',rarity:'R',desc:'Mirror showing your true self',descZh:'映照真實自我的人魚鏡'},
+      {id:'o5',emoji:'📿',name:'Deep Pearl Necklace',nameZh:'深海珍珠項鏈',rarity:'R',desc:'Necklace of abyssal pearls',descZh:'由深海珍珠串成的項鏈'},
+      {id:'o6',emoji:'🌀',name:'Maelstrom Gem',nameZh:'漩渦寶石',rarity:'SR',desc:'Gem containing a whirlpool',descZh:'封印著漩渦之力的寶石'},
+      {id:'o7',emoji:'🗝️',name:'Atlantis Key',nameZh:'亞特蘭提斯之鑰',rarity:'SR',desc:'Key to the sunken kingdom',descZh:'通往沉沒王國的鑰匙'},
+      {id:'o8',emoji:'👑',name:'Poseidon Crown',nameZh:'海神之冠',rarity:'SSR',desc:'Crown of the lord of all seas',descZh:'統御所有海洋的王冠'}
+    ]},
+  { id:'sky', emoji:'☁️', color:'#7eb8da', bg1:'#1a2a4a', bg2:'#3a5a8a', unlockLv:30,
+    monsters:[{name:'Harpy',nameZh:'鷹身女妖',emoji:'🦅',hp:90,atk:18,def:8,gold:22,exp:20},
+              {name:'Cloud Giant',nameZh:'雲巨人',emoji:'🧌',hp:130,atk:20,def:12,gold:26,exp:24},
+              {name:'Storm Elemental',nameZh:'風暴元素',emoji:'⛈️',hp:110,atk:22,def:6,gold:24,exp:22}],
+    boss:{name:'Sky Titan',nameZh:'天空泰坦',emoji:'🗿',hp:1600,atk:55,def:28,gold:500,exp:300,shards:25},
+    relics:[
+      {id:'k1',emoji:'🪶',name:'Sky Feather',nameZh:'天空之羽',rarity:'N',desc:'Feather that defies gravity',descZh:'違反重力的羽毛'},
+      {id:'k2',emoji:'🌬️',name:'Wind Flute',nameZh:'風之笛',rarity:'N',desc:'Flute that summons gentle breeze',descZh:'能召喚微風的笛子'},
+      {id:'k3',emoji:'⚡',name:'Thunder Stone',nameZh:'雷鳴石',rarity:'R',desc:'Stone crackling with lightning',descZh:'閃爍著雷電的石頭'},
+      {id:'k4',emoji:'🌈',name:'Rainbow Shard',nameZh:'彩虹碎片',rarity:'R',desc:'Solidified piece of rainbow',descZh:'凝固的彩虹碎片'},
+      {id:'k5',emoji:'🪁',name:'Skyship Blueprint',nameZh:'飛空艇藍圖',rarity:'R',desc:'Blueprint for an ancient airship',descZh:'古代飛空艇的設計圖'},
+      {id:'k6',emoji:'☀️',name:'Sunstone',nameZh:'太陽石',rarity:'SR',desc:'Stone that holds sunlight',descZh:'儲存陽光的石頭'},
+      {id:'k7',emoji:'🌤️',name:'Cloud Essence',nameZh:'雲之精華',rarity:'SR',desc:'Bottled cloud from the highest sky',descZh:'從最高天空裝瓶的雲'},
+      {id:'k8',emoji:'🌟',name:'Star Map Tablet',nameZh:'星圖石板',rarity:'SSR',desc:'Tablet mapping all constellations',descZh:'刻有所有星座的石板'}
+    ]},
+  { id:'volcano', emoji:'🌋', color:'#8b2500', bg1:'#2a0a00', bg2:'#5a1a0a', unlockLv:42,
+    monsters:[{name:'Fire Imp',nameZh:'火精靈',emoji:'👹',hp:110,atk:22,def:10,gold:28,exp:26},
+              {name:'Lava Golem',nameZh:'熔岩魔像',emoji:'🗿',hp:160,atk:24,def:16,gold:32,exp:30},
+              {name:'Phoenix',nameZh:'鳳凰',emoji:'🦅',hp:140,atk:28,def:8,gold:30,exp:28}],
+    boss:{name:'Elder Dragon',nameZh:'遠古巨龍',emoji:'🐲',hp:2500,atk:70,def:35,gold:800,exp:500,shards:35},
+    relics:[
+      {id:'v1',emoji:'🕯️',name:'Eternal Flame',nameZh:'永恆之火',rarity:'N',desc:'Flame that burns without fuel',descZh:'不需燃料的永恆火焰'},
+      {id:'v2',emoji:'🔪',name:'Obsidian Blade',nameZh:'黑曜石刃',rarity:'N',desc:'Blade forged in volcanic glass',descZh:'以火山玻璃鍛造的利刃'},
+      {id:'v3',emoji:'🔴',name:'Dragon Scale',nameZh:'龍鱗',rarity:'R',desc:'Scale shed by an ancient dragon',descZh:'遠古巨龍脫落的鱗片'},
+      {id:'v4',emoji:'🧪',name:'Magma Vial',nameZh:'岩漿瓶',rarity:'R',desc:'Vial containing liquid fire',descZh:'裝著液態火焰的瓶子'},
+      {id:'v5',emoji:'🪨',name:'Core Fragment',nameZh:'地核碎片',rarity:'R',desc:'Fragment from the planet\'s core',descZh:'來自地核的碎片'},
+      {id:'v6',emoji:'🔥',name:'Inferno Heart',nameZh:'煉獄之心',rarity:'SR',desc:'Heart of a fire elemental lord',descZh:'火元素領主的心臟'},
+      {id:'v7',emoji:'⚗️',name:'Phoenix Tear',nameZh:'鳳凰之淚',rarity:'SR',desc:'Tear with power of resurrection',descZh:'擁有復活之力的淚滴'},
+      {id:'v8',emoji:'🐉',name:'Dragon Soul Gem',nameZh:'龍魂寶石',rarity:'SSR',desc:'Gem containing a dragon\'s soul',descZh:'封印著龍之靈魂的寶石'}
+    ]}
+];
+
+// Hero templates
+const HERO_TEMPLATES = [
+  {id:'warrior',emoji:'⚔️',cls:'warrior',hp:50,atk:8,def:6,cost:50,
+   perk:{hp:0.15,def:0.1}},
+  {id:'ranger',emoji:'🏹',cls:'ranger',hp:35,atk:12,def:3,cost:80,
+   perk:{atk:0.12,crit:0.05}},
+  {id:'mage',emoji:'🔮',cls:'mage',hp:30,atk:10,def:2,cost:100,
+   perk:{atk:0.1,expBonus:0.15}},
+  {id:'scholar',emoji:'📚',cls:'scholar',hp:25,atk:5,def:3,cost:120,
+   perk:{relicRate:0.2,shardBonus:0.15}},
+  {id:'engineer',emoji:'🔧',cls:'engineer',hp:35,atk:7,def:4,cost:90,
+   perk:{goldBonus:0.2,def:0.05}}
+];
+
+// Shop items
+const SHOP_ITEMS = [
+  {id:'wpn1',cat:'weapon',emoji:'🗡️',name:'Iron Sword',nameZh:'鐵劍',atk:5,cost:100,currency:'gold'},
+  {id:'wpn2',cat:'weapon',emoji:'⚔️',name:'Steel Blade',nameZh:'鋼刃',atk:12,cost:400,currency:'gold'},
+  {id:'wpn3',cat:'weapon',emoji:'🔮',name:'Magic Sword',nameZh:'魔法劍',atk:25,cost:1200,currency:'gold'},
+  {id:'wpn4',cat:'weapon',emoji:'⚡',name:'Thunder Edge',nameZh:'雷鳴之刃',atk:50,cost:3500,currency:'gold'},
+  {id:'arm1',cat:'armor',emoji:'🛡️',name:'Leather Armor',nameZh:'皮甲',def:4,cost:80,currency:'gold'},
+  {id:'arm2',cat:'armor',emoji:'🛡️',name:'Chain Mail',nameZh:'鎖子甲',def:10,cost:350,currency:'gold'},
+  {id:'arm3',cat:'armor',emoji:'🛡️',name:'Plate Armor',nameZh:'板甲',def:22,cost:1000,currency:'gold'},
+  {id:'arm4',cat:'armor',emoji:'🛡️',name:'Dragon Armor',nameZh:'龍鎧',def:45,cost:3000,currency:'gold'},
+  {id:'chr1',cat:'charm',emoji:'🍀',name:'Lucky Charm',nameZh:'幸運護符',relicRate:0.1,cost:10,currency:'shards'},
+  {id:'chr2',cat:'charm',emoji:'🔮',name:'Discovery Orb',nameZh:'探索寶珠',relicRate:0.2,cost:25,currency:'shards'},
+  {id:'chr3',cat:'charm',emoji:'✨',name:'Relic Magnet',nameZh:'遺物磁石',relicRate:0.35,cost:60,currency:'shards'},
+  {id:'scr1',cat:'scroll',emoji:'📜',name:'EXP Scroll',nameZh:'經驗卷軸',expBonus:0.15,cost:150,currency:'gold'},
+  {id:'scr2',cat:'scroll',emoji:'📜',name:'Gold Scroll',nameZh:'金幣卷軸',goldBonus:0.15,cost:15,currency:'shards'},
+  {id:'scr3',cat:'scroll',emoji:'📜',name:'Speed Scroll',nameZh:'速度卷軸',speedBonus:0.2,cost:200,currency:'gold'}
+];
+
+const RARITY_RATES = {N:0.45, R:0.30, SR:0.18, SSR:0.07};
+const RARITY_COLORS = {N:'#888', R:'#50a0e0', SR:'#a070e0', SSR:'#ff9900'};
+const EXP_TABLE = []; // exp needed per level
+for(let i=0;i<100;i++) EXP_TABLE[i] = Math.floor(20 * Math.pow(1.25, i));
+
+// ===== CHUNK 3: Game State, Save/Load, Core =====
+const GW = 480, GH = 320;
+let canvas, ctx, gameArea;
+
+const defaultState = () => ({
+  level: 1, exp: 0, gold: 0, shards: 0,
+  currentRegion: 0, exploreProgress: 0, exploreCount: 0,
+  heroes: [], maxParty: 2,
+  foundRelics: {}, // {relicId: true}
+  equipment: {weapon: null, armor: null, charm: null, scroll: null},
+  purchased: {}, // {shopItemId: true}
+  totalRelics: 0, totalKills: 0, totalGold: 0,
+  lastOnline: Date.now(),
+  tutorialDone: false, muted: false
+});
+
+let S = defaultState();
+let activeTab = 'none';
+let battleState = null; // {enemy, enemyHp, playerHp, maxPlayerHp, timer}
+let floatingNums = [];
+let particles = [];
+let logQueue = [];
+let lastTick = 0;
+let exploreSpeed = 3000; // ms per explore cycle
+let sceneObjects = []; // decorative objects for canvas
+
+function saveGame() {
+  S.lastOnline = Date.now();
+  localStorage.setItem('relicChronicle', JSON.stringify(S));
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem('relicChronicle');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      S = {...defaultState(), ...saved};
+      // Ensure foundRelics is an object
+      if (typeof S.foundRelics !== 'object') S.foundRelics = {};
+      return true;
+    }
+  } catch(e) {}
+  S = defaultState();
+  return false;
+}
+
+function calcOfflineReward() {
+  const elapsed = Date.now() - S.lastOnline;
+  if (elapsed < 60000) return null; // less than 1 min
+  const cycles = Math.min(Math.floor(elapsed / exploreSpeed), 500);
+  const region = REGIONS[S.currentRegion];
+  const avgGold = region.monsters.reduce((s,m) => s + m.gold, 0) / region.monsters.length;
+  const avgExp = region.monsters.reduce((s,m) => s + m.exp, 0) / region.monsters.length;
+  const goldMult = 1 + getBonus('goldBonus');
+  const expMult = 1 + getBonus('expBonus');
+  const gold = Math.floor(cycles * avgGold * 0.5 * goldMult);
+  const exp = Math.floor(cycles * avgExp * 0.5 * expMult);
+  const shards = Math.floor(cycles * 0.05);
+  return {gold, exp, shards, minutes: Math.floor(elapsed / 60000)};
+}
+
+function getBonus(type) {
+  let bonus = 0;
+  // Equipment bonuses
+  for (const slot of ['weapon','armor','charm','scroll']) {
+    const itemId = S.equipment[slot];
+    if (!itemId) continue;
+    const item = SHOP_ITEMS.find(si => si.id === itemId);
+    if (item && item[type]) bonus += item[type];
+  }
+  // Hero perk bonuses
+  for (const h of S.heroes) {
+    const tmpl = HERO_TEMPLATES.find(ht => ht.id === h.id);
+    if (tmpl && tmpl.perk[type]) bonus += tmpl.perk[type] * (1 + (h.level - 1) * 0.1);
+  }
+  // Codex set bonuses
+  for (let ri = 0; ri < REGIONS.length; ri++) {
+    const region = REGIONS[ri];
+    const found = region.relics.filter(r => S.foundRelics[r.id]).length;
+    if (found === 8) { // complete set
+      if (type === 'atk') bonus += 5 * (ri + 1);
+      if (type === 'def') bonus += 3 * (ri + 1);
+      if (type === 'relicRate') bonus += 0.05;
+      if (type === 'goldBonus') bonus += 0.05;
+      if (type === 'expBonus') bonus += 0.05;
+    }
+  }
+  return bonus;
+}
+
+function getCombatPower() {
+  let atk = 5 + S.level * 2 + getBonus('atk');
+  let def = 2 + S.level * 1 + getBonus('def');
+  let hp = 50 + S.level * 5 + getBonus('hp') * (50 + S.level * 5);
+  for (const h of S.heroes) {
+    const tmpl = HERO_TEMPLATES.find(ht => ht.id === h.id);
+    if (!tmpl) continue;
+    const lvMult = 1 + (h.level - 1) * 0.15;
+    atk += tmpl.atk * lvMult;
+    def += tmpl.def * lvMult * 0.5;
+    hp += tmpl.hp * lvMult;
+  }
+  // Equipment direct stats
+  const wpn = S.equipment.weapon ? SHOP_ITEMS.find(i => i.id === S.equipment.weapon) : null;
+  const arm = S.equipment.armor ? SHOP_ITEMS.find(i => i.id === S.equipment.armor) : null;
+  if (wpn) atk += wpn.atk || 0;
+  if (arm) def += arm.def || 0;
+  return {atk: Math.floor(atk), def: Math.floor(def), hp: Math.floor(hp)};
+}
+
+function getRelicDiscoveryRate() {
+  let base = 0.08;
+  base += getBonus('relicRate');
+  return Math.min(base, 0.75);
+}
+
+function addExp(amount) {
+  const mult = 1 + getBonus('expBonus');
+  amount = Math.floor(amount * mult);
+  S.exp += amount;
+  while (S.exp >= EXP_TABLE[S.level - 1] && S.level < 99) {
+    S.exp -= EXP_TABLE[S.level - 1];
+    S.level++;
+    addLog(t('lvUp') + ' Lv.' + S.level);
+    spawnParticles(GW/2, GH/2, '#ffe066', 20);
+    // Check region unlocks
+    for (let i = 0; i < REGIONS.length; i++) {
+      if (S.level >= REGIONS[i].unlockLv && i > S.currentRegion) {
+        // Don't auto-switch, just notify
+        addLog(t('newRegion') + ' ' + (lang==='zh' ? REGIONS[i].relics[0].nameZh.slice(0,2) : REGIONS[i].id));
+      }
+    }
+  }
+  return amount;
+}
+
+function addGold(amount) {
+  const mult = 1 + getBonus('goldBonus');
+  amount = Math.floor(amount * mult);
+  S.gold += amount;
+  S.totalGold += amount;
+  return amount;
+}
+
+function addLog(msg) {
+  logQueue.push(msg);
+  if (logQueue.length > 20) logQueue.shift();
+}
+
+function formatNum(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return Math.floor(n).toString();
+}
+
+function spawnFloat(x, y, text, color) {
+  floatingNums.push({x, y, text, color, life: 1});
+}
+
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 3;
+    particles.push({
+      x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed - 1,
+      color, life: 1, size: 2 + Math.random() * 3
+    });
+  }
+}
+
+// ===== CHUNK 4: Exploration + Combat =====
+function startExplore() {
+  if (battleState) return;
+  S.exploreProgress = 0;
+}
+
+function tickExplore(dt) {
+  if (battleState) return;
+  const speedMult = 1 + getBonus('speedBonus');
+  const cycleDuration = exploreSpeed / speedMult;
+  S.exploreProgress += (dt / cycleDuration) * 100;
+
+  if (S.exploreProgress >= 100) {
+    S.exploreProgress = 0;
+    S.exploreCount++;
+    // Every 10th explore = boss
+    if (S.exploreCount % 10 === 0) {
+      startBattle(true);
+    } else {
+      startBattle(false);
+    }
+  }
+}
+
+function startBattle(isBoss) {
+  const region = REGIONS[S.currentRegion];
+  let enemy;
+  if (isBoss) {
+    enemy = {...region.boss, isBoss: true};
+    addLog(t('bossAppears'));
+  } else {
+    const idx = Math.floor(Math.random() * region.monsters.length);
+    enemy = {...region.monsters[idx], isBoss: false};
+  }
+  const cp = getCombatPower();
+  battleState = {
+    enemy,
+    enemyHp: enemy.hp,
+    enemyMaxHp: enemy.hp,
+    playerHp: cp.hp,
+    maxPlayerHp: cp.hp,
+    timer: 0,
+    hits: 0
+  };
+}
+
+function tickBattle(dt) {
+  if (!battleState) return;
+  battleState.timer += dt;
+
+  // Attack every 500ms
+  if (battleState.timer >= 500) {
+    battleState.timer -= 500;
+    battleState.hits++;
+    const cp = getCombatPower();
+    const e = battleState.enemy;
+
+    // Player attacks enemy
+    let dmg = Math.max(1, cp.atk - e.def * 0.5);
+    // Crit chance
+    const critRate = getBonus('crit') || 0;
+    let crit = false;
+    if (Math.random() < critRate) {
+      dmg *= 2;
+      crit = true;
+    }
+    dmg = Math.floor(dmg * (0.9 + Math.random() * 0.2));
+    battleState.enemyHp -= dmg;
+
+    // Spawn damage number on enemy
+    const ex = GW * 0.65 + (Math.random()-0.5)*30;
+    const ey = GH * 0.4 + (Math.random()-0.5)*20;
+    spawnFloat(ex, ey, '-' + dmg, crit ? '#ffcc00' : '#ff6644');
+    if (crit) spawnParticles(ex, ey, '#ffcc00', 6);
+
+    // Enemy attacks player
+    let eDmg = Math.max(1, e.atk - cp.def * 0.5);
+    eDmg = Math.floor(eDmg * (0.9 + Math.random() * 0.2));
+    battleState.playerHp -= eDmg;
+
+    const px = GW * 0.3 + (Math.random()-0.5)*20;
+    const py = GH * 0.5 + (Math.random()-0.5)*20;
+    spawnFloat(px, py, '-' + eDmg, '#ff4444');
+
+    // Check outcomes
+    if (battleState.enemyHp <= 0) {
+      // Victory!
+      onBattleWin();
+    } else if (battleState.playerHp <= 0) {
+      // Defeat - just restart exploring (no penalty in idle games)
+      addLog(lang==='zh' ? '探索失敗，休息後重新出發...' : 'Exploration failed, resting...');
+      battleState = null;
+      S.exploreProgress = 0;
+    }
+  }
+}
+
+function onBattleWin() {
+  const e = battleState.enemy;
+  const eName = lang === 'zh' ? e.nameZh : e.name;
+  addLog(t('defeated') + ' ' + e.emoji + ' ' + eName);
+
+  const goldGained = addGold(e.gold);
+  const expGained = addExp(e.exp);
+  S.totalKills++;
+
+  spawnFloat(GW*0.5, GH*0.3, '+' + goldGained + '🪙', '#ffe066');
+  spawnFloat(GW*0.5, GH*0.4, '+' + expGained + '⭐', '#88ff88');
+  spawnParticles(GW*0.65, GH*0.45, '#ff8844', 12);
+
+  if (e.isBoss && e.shards) {
+    S.shards += e.shards;
+    spawnFloat(GW*0.5, GH*0.5, '+' + e.shards + '💎', '#aa88ff');
+  }
+
+  // Relic discovery check
+  tryDiscoverRelic();
+
+  battleState = null;
+  saveGame();
+}
+
+function tryDiscoverRelic() {
+  const rate = getRelicDiscoveryRate();
+  if (Math.random() > rate) return;
+
+  const region = REGIONS[S.currentRegion];
+  // Filter relics not yet found
+  const undiscovered = region.relics.filter(r => !S.foundRelics[r.id]);
+  if (undiscovered.length === 0) return; // all found in this region
+
+  // Weighted by rarity
+  const weights = undiscovered.map(r => {
+    const w = {N:50, R:30, SR:15, SSR:5};
+    return w[r.rarity] || 10;
+  });
+  const totalW = weights.reduce((a,b) => a+b, 0);
+  let roll = Math.random() * totalW;
+  let chosen = undiscovered[0];
+  for (let i = 0; i < undiscovered.length; i++) {
+    roll -= weights[i];
+    if (roll <= 0) { chosen = undiscovered[i]; break; }
+  }
+
+  S.foundRelics[chosen.id] = true;
+  S.totalRelics++;
+
+  // Shard reward based on rarity
+  const shardReward = {N:1, R:3, SR:8, SSR:20};
+  S.shards += (shardReward[chosen.rarity] || 1);
+
+  const rName = lang === 'zh' ? chosen.nameZh : chosen.name;
+  addLog(t('relicFound') + ' ' + chosen.emoji + ' ' + rName + ' [' + chosen.rarity + ']');
+
+  // Show overlay for SR+ relics
+  if (chosen.rarity === 'SR' || chosen.rarity === 'SSR') {
+    showRelicOverlay(chosen);
+  }
+
+  // Flash codex notification
+  const notif = document.getElementById('codex-notif');
+  if (notif) notif.style.display = 'block';
+
+  // Check set completion
+  const allFound = region.relics.every(r => S.foundRelics[r.id]);
+  if (allFound) {
+    addLog(t('regionComplete') + ' ' + t('setBonus'));
+    spawnParticles(GW/2, GH/2, RARITY_COLORS.SSR, 30);
+  }
+
+  spawnParticles(GW/2, GH/2, RARITY_COLORS[chosen.rarity], 20);
+}
+
+function showRelicOverlay(relic) {
+  const box = document.getElementById('overlay-box');
+  const rName = lang === 'zh' ? relic.nameZh : relic.name;
+  const rDesc = lang === 'zh' ? relic.descZh : relic.desc;
+  box.innerHTML = `
+    <h2>${t('relicFound')}</h2>
+    <div style="font-size:48px;margin:12px 0;animation:pulse 0.6s">${relic.emoji}</div>
+    <div style="font-size:18px;font-weight:bold;color:${RARITY_COLORS[relic.rarity]}">${rName}</div>
+    <div style="font-size:12px;margin:4px 0"><span class="rarity-label" style="background:${RARITY_COLORS[relic.rarity]}">${relic.rarity}</span></div>
+    <p style="color:var(--text2);margin:8px 0">${rDesc}</p>
+    <button class="btn btn-gold" onclick="closeOverlay()">OK</button>
+  `;
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function closeOverlay() {
+  document.getElementById('overlay').style.display = 'none';
+}
+
+// ===== CHUNK 5: Canvas Rendering =====
+function initCanvas() {
+  canvas = document.getElementById('game');
+  ctx = canvas.getContext('2d');
+  gameArea = document.getElementById('game-area');
+  canvas.width = GW;
+  canvas.height = GH;
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  generateSceneObjects();
+}
+
+function resizeCanvas() {
+  const aw = gameArea.clientWidth;
+  const ah = gameArea.clientHeight;
+  const scale = Math.min(aw / GW, ah / GH);
+  canvas.style.width = Math.min(GW * scale, aw) + 'px';
+  canvas.style.height = Math.min(GH * scale, ah) + 'px';
+}
+
+function generateSceneObjects() {
+  sceneObjects = [];
+  const region = REGIONS[S.currentRegion];
+  const rid = region.id;
+  for (let i = 0; i < 8; i++) {
+    const obj = {x: 30 + Math.random() * (GW - 60), y: GH * 0.55 + Math.random() * (GH * 0.35)};
+    if (rid === 'forest') {obj.type = Math.random()>0.5?'tree':'bush'; obj.color = '#2d5a27';}
+    else if (rid === 'desert') {obj.type = Math.random()>0.5?'cactus':'rock'; obj.color = '#c4a35a';}
+    else if (rid === 'snow') {obj.type = Math.random()>0.5?'pine':'snowrock'; obj.color = '#a8c8e8';}
+    else if (rid === 'ocean') {obj.type = Math.random()>0.5?'coral':'kelp'; obj.color = '#1a5276';}
+    else if (rid === 'sky') {obj.type = Math.random()>0.5?'cloud':'pillar'; obj.color = '#7eb8da';}
+    else if (rid === 'volcano') {obj.type = Math.random()>0.5?'lava':'rock'; obj.color = '#8b2500';}
+    obj.size = 10 + Math.random() * 20;
+    sceneObjects.push(obj);
+  }
+  // Sort by y for depth
+  sceneObjects.sort((a,b) => a.y - b.y);
+}
+
+function drawScene() {
+  const region = REGIONS[S.currentRegion];
+  // Sky gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, GH);
+  grad.addColorStop(0, region.bg1);
+  grad.addColorStop(0.5, region.bg2);
+  grad.addColorStop(1, darkenColor(region.bg2, 0.5));
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, GW, GH);
+
+  // Ground
+  ctx.fillStyle = darkenColor(region.color, 0.6);
+  ctx.fillRect(0, GH * 0.7, GW, GH * 0.3);
+
+  // Ground line
+  ctx.strokeStyle = region.color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, GH * 0.7);
+  for (let x = 0; x <= GW; x += 20) {
+    ctx.lineTo(x, GH * 0.7 + Math.sin(x * 0.03) * 3);
+  }
+  ctx.stroke();
+
+  // Scene decorations
+  drawSceneObjects(region.id);
+
+  // Region-specific ambient
+  drawAmbient(region.id);
+
+  // Player character (left side)
+  drawPlayer(GW * 0.25, GH * 0.55);
+
+  // Enemy (if battle)
+  if (battleState) {
+    drawEnemy(GW * 0.7, GH * 0.48);
+    drawBattleUI();
+  } else {
+    // Exploration animation - walking dots
+    const t2 = Date.now() * 0.002;
+    ctx.fillStyle = 'rgba(200,164,86,0.3)';
+    for (let i = 0; i < 3; i++) {
+      const dx = (t2 * 30 + i * 40) % 120;
+      ctx.beginPath();
+      ctx.arc(GW*0.35 + dx, GH*0.68, 2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  // Region name banner
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(0, 0, GW, 28);
+  ctx.font = 'bold 14px sans-serif';
+  ctx.fillStyle = region.color;
+  ctx.textAlign = 'left';
+  const rName = lang === 'zh'
+    ? ['古森林','荒漠遺跡','雪山之巔','深海神殿','浮空群島','龍脊火山'][S.currentRegion]
+    : ['Ancient Forest','Desert Ruins','Frozen Peak','Ocean Temple','Sky Islands','Dragon Ridge'][S.currentRegion];
+  ctx.fillText(region.emoji + ' ' + rName, 10, 19);
+
+  // Level + combat power (right side of banner)
+  ctx.textAlign = 'right';
+  ctx.font = '12px sans-serif';
+  ctx.fillStyle = '#e0d6c8';
+  const cp = getCombatPower();
+  ctx.fillText('⚔' + cp.atk + ' 🛡' + cp.def + ' ❤' + cp.hp, GW - 10, 18);
+
+  // Floating numbers
+  ctx.textAlign = 'center';
+  for (const fn of floatingNums) {
+    ctx.globalAlpha = fn.life;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillStyle = fn.color;
+    ctx.fillText(fn.text, fn.x, fn.y);
+  }
+  ctx.globalAlpha = 1;
+
+  // Particles
+  for (const p of particles) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawSceneObjects(rid) {
+  for (const obj of sceneObjects) {
+    ctx.fillStyle = obj.color;
+    const s = obj.size;
+    if (obj.type === 'tree') {
+      ctx.fillStyle = '#3a2010';
+      ctx.fillRect(obj.x - 3, obj.y - s, 6, s);
+      ctx.fillStyle = '#2d5a27';
+      ctx.beginPath(); ctx.arc(obj.x, obj.y - s, s*0.6, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#3d7a37';
+      ctx.beginPath(); ctx.arc(obj.x - 4, obj.y - s - 3, s*0.4, 0, Math.PI*2); ctx.fill();
+    } else if (obj.type === 'bush') {
+      ctx.fillStyle = '#1d4a17';
+      ctx.beginPath(); ctx.arc(obj.x, obj.y, s*0.4, 0, Math.PI*2); ctx.fill();
+    } else if (obj.type === 'cactus') {
+      ctx.fillStyle = '#4a7a30';
+      ctx.fillRect(obj.x-3, obj.y-s, 6, s);
+      ctx.fillRect(obj.x-10, obj.y-s*0.6, 7, 4);
+      ctx.fillRect(obj.x+3, obj.y-s*0.4, 7, 4);
+    } else if (obj.type === 'rock') {
+      ctx.fillStyle = rid==='volcano' ? '#4a2010' : '#667';
+      ctx.beginPath(); ctx.moveTo(obj.x-s*0.5,obj.y); ctx.lineTo(obj.x-s*0.3,obj.y-s*0.5); ctx.lineTo(obj.x+s*0.3,obj.y-s*0.4); ctx.lineTo(obj.x+s*0.5,obj.y); ctx.fill();
+    } else if (obj.type === 'pine') {
+      ctx.fillStyle = '#1a3a2a';
+      ctx.beginPath(); ctx.moveTo(obj.x,obj.y-s); ctx.lineTo(obj.x-s*0.4,obj.y); ctx.lineTo(obj.x+s*0.4,obj.y); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath(); ctx.moveTo(obj.x,obj.y-s); ctx.lineTo(obj.x-s*0.15,obj.y-s*0.3); ctx.lineTo(obj.x+s*0.1,obj.y-s*0.5); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (obj.type === 'coral') {
+      ctx.fillStyle = '#e06080';
+      ctx.beginPath(); ctx.arc(obj.x, obj.y, s*0.3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#f080a0';
+      ctx.beginPath(); ctx.arc(obj.x+5, obj.y-4, s*0.2, 0, Math.PI*2); ctx.fill();
+    } else if (obj.type === 'kelp') {
+      ctx.strokeStyle = '#306030';
+      ctx.lineWidth = 2;
+      const wave = Math.sin(Date.now()*0.002+obj.x)*3;
+      ctx.beginPath(); ctx.moveTo(obj.x,obj.y); ctx.quadraticCurveTo(obj.x+wave,obj.y-s*0.5,obj.x+wave*1.5,obj.y-s); ctx.stroke();
+    } else if (obj.type === 'cloud') {
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      const cx = obj.x + Math.sin(Date.now()*0.0005+obj.y)*10;
+      ctx.beginPath(); ctx.arc(cx,obj.y,s*0.5,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx+s*0.3,obj.y+2,s*0.35,0,Math.PI*2); ctx.fill();
+    } else if (obj.type === 'pillar') {
+      ctx.fillStyle = '#aac';
+      ctx.fillRect(obj.x-4,obj.y-s,8,s);
+      ctx.fillRect(obj.x-6,obj.y-s,12,3);
+    } else if (obj.type === 'lava') {
+      ctx.fillStyle = '#ff4400';
+      ctx.globalAlpha = 0.5 + Math.sin(Date.now()*0.003+obj.x)*0.3;
+      ctx.beginPath(); ctx.arc(obj.x,obj.y,s*0.3,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (obj.type === 'snowrock') {
+      ctx.fillStyle = '#889';
+      ctx.beginPath(); ctx.moveTo(obj.x-s*0.4,obj.y); ctx.lineTo(obj.x,obj.y-s*0.4); ctx.lineTo(obj.x+s*0.4,obj.y); ctx.fill();
+      ctx.fillStyle = '#dde';
+      ctx.beginPath(); ctx.moveTo(obj.x-s*0.3,obj.y-s*0.1); ctx.lineTo(obj.x,obj.y-s*0.4); ctx.lineTo(obj.x+s*0.25,obj.y-s*0.05); ctx.fill();
+    }
+  }
+}
+
+function drawAmbient(rid) {
+  const t2 = Date.now() * 0.001;
+  if (rid === 'forest') {
+    // Floating leaves
+    for (let i = 0; i < 5; i++) {
+      const lx = ((t2 * 15 + i * 97) % (GW+40)) - 20;
+      const ly = 30 + Math.sin(t2 + i * 2) * 20 + i * 30;
+      ctx.fillStyle = 'rgba(100,180,60,0.5)';
+      ctx.fillRect(lx, ly, 4, 3);
+    }
+  } else if (rid === 'snow') {
+    for (let i = 0; i < 15; i++) {
+      const sx = ((t2 * 10 + i * 63) % GW);
+      const sy = ((t2 * 20 + i * 47) % GH);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, Math.PI*2); ctx.fill();
+    }
+  } else if (rid === 'ocean') {
+    // Bubbles
+    for (let i = 0; i < 8; i++) {
+      const bx = 40 + i * 55;
+      const by = GH - ((t2 * 30 + i * 40) % (GH * 0.6));
+      ctx.strokeStyle = 'rgba(100,180,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(bx, by, 3 + i%3, 0, Math.PI*2); ctx.stroke();
+    }
+  } else if (rid === 'volcano') {
+    // Embers
+    for (let i = 0; i < 6; i++) {
+      const ex = 50 + i * 70 + Math.sin(t2*2+i)*10;
+      const ey = GH * 0.6 - ((t2 * 25 + i * 30) % (GH * 0.4));
+      ctx.fillStyle = `rgba(255,${100+Math.floor(Math.random()*80)},0,${0.3+Math.random()*0.4})`;
+      ctx.fillRect(ex, ey, 2, 2);
+    }
+  }
+}
+
+function drawPlayer(x, y) {
+  const bob = Math.sin(Date.now() * 0.004) * 2;
+  // Body
+  ctx.fillStyle = '#4488cc';
+  ctx.fillRect(x-8, y-20+bob, 16, 20);
+  // Head
+  ctx.fillStyle = '#ffcc88';
+  ctx.beginPath(); ctx.arc(x, y-26+bob, 8, 0, Math.PI*2); ctx.fill();
+  // Eyes
+  ctx.fillStyle = '#222';
+  ctx.fillRect(x-4, y-28+bob, 2, 2);
+  ctx.fillRect(x+2, y-28+bob, 2, 2);
+  // Hat
+  ctx.fillStyle = '#8b4513';
+  ctx.fillRect(x-10, y-34+bob, 20, 4);
+  ctx.fillRect(x-6, y-38+bob, 12, 4);
+  // Weapon equipped indicator
+  if (S.equipment.weapon) {
+    ctx.fillStyle = '#ccc';
+    ctx.fillRect(x+10, y-18+bob, 3, 16);
+    ctx.fillStyle = '#aaa';
+    ctx.fillRect(x+8, y-20+bob, 7, 3);
+  }
+}
+
+function drawEnemy(x, y) {
+  if (!battleState) return;
+  const e = battleState.enemy;
+  const shake = battleState.hits > 0 ? Math.sin(Date.now()*0.05) * 2 : 0;
+  ctx.font = e.isBoss ? '42px sans-serif' : '32px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(e.emoji, x + shake, y + 10);
+  if (e.isBoss) {
+    ctx.fillStyle = 'rgba(255,150,0,0.15)';
+    ctx.beginPath(); ctx.arc(x, y, 30, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+function drawBattleUI() {
+  if (!battleState) return;
+  const b = battleState;
+  // Enemy HP bar
+  const ex = GW * 0.55, ey = GH * 0.28, bw = 100, bh = 8;
+  ctx.fillStyle = '#333';
+  ctx.fillRect(ex, ey, bw, bh);
+  const hpRatio = Math.max(0, b.enemyHp / b.enemyMaxHp);
+  ctx.fillStyle = b.enemy.isBoss ? '#ff9900' : '#e05040';
+  ctx.fillRect(ex, ey, bw * hpRatio, bh);
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(ex, ey, bw, bh);
+  // Enemy name
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  const eName = lang==='zh' ? b.enemy.nameZh : b.enemy.name;
+  ctx.fillText(eName + ' ' + Math.max(0,Math.floor(b.enemyHp))+'/'+b.enemyMaxHp, ex, ey - 3);
+
+  // Player HP bar (bottom-left)
+  const px = 20, py = GH * 0.72;
+  ctx.fillStyle = '#333';
+  ctx.fillRect(px, py, 80, 6);
+  const pRatio = Math.max(0, b.playerHp / b.maxPlayerHp);
+  ctx.fillStyle = '#50c060';
+  ctx.fillRect(px, py, 80 * pRatio, 6);
+  ctx.strokeStyle = '#555';
+  ctx.strokeRect(px, py, 80, 6);
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = '#aaa';
+  ctx.fillText('HP '+Math.max(0,Math.floor(b.playerHp))+'/'+b.maxPlayerHp, px, py - 2);
+}
+
+function darkenColor(hex, factor) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${Math.floor(r*factor)},${Math.floor(g*factor)},${Math.floor(b*factor)})`;
+}
+
+// ===== CHUNK 6: UI Panels =====
+function renderMapPanel() {
+  const panel = document.getElementById('panel-map');
+  let html = '<h2>🗺️ ' + t('selectRegion') + '</h2><div class="grid-2">';
+  REGIONS.forEach((r, i) => {
+    const unlocked = S.level >= r.unlockLv;
+    const isCurrent = i === S.currentRegion;
+    const rName = lang === 'zh'
+      ? ['古森林','荒漠遺跡','雪山之巔','深海神殿','浮空群島','龍脊火山'][i]
+      : ['Ancient Forest','Desert Ruins','Frozen Peak','Ocean Temple','Sky Islands','Dragon Ridge'][i];
+    const transport = lang === 'zh'
+      ? ['🚶 步行','🐫 駱駝','⛏️ 攀岩','🚢 潛水艇','🎈 飛空艇','🐉 馴龍'][i]
+      : ['🚶 On foot','🐫 Camel','⛏️ Climbing','🚢 Submarine','🎈 Airship','🐉 Dragon'][i];
+    const found = r.relics.filter(rl => S.foundRelics[rl.id]).length;
+    html += `<div class="region-card ${unlocked?'':'locked'} ${isCurrent?'active':''}" onclick="${unlocked?'switchRegion('+i+')':''}">
+      <span class="r-emoji">${r.emoji}</span>
+      <span class="r-name">${rName}</span>
+      <div style="font-size:10px;color:var(--text2);margin-top:4px">${transport}</div>
+      <div style="font-size:10px;margin-top:2px;color:${found===8?'var(--ssr)':'var(--text2)'}">📖 ${found}/8</div>
+      ${!unlocked ? '<div style="font-size:10px;color:var(--red);margin-top:2px">🔒 '+t('unlockAt')+r.unlockLv+'</div>' : ''}
+      ${isCurrent ? '<div style="font-size:10px;color:var(--accent);margin-top:2px">▶ '+t('currentRegion')+'</div>' : ''}
+    </div>`;
+  });
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+function switchRegion(idx) {
+  if (idx === S.currentRegion) return;
+  if (S.level < REGIONS[idx].unlockLv) return;
+  S.currentRegion = idx;
+  battleState = null;
+  S.exploreProgress = 0;
+  generateSceneObjects();
+  renderMapPanel();
+  saveGame();
+  addLog(lang==='zh' ? '前往新秘境...' : 'Traveling to new region...');
+}
+
+function renderTeamPanel() {
+  const panel = document.getElementById('panel-team');
+  let html = '<h2>👥 ' + t('team') + '</h2>';
+
+  // Current party
+  html += '<h3>' + t('partySlots') + ' (' + S.heroes.length + '/' + S.maxParty + ')</h3>';
+  html += '<div class="grid-2">';
+  for (let i = 0; i < S.maxParty; i++) {
+    if (i < S.heroes.length) {
+      const h = S.heroes[i];
+      const tmpl = HERO_TEMPLATES.find(ht => ht.id === h.id);
+      const hName = lang === 'zh' ? t(tmpl.cls) : tmpl.cls.charAt(0).toUpperCase() + tmpl.cls.slice(1);
+      const lvCost = Math.floor(tmpl.cost * Math.pow(1.5, h.level - 1));
+      html += `<div class="hero-slot">
+        <span class="h-emoji">${tmpl.emoji}</span>
+        <span class="h-name">${hName}</span>
+        <span class="h-lv">Lv.${h.level}</span>
+        <div style="font-size:10px;color:var(--text2)">ATK ${Math.floor(tmpl.atk*(1+(h.level-1)*0.15))} DEF ${Math.floor(tmpl.def*(1+(h.level-1)*0.15)*0.5)}</div>
+        <button class="btn btn-gold btn-sm" onclick="upgradeHero(${i})" ${S.gold>=lvCost?'':'disabled'}>
+          ${t('upgrade')} 🪙${formatNum(lvCost)}
+        </button>
+      </div>`;
+    } else {
+      html += `<div class="hero-slot empty" onclick="showRecruitPanel()">${t('emptySlot')}<br><span style="font-size:10px">${t('tapToRecruit')}</span></div>`;
+    }
+  }
+  html += '</div>';
+
+  // Recruit section
+  if (S.heroes.length < S.maxParty) {
+    html += '<h3>' + t('heroRecruit') + '</h3>';
+    HERO_TEMPLATES.forEach(tmpl => {
+      if (S.heroes.find(h => h.id === tmpl.id)) return; // already recruited
+      const hName = lang === 'zh' ? t(tmpl.cls) : tmpl.cls.charAt(0).toUpperCase() + tmpl.cls.slice(1);
+      const hDesc = lang === 'zh' ? t(tmpl.cls + 'Desc') : t(tmpl.cls + 'Desc');
+      html += `<div class="card card-row" style="cursor:pointer" onclick="recruitHero('${tmpl.id}')">
+        <div class="card-icon">${tmpl.emoji}</div>
+        <div class="card-info">
+          <div class="card-name">${hName}</div>
+          <div class="card-desc">${hDesc}</div>
+          <div class="card-stats">ATK ${tmpl.atk} DEF ${tmpl.def} HP ${tmpl.hp}</div>
+        </div>
+        <button class="btn btn-gold btn-sm" ${S.gold>=tmpl.cost?'':'disabled'}>🪙${tmpl.cost}</button>
+      </div>`;
+    });
+  }
+
+  // Extra party slot (costs shards)
+  if (S.maxParty < 5) {
+    const slotCost = S.maxParty * 20;
+    html += `<div style="margin-top:12px;text-align:center">
+      <button class="btn btn-blue" onclick="buyPartySlot()" ${S.shards>=slotCost?'':'disabled'}>
+        +1 ${t('partySlots')} (💎${slotCost})
+      </button>
+    </div>`;
+  }
+
+  panel.innerHTML = html;
+}
+
+function recruitHero(id) {
+  if (S.heroes.length >= S.maxParty) return;
+  if (S.heroes.find(h => h.id === id)) return;
+  const tmpl = HERO_TEMPLATES.find(ht => ht.id === id);
+  if (S.gold < tmpl.cost) return;
+  S.gold -= tmpl.cost;
+  S.heroes.push({id, level: 1});
+  renderTeamPanel();
+  saveGame();
+}
+
+function upgradeHero(idx) {
+  const h = S.heroes[idx];
+  const tmpl = HERO_TEMPLATES.find(ht => ht.id === h.id);
+  const cost = Math.floor(tmpl.cost * Math.pow(1.5, h.level - 1));
+  if (S.gold < cost) return;
+  S.gold -= cost;
+  h.level++;
+  renderTeamPanel();
+  saveGame();
+}
+
+function buyPartySlot() {
+  if (S.maxParty >= 5) return;
+  const cost = S.maxParty * 20;
+  if (S.shards < cost) return;
+  S.shards -= cost;
+  S.maxParty++;
+  renderTeamPanel();
+  saveGame();
+}
+
+function showRecruitPanel() {
+  // Already shown in team panel, just scroll
+}
+
+function renderCodexPanel() {
+  const panel = document.getElementById('panel-codex');
+  // Hide notification
+  const notif = document.getElementById('codex-notif');
+  if (notif) notif.style.display = 'none';
+
+  const totalFound = Object.keys(S.foundRelics).length;
+  const totalRelics = REGIONS.reduce((s,r) => s + r.relics.length, 0);
+
+  let html = '<h2>📖 ' + t('codex') + '</h2>';
+  html += `<div style="text-align:center;margin-bottom:12px;font-size:13px;color:var(--accent2)">${t('codexProgress')}: ${totalFound}/${totalRelics}</div>`;
+
+  // Progress bar
+  html += `<div class="progress-wrap" style="width:100%;height:12px;margin-bottom:16px"><div class="progress-fill" style="width:${(totalFound/totalRelics*100).toFixed(1)}%"></div></div>`;
+
+  REGIONS.forEach((r, ri) => {
+    const rName = lang === 'zh'
+      ? ['古森林','荒漠遺跡','雪山之巔','深海神殿','浮空群島','龍脊火山'][ri]
+      : ['Ancient Forest','Desert Ruins','Frozen Peak','Ocean Temple','Sky Islands','Dragon Ridge'][ri];
+    const found = r.relics.filter(rl => S.foundRelics[rl.id]).length;
+    const complete = found === 8;
+    html += `<h3 style="color:${complete?'var(--ssr)':r.color}">${r.emoji} ${rName} (${found}/8) ${complete?'✅':''}</h3>`;
+    html += '<div class="codex-grid">';
+    r.relics.forEach(rl => {
+      const isFound = S.foundRelics[rl.id];
+      const rName2 = lang==='zh' ? rl.nameZh : rl.name;
+      html += `<div class="codex-item ${isFound?'found':'unfound'}" title="${isFound?rName2:'???'}">
+        ${isFound ? rl.emoji : '❓'}
+        <span class="ci-rarity" style="color:${RARITY_COLORS[rl.rarity]}">${rl.rarity}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  panel.innerHTML = html;
+}
+
+function renderShopPanel() {
+  const panel = document.getElementById('panel-shop');
+  let html = '<h2>🏪 ' + t('shop') + '</h2>';
+
+  const categories = ['weapon','armor','charm','scroll'];
+  const catNames = {weapon: t('weapon'), armor: t('armor'), charm: t('charm'), scroll: t('scroll')};
+  const catEmojis = {weapon:'⚔️', armor:'🛡️', charm:'🍀', scroll:'📜'};
+
+  categories.forEach(cat => {
+    html += `<h3>${catEmojis[cat]} ${catNames[cat]}</h3>`;
+    const items = SHOP_ITEMS.filter(i => i.cat === cat);
+    items.forEach(item => {
+      const owned = S.purchased[item.id];
+      const equipped = S.equipment[cat] === item.id;
+      const iName = lang === 'zh' ? item.nameZh : item.name;
+      const currIcon = item.currency === 'shards' ? '💎' : '🪙';
+      const canAfford = item.currency === 'shards' ? S.shards >= item.cost : S.gold >= item.cost;
+
+      let statText = '';
+      if (item.atk) statText = '+' + item.atk + ' ' + t('atkLabel');
+      if (item.def) statText = '+' + item.def + ' ' + t('defLabel');
+      if (item.relicRate) statText = '+' + Math.floor(item.relicRate*100) + '% ' + t('discoveryRate');
+      if (item.expBonus) statText = '+' + Math.floor(item.expBonus*100) + '% EXP';
+      if (item.goldBonus) statText = '+' + Math.floor(item.goldBonus*100) + '% ' + t('gold');
+      if (item.speedBonus) statText = '+' + Math.floor(item.speedBonus*100) + '% ' + t('speed');
+
+      html += `<div class="shop-item">
+        <div class="si-info">
+          <div class="si-name">${item.emoji} ${iName}</div>
+          <div class="si-desc">${statText}</div>
+        </div>`;
+      if (equipped) {
+        html += `<span style="color:var(--green);font-size:11px">✅ ${t('equipped')}</span>`;
+      } else if (owned) {
+        html += `<button class="btn btn-green btn-sm" onclick="equipItem('${item.id}','${cat}')">Equip</button>`;
+      } else {
+        html += `<span class="si-price">${currIcon}${item.cost}</span>
+          <button class="btn btn-gold btn-sm" onclick="buyItem('${item.id}')" ${canAfford?'':'disabled'}>${t('buy')}</button>`;
+      }
+      html += '</div>';
+    });
+  });
+  panel.innerHTML = html;
+}
+
+function buyItem(id) {
+  const item = SHOP_ITEMS.find(i => i.id === id);
+  if (!item || S.purchased[id]) return;
+  if (item.currency === 'shards') {
+    if (S.shards < item.cost) return;
+    S.shards -= item.cost;
+  } else {
+    if (S.gold < item.cost) return;
+    S.gold -= item.cost;
+  }
+  S.purchased[id] = true;
+  S.equipment[item.cat] = id; // auto equip
+  renderShopPanel();
+  saveGame();
+}
+
+function equipItem(id, cat) {
+  S.equipment[cat] = id;
+  renderShopPanel();
+  saveGame();
+}
+
+function switchTab(tab) {
+  const panels = ['map','team','codex','shop'];
+  const wasActive = activeTab === tab;
+  activeTab = wasActive ? 'none' : tab;
+
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === activeTab);
+  });
+
+  // Hide/show panels
+  panels.forEach(p => {
+    const el = document.getElementById('panel-' + p);
+    el.classList.toggle('active', p === activeTab);
+  });
+
+  // Render panel content
+  if (!wasActive) {
+    if (tab === 'map') renderMapPanel();
+    else if (tab === 'team') renderTeamPanel();
+    else if (tab === 'codex') renderCodexPanel();
+    else if (tab === 'shop') renderShopPanel();
+  }
+}
+
+// ===== CHUNK 7: Tutorial, Audio, Init, Main Loop =====
+
+// Audio
+const AUDIO_CTX = new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS = {};
+let bgmSource = null, bgmGain = null, bgmLoaded = false;
+
+function loadAudio(name, url){
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab))
+    .then(buf=>{ AUDIO_BUFS[name]=buf; }).catch(()=>{});
+}
+function playAudio(name, vol=0.7, rate=1, maxMs=0){
+  if(S.muted) return;
+  const buf=AUDIO_BUFS[name]; if(!buf) return;
+  if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+  const src=AUDIO_CTX.createBufferSource();
+  src.buffer=buf; src.playbackRate.value=rate;
+  const gain=AUDIO_CTX.createGain(); gain.gain.value=vol;
+  src.connect(gain); gain.connect(AUDIO_CTX.destination);
+  src.start(0,0,maxMs>0?maxMs/1000:buf.duration);
+}
+function startBGM(url){
+  if(bgmLoaded||S.muted) return; bgmLoaded=true;
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
+    if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+    bgmSource=AUDIO_CTX.createBufferSource();
+    bgmSource.buffer=buf; bgmSource.loop=true;
+    bgmGain=AUDIO_CTX.createGain(); bgmGain.gain.value=0.18;
+    bgmSource.connect(bgmGain); bgmGain.connect(AUDIO_CTX.destination);
+    bgmSource.start();
+  }).catch(()=>{});
+}
+function toggleMute(){
+  S.muted=!S.muted;
+  if(bgmGain) bgmGain.gain.value=S.muted?0:0.18;
+  document.getElementById('mute-btn').textContent=S.muted?'🔇':'🔊';
+  localStorage.setItem('relicMuted',S.muted?'1':'0');
+  if(!S.muted&&!bgmLoaded) startBGM(BGM_URL);
+}
+const BGM_URL = '../../assets/Fantasy RPG Music Pack Vol.3/Loops/ogg/Ambient 1 Loop.ogg';
+
+// Tutorial
+function showTutorial() {
+  const box = document.getElementById('overlay-box');
+  box.innerHTML = `
+    <h2>${t('tutTitle')}</h2>
+    <div style="text-align:left;margin:16px 0">
+      <p>${t('tut1')}</p>
+      <p>${t('tut2')}</p>
+      <p>${t('tut3')}</p>
+      <p>${t('tut4')}</p>
+      <p>${t('tut5')}</p>
+    </div>
+    <button class="btn btn-gold" onclick="closeTutorial()" style="font-size:16px;padding:12px 32px">${t('tutStart')}</button>
+  `;
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function closeTutorial() {
+  S.tutorialDone = true;
+  closeOverlay();
+  saveGame();
+}
+
+function showOfflineReward(reward) {
+  const box = document.getElementById('overlay-box');
+  box.innerHTML = `
+    <h2>⏰ ${t('offline')}</h2>
+    <p style="font-size:11px;color:var(--text2)">(${reward.minutes} min)</p>
+    <div style="font-size:16px;margin:12px 0">
+      <div>🪙 +${formatNum(reward.gold)} ${t('gold')}</div>
+      <div>⭐ +${formatNum(reward.exp)} ${t('exp')}</div>
+      <div>💎 +${reward.shards} ${t('shards')}</div>
+    </div>
+    <button class="btn btn-gold" onclick="closeOverlay()">OK</button>
+  `;
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+// Language
+function toggleLang() {
+  lang = lang === 'en' ? 'zh' : 'en';
+  localStorage.setItem('relicLang', lang);
+  applyLang();
+}
+
+function applyLang() {
+  document.getElementById('lang-btn').textContent = lang === 'en' ? '繁中' : 'EN';
+  document.getElementById('back-btn').textContent = t('back');
+  document.getElementById('tab-explore-label').textContent = t('explore');
+  document.getElementById('tab-map-label').textContent = t('map');
+  document.getElementById('tab-team-label').textContent = t('team');
+  document.getElementById('tab-codex-label').textContent = t('codex');
+  document.getElementById('tab-shop-label').textContent = t('shop');
+  document.title = t('title') + ' — Fantasy Idle RPG';
+  // Re-render active panel
+  if (activeTab !== 'none') {
+    if (activeTab === 'map') renderMapPanel();
+    else if (activeTab === 'team') renderTeamPanel();
+    else if (activeTab === 'codex') renderCodexPanel();
+    else if (activeTab === 'shop') renderShopPanel();
+  }
+}
+
+// HUD Update
+function updateHUD() {
+  document.getElementById('player-lv').textContent = t('lv') + S.level;
+  document.getElementById('player-title').textContent = t('relicHunter');
+  document.getElementById('res-gold').textContent = formatNum(S.gold);
+  document.getElementById('res-exp').textContent = formatNum(S.exp) + '/' + formatNum(EXP_TABLE[S.level-1]||999);
+  document.getElementById('res-shards').textContent = formatNum(S.shards);
+  document.getElementById('explore-progress').style.width = (battleState ? 100 : S.exploreProgress) + '%';
+
+  // Log text
+  if (logQueue.length > 0) {
+    document.getElementById('log-text').textContent = logQueue[logQueue.length - 1];
+  }
+}
+
+// Main Game Loop
+function gameLoop(ts) {
+  if (!lastTick) lastTick = ts;
+  const dt = Math.min(ts - lastTick, 100); // cap dt
+  lastTick = ts;
+
+  // Tick game logic
+  if (battleState) {
+    tickBattle(dt);
+  } else {
+    tickExplore(dt);
+  }
+
+  // Update floating nums
+  floatingNums = floatingNums.filter(fn => {
+    fn.life -= dt * 0.002;
+    fn.y -= dt * 0.04;
+    return fn.life > 0;
+  });
+
+  // Update particles
+  particles = particles.filter(p => {
+    p.life -= dt * 0.002;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.05; // gravity
+    return p.life > 0;
+  });
+
+  // Draw
+  drawScene();
+  updateHUD();
+
+  // Auto save every 30s
+  if (Math.floor(ts / 30000) !== Math.floor((ts - dt) / 30000)) {
+    saveGame();
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Init
+function init() {
+  const hadSave = loadGame();
+  S.muted = localStorage.getItem('relicMuted') === '1';
+
+  initCanvas();
+  applyLang();
+
+  // Bind tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Bind controls
+  document.getElementById('lang-btn').addEventListener('click', toggleLang);
+  document.getElementById('mute-btn').addEventListener('click', toggleMute);
+  if (S.muted) document.getElementById('mute-btn').textContent = '🔇';
+
+  // Audio
+  loadAudio('collect', '../../assets/sfx/400 Sounds Pack/Items/coin_collect.wav');
+  loadAudio('upgrade', '../../assets/sfx/GameSFX3/PowerUp/Retro PowerUP 09.wav');
+  loadAudio('hit', '../../assets/sfx/GameSFX2/Impact/Retro Impact Punch 07.wav');
+  const startOnce = () => {
+    startBGM(BGM_URL);
+    document.removeEventListener('click', startOnce);
+    document.removeEventListener('touchend', startOnce);
+  };
+  document.addEventListener('click', startOnce);
+  document.addEventListener('touchend', startOnce);
+
+  // Tutorial or offline reward
+  if (!hadSave || !S.tutorialDone) {
+    showTutorial();
+  } else {
+    const reward = calcOfflineReward();
+    if (reward && (reward.gold > 0 || reward.exp > 0)) {
+      S.gold += reward.gold;
+      addExp(reward.exp);
+      S.shards += reward.shards;
+      showOfflineReward(reward);
+    }
+  }
+
+  generateSceneObjects();
+  requestAnimationFrame(gameLoop);
+}
+
+// Close overlay on click outside
+document.getElementById('overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('overlay')) closeOverlay();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('overlay').style.display !== 'none') {
+      closeOverlay();
+    } else if (activeTab !== 'none') {
+      switchTab(activeTab); // close panel
+    }
+  }
+  if (e.key === 'm' || e.key === 'M') toggleMute();
+});
+
+init();
+</script>
+</body>
+</html>
