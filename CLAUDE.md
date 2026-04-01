@@ -1487,6 +1487,70 @@ git push origin main
 
 ---
 
+## 上架流程（2026/4/1 更新）
+
+> 上架分兩軌：**自家網站**（Claude 直接做）vs **CrazyGames**（需要用戶在 Chat 端打磨後再上）。
+> 不確定時問用戶。
+
+---
+
+### 軌道 A：上架自家網站（Claude 執行）
+
+> Claude 每次完成新遊戲後，**自動執行以下流程**，不需要問。
+
+```
+1. 建立遊戲目錄 games/<game-name>/index.html
+   - 遵守所有技術規範（隱私權連結、localStorage 存檔、新手教學、雙語）
+
+2. 加入遊戲清單頁 games/index.html
+   - 按標準卡片格式加入
+
+3. 加入首頁 index.html 對應分類
+   - 判斷遊戲類型，加到正確的分類 row：
+     | 類型 | 分類 ID | 名稱 |
+     |------|---------|------|
+     | 放置/RPG/Idle/進化/掛機 | #idle | 🏰 放置 / RPG |
+     | 動作/射擊/跑酷/Roguelike | #action | ⚡ 動作 |
+     | 三消/解謎/問答 | #puzzle | 🧩 益智 |
+     | 農場/村落/經營 | #simulation | 🌿 模擬經營 |
+     | 對戰/聊天/連線 | #multiplayer | 👥 多人連線 |
+   - 同時加入「最新遊戲」row（最前面，最多保留 3~4 張）
+   - 不確定分類時 → 問用戶
+
+4. commit + push 到指定分支
+```
+
+### 首頁遊戲卡片格式
+
+```html
+<a class="g-card" href="games/<name>/">
+  <div class="g-card-banner" style="background:linear-gradient(135deg,#色1,#色2)">emoji</div>
+  <div class="g-card-body">
+    <div class="g-card-title">遊戲名稱</div>
+    <div class="g-card-tags"><span class="g-card-tag">標籤1</span><span class="g-card-tag">標籤2</span></div>
+  </div>
+</a>
+```
+
+### 「最新遊戲」row 格式（略有不同）
+
+```html
+<a class="g-card" href="games/<name>/">
+  <div class="g-card-banner" style="background:linear-gradient(135deg,#色1,#色2)">emoji</div>
+  <div class="g-card-body">
+    <div class="g-card-title">遊戲名稱</div>
+    <div class="g-card-sub">類型描述</div>
+  </div>
+</a>
+```
+
+---
+
+### 軌道 B：上架 CrazyGames（用戶主導）
+
+> 用戶在 Chat 端做 Step 5（核心迴圈打磨），到 Claude 這邊時已準備好上架。
+> Claude 負責：準備上架文案 + 跑檢查清單 + 確保瀏覽器相容性。
+
 ## 好遊戲上架 SOP（2026/3/23 制定）
 
 > 適用平台：CrazyGames（Web）為主，可延伸至 itch.io / Steam / 手機
