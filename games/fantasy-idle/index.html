@@ -94,9 +94,7 @@ canvas{touch-action:none}
 .found-anim{animation:pulse 0.5s ease}
 @media(min-width:768px){
   .panel{max-width:480px;margin:0 auto;left:50%;transform:translateX(-50%)}
-  .top-bar,.info-bar,.tab-bar{max-width:600px;margin:0 auto}
-  body{align-items:center}
-  .top-bar,.info-bar,.tab-bar{width:100%}
+  .top-bar,.info-bar,.tab-bar,.game-area{max-width:600px;width:100%;margin-left:auto;margin-right:auto}
 }
 </style>
 </head>
@@ -717,8 +715,13 @@ function initCanvas() {
 }
 
 function resizeCanvas() {
-  const aw = gameArea.clientWidth;
-  const ah = gameArea.clientHeight;
+  const aw = gameArea.clientWidth || window.innerWidth;
+  const ah = gameArea.clientHeight || 300;
+  if (aw <= 0 || ah <= 0) {
+    canvas.style.width = GW + 'px';
+    canvas.style.height = GH + 'px';
+    return;
+  }
   const scale = Math.min(aw / GW, ah / GH);
   canvas.style.width = Math.min(GW * scale, aw) + 'px';
   canvas.style.height = Math.min(GH * scale, ah) + 'px';
@@ -1474,7 +1477,11 @@ function init() {
   }
 
   generateSceneObjects();
-  requestAnimationFrame(gameLoop);
+  // Delay first frame to ensure DOM layout is complete (CLAUDE.md Canvas黑屏教訓)
+  requestAnimationFrame(() => {
+    resizeCanvas();
+    requestAnimationFrame(gameLoop);
+  });
 }
 
 // Close overlay on click outside
