@@ -1,5 +1,125 @@
 # CapyWorlds — Claude 開發指引（2026/4/1 更新）
 
+---
+
+## 🚀 外部開發檔案上架流程（最優先執行）
+
+**背景**：Alice 的習慣是在另一個 Claude Chat 開發遊戲，開發完成後，在本 session（部署 session）上架到網站。這個流程必須嚴格遵守，**不可以邊上架邊改 code**。
+
+### 標準上架 SOP（每次必做，不可跳步驟）
+
+```
+Step 1：接收檔案
+  → 確認使用者提供的是哪個檔案（如 @桌面/deep_sea_idle.html）
+  → 詢問目標路徑（如 games/deep-sea-idle/index.html）
+
+Step 2：衝突標記掃描（最重要！）
+  → grep -n "<<<<<<\|=======\|>>>>>>>" <目標檔案>
+  → 若有任何衝突標記 → 立刻停下，告訴 Alice「檔案有 git 衝突標記，請在開發 Chat 先清掉再傳」
+  → 零容忍，有標記就不上架
+
+Step 3：確認 git 狀態乾淨
+  → git status
+  → 若有 unfinished merge：git merge --abort
+  → 若有 pending conflict：先解掉再繼續
+
+Step 4：複製／覆蓋檔案到 repo 目標路徑
+
+Step 5：git add → git commit → git pull --no-edit → git push
+  → pull 若有衝突：index.html / games/index.html 以 --ours 為主，手動整合遠端新增的卡片
+  → 若 push 被拒（fetch first）：git pull --no-edit 再重 push
+
+Step 6：更新首頁「最新遊戲」區塊（index.html 的 NEW GAMES ROW）
+  → 在 row-scroll 最前面插入新遊戲的 g-card
+  → 移除最舊的那張（維持最多 3 張）
+  → 同步更新 GAMES 陣列 + GAME_REG 物件（供搜尋/收藏功能使用）
+  → 新遊戲也要加進對應的分類區（放置/RPG、動作、益智…）
+
+Step 7：確認 GitHub Actions 部署成功（綠勾）
+```
+
+### 首頁「最新遊戲」更新格式
+
+位置：`index.html` → `<!-- NEW GAMES ROW -->` → `div.row-scroll`
+
+```html
+<!-- 新遊戲插在最前面，最多保留 3 張，超過刪最舊的 -->
+<a class="g-card" href="games/XXX/">
+  <div class="g-card-banner" style="background:linear-gradient(135deg,#???,#???)">EMOJI</div>
+  <div class="g-card-body">
+    <div class="g-card-title">遊戲名稱</div>
+    <div class="g-card-sub">類型 / 標籤</div>
+  </div>
+</a>
+```
+
+背景漸層顏色挑選原則：
+- 放置/探索類 → `#0a1a3a, #081028`（深藍）
+- 動作/戰鬥類 → `#3a1a0a, #281008`（深橘紅）
+- 賽車/競速類 → `#3a1a1a, #280a0a`（深紅）
+- 深海/水系 → `#050d1a, #081828`（深海藍）
+- 節奏/音樂 → `#2a1a3a, #1a0a28`（深紫）
+
+### GAMES 陣列 + GAME_REG 同步格式
+
+```javascript
+// GAMES 陣列（搜尋用），加在對應位置
+{name:'遊戲名稱', emoji:'EMOJI', href:'games/XXX/', cat:'分類 / 標籤'},
+
+// GAME_REG 物件（收藏用），key = 資料夾名稱
+'XXX':{t:'遊戲名稱', e:'EMOJI', c:'分類', bg:'#深色1,#深色2'},
+```
+
+### ⛔ 禁止行為
+
+| 禁止 | 原因 |
+|------|------|
+| 直接把桌面檔案 commit 進 repo 前不掃衝突標記 | 會把 `<<<<<<` 當 HTML 顯示在網站上 |
+| 把開發 Chat 和部署 Chat 的工作混在一起 | 導致遊戲程式碼被意外修改、出現新 bug |
+| 在 merge 衝突中途又 commit 其他檔案 | 觸發連鎖衝突，深度越來越難解 |
+| 一次 commit 多個不相關的新檔案 | 某個檔案有問題會拖累整包 |
+
+### ✅ 遇到 merge 衝突的正確處理順序
+
+```
+1. 先確認哪些檔案衝突：git status
+2. index.html → git checkout --ours index.html（保留本地版本）
+3. games/index.html → 手動解：保留「深海秘境」等本地新增卡片，接受遠端刪除的部分
+4. 新遊戲檔案（add/add 衝突）→ git checkout --ours <檔案>
+5. git add 所有解完的檔案
+6. git commit --no-edit
+7. git push
+```
+
+---
+
+## 🐛 已知 Bug 教訓（Canvas 黑屏）
+
+**問題**：Canvas 遊戲頁面主畫面完全黑屏，sidebar 有資料但中央空白。
+
+**根因**：`initOceanCanvas()` 在 DOM 完全佈局前就執行，`canvas.offsetWidth` 取到 0，導致 canvas 尺寸被設為 0×0。
+
+**修法**：
+```javascript
+// ❌ 錯誤：script 末尾直接呼叫
+initOceanCanvas();
+
+// ✅ 正確：延後一幀等 DOM 佈局完成
+requestAnimationFrame(() => { initOceanCanvas(); });
+
+// ✅ 正確：resize 函式加 fallback
+function resize() {
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  if (w > 0 && h > 0) { W = canvas.width = w; H = canvas.height = h; }
+  else { W = canvas.width = 800; H = canvas.height = 600; } // fallback
+}
+```
+
+**這條規則適用於所有新遊戲**：凡是用 Canvas 且尺寸依賴容器大小的，init 函式一律用 `requestAnimationFrame` 包住。
+
+---
+
 ## 程式碼修改安全規則（最優先執行）
 
 **問題根因**：修改遊戲參數時，只改了一處但漏改相關聯的變數，導致畫面破壞（如車子消失、角色偏移）。
