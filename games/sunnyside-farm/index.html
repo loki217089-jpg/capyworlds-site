@@ -1123,7 +1123,7 @@ function handleTap(px,py){
   if(py<TOP_H){
     if(px<80){
       if(state.screen==='minigame'&&state.mg.phase!=='result'){exitMiniGameEarly();return}
-      window.location.href='../';return;
+      window.location.href='/';return;
     }// Back
     if(px>GW-140&&px<GW-100){togglePause();return}// Pause
     if(px>GW-170&&px<GW-130){toggleMute();return}// Mute
