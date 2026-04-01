@@ -190,7 +190,7 @@ if(dblT>0)dblT-=dt;if(rushT>0)rushT-=dt;
 const slip=Math.abs(Math.atan2(carVy,carVx)-carAng);
 if(slip>.3&&alive)trails.push({x:carX,y:carY,a:1});
 trails=trails.filter(t=>{t.a-=dt*2.5;return t.a>0;});
-camX+=(carX-camX)*3.5*dt;camY+=(carY-cvs.height*.5-camY)*3.5*dt;
+camX+=(carX-camX)*3.5*dt;camY+=(carY-camY)*3.5*dt;
 document.getElementById('ind-double').style.display=dblT>0?'inline':'none';
 document.getElementById('ind-rush').style.display=rushT>0?'inline':'none';
 document.getElementById('ind-life').style.display=xLives>0?'inline':'none';
@@ -299,7 +299,7 @@ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
 genRoad();carX=0;carY=-40;carAng=-Math.PI/2;carVx=0;carVy=-BASE_SPD;
 spd=BASE_SPD;sc=0;rCoins=0;alive=true;segI=0;fallT=0;
 dblT=0;rushT=0;xLives=0;trails=[];
-camX=carX;camY=carY-cvs.height*.5;pressingLeft=false;pressingRight=false;gState='play';
+camX=carX;camY=carY;pressingLeft=false;pressingRight=false;gState='play';
 if(!audioMuted&&!bgmLoaded)startBGM();}
 function showOver(){
 gState='over';const s=Math.floor(sc);
