@@ -58,7 +58,7 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#0
 <body>
 <div class="top-bar">
   <div class="top-left">
-    <a href="../" id="back-btn">← 返回</a>
+    <a href="/" id="back-btn">← 返回</a>
     <div class="hud-res">
       <span class="hud-r" style="color:#6f6" id="hud-hp">❤ 5</span>
       <span class="hud-r" style="color:#fd0" id="hud-gold">💰 0</span>
@@ -715,7 +715,7 @@ document.getElementById('resume-btn').addEventListener('click',togglePause);
 document.getElementById('mute-btn').addEventListener('click',toggleMute);
 document.getElementById('upgrade-btn').addEventListener('click',showUpgradePanel);
 document.getElementById('up-close-btn').addEventListener('click',hideUpgradePanel);
-document.getElementById('back-btn').addEventListener('click',e=>{e.preventDefault();if(state==='play'){togglePause();}else{window.location.href='../';}});
+document.getElementById('back-btn').addEventListener('click',e=>{e.preventDefault();if(state==='play'){togglePause();}else{window.location.href='/';}});
 
 // Weapon bar
 document.querySelectorAll('.weapon-slot').forEach(el=>{
