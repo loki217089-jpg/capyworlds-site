@@ -604,6 +604,172 @@ function getCharPortraitStyle(c, displaySize) {
 
 ---
 
+## 內購（IAP）設計規範（最優先執行）
+
+> **核心原則**：每款遊戲/軟體在開發初期就必須規劃內購，不是做完才加。
+> 內購設計是產品設計的一部分，跟玩法/功能同等重要。
+
+### 開發新遊戲/軟體時的 IAP 規劃清單
+
+**Step 0：決定商業模式**（在寫第一行程式碼之前）
+
+| 模式 | 適用類型 | 抽成 |
+|------|---------|------|
+| Google Play IAP | Android App（Capacitor 包裝） | 15%（首年 <$1M） |
+| CrazyGames 分潤 | Web 遊戲 | 平台廣告分潤 |
+| Web 直購（Stripe） | 工具/訂閱服務 | 2.9% |
+
+**Step 1：設計虛擬貨幣結構**
+
+```
+硬幣（Coins）🪙 — 遊戲內免費賺取，用於基礎升級
+寶石（Gems）💎 — 稀缺貨幣，少量免費給，主要靠購買
+                  用於加速 / 抽卡 / 限定道具 / 去廣告
+```
+
+**Step 2：規劃商品清單**（每款遊戲寫進 DESIGN.md）
+
+| 商品類型 | 範例 | 價格帶 | 說明 |
+|----------|------|--------|------|
+| 小額寶石包 | 💎×100 | NT$30 | 入門試水溫 |
+| 中額寶石包 | 💎×500+100 | NT$150 | 最暢銷（+20% bonus） |
+| 大額寶石包 | 💎×1200+480 | NT$300 | 重度玩家（+40% bonus） |
+| 月卡 | 每日 30💎 | NT$60/月 | 長期留存利器 |
+| 去廣告 | 永久 | NT$90 | 一次性買斷 |
+| 限時禮包 | 💎+道具組合 | NT$30~150 | 節日/活動限定 |
+
+**Step 3：設計內購觸發點**（最重要！）
+
+> 好的內購時機 = 玩家**最有動力**的瞬間，不是最沮喪的時候。
+
+| 觸發時機 | 心理狀態 | 推薦商品 | 禁止做法 |
+|----------|---------|---------|---------|
+| **首次通關 / 首殺 Boss** | 成就感高峰 | 「🎉 恭喜！首購禮包 5折」 | 不可擋住繼續遊玩 |
+| **卡關 / 體力用完** | 想繼續但被阻 | 「⚡ 補充體力？」（有免費等待選項） | 不可只有付費選項 |
+| **抽卡前** | 期待感 | 「💎 不夠？限時加購」 | 不可自動跳轉商店 |
+| **升級差一點資源** | 差臨門一腳 | 「再 50💎 就能升級！」 | 不可隱藏免費獲取途徑 |
+| **每日登入第7天** | 養成習慣 | 「月卡讓獎勵翻倍」 | 不可每天都彈 |
+| **新內容解鎖** | 好奇心 | 「新角色搶先體驗包」 | 不可鎖住核心內容 |
+| **遊戲結束畫面** | 回顧成績 | 「去廣告享受純淨體驗」 | 不可阻止重新開始 |
+
+### 內購 UI 嵌入位置（每款遊戲必須有）
+
+```
+┌─────────────────────────────┐
+│ 頂部 HUD                    │
+│  [💎 230 ＋] ← 點 ＋ 開商店  │  ← 位置 1：資源列旁的加號
+├─────────────────────────────┤
+│                             │
+│   遊戲主畫面                 │
+│                             │
+├─────────────────────────────┤
+│ ⑤ 底部 Tab                  │
+│  [...] [🛒商店] [...]       │  ← 位置 2：底部 Tab 常駐入口
+└─────────────────────────────┘
+
+彈窗觸發（位置 3）：
+  - 體力歸零時 → 半屏彈窗「補充體力 or 等 5 分鐘」
+  - 首購/限時 → 右下角小浮標，不擋遊戲畫面
+```
+
+### 內購入口實作模板
+
+```javascript
+// 開啟商店（嵌入各遊戲）
+function openStore() {
+  // 方法 A：跳轉商店頁
+  window.location.href = '../shared/store.html?lang=' + lang + '&from=' + GAME_ID;
+  // 方法 B：iframe 彈窗（不離開遊戲）
+  // const iframe = document.createElement('iframe');
+  // iframe.src = '../shared/store.html?lang=' + lang + '&embed=1';
+  // iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;border:none;';
+  // document.body.appendChild(iframe);
+}
+
+// 寶石餘額同步（從 Worker 讀取）
+async function syncGems() {
+  const uid = localStorage.getItem('capyUID');
+  if (!uid) return;
+  const res = await fetch('/iap/user?uid=' + uid);
+  const data = await res.json();
+  if (data.user) {
+    gems = data.user.gems;
+    localStorage.setItem('capyGems', gems);
+    updateGemDisplay();
+  }
+}
+
+// 消費寶石（遊戲內使用）
+async function spendGems(amount, reason) {
+  const uid = localStorage.getItem('capyUID');
+  const res = await fetch('/iap/spend', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({uid, amount, reason})
+  });
+  const data = await res.json();
+  if (data.ok) { gems = data.gems; updateGemDisplay(); return true; }
+  else { openStore(); return false; } // 不夠 → 導向商店
+}
+```
+
+### IAP 後端 API（已實作）
+
+| 端點 | 方法 | 用途 |
+|------|------|------|
+| `/iap/products` | GET | 商品清單 |
+| `/iap/register` | POST | 用 device_id 註冊用戶 |
+| `/iap/user?uid=` | GET | 查詢寶石餘額 |
+| `/iap/verify` | POST | Google Play 收據驗證 + 發放寶石 |
+| `/iap/spend` | POST | 消費寶石 |
+| `/iap/history?uid=` | GET | 購買紀錄 |
+| `/iap/admin` | GET | 營收後台（需 ADMIN_KEY） |
+
+### Worker Secrets（上線前必設）
+
+| Secret | 說明 |
+|--------|------|
+| `GOOGLE_PLAY_KEY` | Google Cloud 服務帳號 JSON（Android Publisher API） |
+| `ANDROID_PACKAGE` | `com.capyworlds.app` |
+
+> 未設定 `GOOGLE_PLAY_KEY` 時自動進入 Sandbox 模式（購買自動通過，僅供測試）。
+
+### 商店 UI
+
+- 共用頁面：`games/shared/store.html`
+- 深色風格，中英雙語
+- 各遊戲透過 `openStore()` 呼叫
+
+### Android App（Capacitor）
+
+- 專案位置：`mobile-app/`
+- 包名：`com.capyworlds.app`
+- 設定：`mobile-app/capacitor.config.json`
+- IAP 套件：`@capgo/capacitor-purchases`（RevenueCat）
+
+### 設計原則（紅線規則）
+
+| 做 | 不做 |
+|----|------|
+| 免費玩家也能玩完核心內容 | 不可 pay-to-win（付費 = 必勝） |
+| 每次彈商店都有「關閉 / 免費替代」按鈕 | 不可強制觀看 / 強制購買 |
+| 寶石可透過遊戲內活動少量獲得 | 不可完全鎖死免費獲取途徑 |
+| 商品價值透明（明確寫多少💎） | 不可混淆計價或隱藏費用 |
+| 限時優惠有真實倒數計時 | 不可假倒數（永遠在特價） |
+| 未成年保護：每日消費上限提示 | 不可誘導兒童消費 |
+
+### 各遊戲 IAP 規劃狀態
+
+| 遊戲 | IAP 規劃 | 商品 | 觸發點 |
+|------|---------|------|--------|
+| 所有遊戲 | 共用寶石系統 | 見上方商品表 | 待各遊戲個別設計 |
+
+> 新遊戲開發時，在 `games/<name>/DESIGN.md` 的「商業模式」區塊填入：
+> 1. 該遊戲的💎消費場景（買什麼、花多少）
+> 2. 內購彈窗觸發點（什麼時機、什麼心理狀態）
+> 3. 免費替代方案（確保不付費也能玩）
+
+---
+
 ## 技術約束
 
 - 所有遊戲都是純前端，無外部依賴（無 npm、無框架）
