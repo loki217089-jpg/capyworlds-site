@@ -1,4 +1,17 @@
 {
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(file:*)",
+      "Bash(mkdir:*)",
+      "Bash(python3:*)"
+    ]
+  },
   "hooks": {
     "PostCompact": [
       {
