@@ -152,13 +152,13 @@ function playAudio(name,vol=0.7,rate=1,maxMs=0){if(audioMuted)return;const buf=A
 function startBGM(url){if(bgmLoaded||audioMuted)return;bgmLoaded=true;fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();bgmSource=AUDIO_CTX.createBufferSource();bgmSource.buffer=buf;bgmSource.loop=true;bgmGain=AUDIO_CTX.createGain();bgmGain.gain.value=0.22;bgmSource.connect(bgmGain);bgmGain.connect(AUDIO_CTX.destination);bgmSource.start();}).catch(()=>{});}
 function toggleMute(){audioMuted=!audioMuted;save.muted=audioMuted;writeSave();if(bgmGain)bgmGain.gain.value=audioMuted?0:0.22;document.getElementById('mute-btn').textContent=audioMuted?'🔇':'🔊';if(!audioMuted&&!bgmLoaded)startBGM(BGM_URL);}
 
-// Load SFX
-loadAudio('slash','../../assets/sfx/GameSFX2/Impact/Retro Impact Punch 07.wav');
-loadAudio('kill','../../assets/sfx/GameSFX3/PowerUp/Retro PowerUP 09.wav');
-loadAudio('hurt','../../assets/sfx/400 Sounds Pack/Musical Effects/8_bit_negative.wav');
-loadAudio('boss','../../assets/sfx/GameSFX0/Ascending/Retro Ascending Short 20.wav');
-loadAudio('levelup','../../assets/sfx/400 Sounds Pack/Musical Effects/brass_level_complete.wav');
-loadAudio('buy','../../assets/sfx/400 Sounds Pack/UI/synth_confirmation.wav');
+// Load SFX (softer tones)
+loadAudio('slash','../../assets/sfx/400 Sounds Pack/Weapons/sword_slice.wav');
+loadAudio('kill','../../assets/sfx/400 Sounds Pack/Musical Effects/vibraphone_chime_positive.wav');
+loadAudio('hurt','../../assets/sfx/400 Sounds Pack/Musical Effects/grand_piano_negative_quick.wav');
+loadAudio('boss','../../assets/sfx/400 Sounds Pack/Musical Effects/brass_chime_positive.wav');
+loadAudio('levelup','../../assets/sfx/400 Sounds Pack/Musical Effects/grand_piano_level_complete.wav');
+loadAudio('buy','../../assets/sfx/400 Sounds Pack/Musical Effects/vibraphone_chime_quick.wav');
 
 // ===== WEAPON DEFINITIONS =====
 const WEAPONS=[
