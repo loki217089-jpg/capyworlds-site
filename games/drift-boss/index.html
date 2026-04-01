@@ -70,8 +70,8 @@ canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);touch-a
 </div>
 <!-- Tutorial -->
 <div class="overlay" id="ov-tut">
-<div class="tut-step"><div class="icon">👆</div><h3 id="t1h">Hold to Drift Right</h3><p id="t1p">Press and hold to steer right</p></div>
-<div class="tut-step"><div class="icon">✋</div><h3 id="t2h">Release to Drift Left</h3><p id="t2p">Let go to steer left</p></div>
+<div class="tut-step"><div class="icon">👆</div><h3 id="t1h">Right → Drift Right</h3><p id="t1p">Press Right arrow or D to drift right</p></div>
+<div class="tut-step"><div class="icon">✋</div><h3 id="t2h">Left ← Drift Left</h3><p id="t2p">Press Left arrow or A to drift left</p></div>
 <div class="tut-step"><div class="icon">🛣️</div><h3 id="t3h">Stay on the Road!</h3><p id="t3p">Don't fall off the edge</p></div>
 <button class="obtn primary" onclick="closeTut()" id="tut-btn">&#9654; Start</button>
 </div>
@@ -79,24 +79,24 @@ canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);touch-a
 <div class="overlay active" id="ov-start">
 <h2 style="font-size:42px">🏎️</h2>
 <h2 id="s-title">Drift Boss</h2>
-<p id="s-desc" style="margin-bottom:14px;color:#bbb">One-button drifting challenge</p>
+<p id="s-desc" style="margin-bottom:14px;color:#bbb">Left/Right drifting challenge</p>
 <button class="obtn primary" onclick="tryStart()" id="s-btn">&#9654; Play</button>
 <button class="obtn secondary" onclick="showShop()" id="s-shop">&#128663; Garage</button>
 </div>
 <script>
 // === i18n ===
 const I={en:{back:'\u2190 Back',score:'Score',best:'Best',over:'Game Over',again:'\u25b6 Play Again',
-shop:'\ud83d\ude97 Garage',close:'\u2715 Close',hR:'Hold to Drift Right',hRd:'Press and hold to steer right',
-rL:'Release to Drift Left',rLd:'Let go to steer left',stay:'Stay on the Road!',
+shop:'\ud83d\ude97 Garage',close:'\u2715 Close',hR:'Right → Drift Right',hRd:'Press Right arrow or D to drift right',
+rL:'Left ← Drift Left',rLd:'Press Left arrow or A to drift left',stay:'Stay on the Road!',
 stayd:"Don't fall off the edge",play:'\u25b6 Play',title:'Drift Boss',
-desc:'One-button drifting challenge',owned:'Owned',buy:'Buy',sel:'Select',seld:'Using'},
+desc:'Left/Right drifting challenge',owned:'Owned',buy:'Buy',sel:'Select',seld:'Using'},
 zh:{back:'\u2190 \u8fd4\u56de',score:'\u5206\u6578',best:'\u6700\u4f73',over:'\u904a\u6232\u7d50\u675f',
 again:'\u25b6 \u518d\u73a9\u4e00\u6b21',shop:'\ud83d\ude97 \u8eca\u5eab',close:'\u2715 \u95dc\u9589',
-hR:'\u6309\u4f4f\u5411\u53f3\u6f02\u79fb',hRd:'\u6309\u4f4f\u87a2\u5e55\u5411\u53f3\u8f49',
-rL:'\u653e\u958b\u5411\u5de6\u6f02\u79fb',rLd:'\u9b06\u624b\u5411\u5de6\u8f49',
+hR:'\u53f3\u5074 \u2192 \u5411\u53f3\u6f02\u79fb',hRd:'\u6309\u53f3\u65b9\u5411\u9375\u6216 D \u5411\u53f3\u6f02\u79fb',
+rL:'\u5de6\u5074 \u2190 \u5411\u5de6\u6f02\u79fb',rLd:'\u6309\u5de6\u65b9\u5411\u9375\u6216 A \u5411\u5de6\u6f02\u79fb',
 stay:'\u7559\u5728\u8def\u4e0a\uff01',stayd:'\u4e0d\u8981\u6389\u4e0b\u53bb',
 play:'\u25b6 \u958b\u59cb',title:'\u6f02\u79fb\u5927\u5e2b',
-desc:'\u4e00\u9375\u6f02\u79fb\u904a\u6232',owned:'\u5df2\u64c1\u6709',
+desc:'\u5de6\u53f3\u6f02\u79fb\u904a\u6232',owned:'\u5df2\u64c1\u6709',
 buy:'\u8cfc\u8cb7',sel:'\u9078\u64c7',seld:'\u4f7f\u7528\u4e2d'}};
 let lang=localStorage.getItem('driftLang')||'en';
 function t(k){return I[lang][k]||I.en[k]||k}
@@ -117,7 +117,7 @@ let road=[],cns=[],pups=[],trails=[];
 let carX,carY,carAng,carVx,carVy,spd,alive;
 let sc,rCoins,bestSc,totCoins,actCar,unlocked;
 let dblT=0,rushT=0,xLives=0;
-let camX,camY,pressing=false,segI=0,fallT=0;
+let camX,camY,pressingLeft=false,pressingRight=false,segI=0,fallT=0;
 let gState='start';
 
 // === Save ===
@@ -130,10 +130,10 @@ unlocked=JSON.parse(localStorage.getItem('driftUnlocked')||'["red"]');
 function genRoad(){
 road=[];cns=[];pups=[];
 let cx=0,cy=0,nd=0;
-road.push({x1:0,y1:0,x2:0,y2:-400,dx:0,dy:-1,len:400,w:100});
+road.push({x1:0,y1:0,x2:0,y2:-400,dx:0,dy:-1,len:400,w:140});
 cx=0;cy=-400;nd=Math.random()<0.5?1:3;
 for(let i=1;i<500;i++){
-const len=80+Math.random()*180,w=Math.max(36,ROAD_W0-i*0.09);
+const len=80+Math.random()*180,w=Math.max(38,140-i*0.22);
 let dx=0,dy=0;
 if(nd===0)dy=-1;else if(nd===1)dx=1;else dx=-1;
 road.push({x1:cx,y1:cy,x2:cx+dx*len,y2:cy+dy*len,dx,dy,len,w});
@@ -168,7 +168,7 @@ const d=Math.hypot(carX-mx,carY-my);if(d<bd){bd=d;b=i;}}segI=b;}
 function update(dt){
 if(gState!=='play')return;
 if(fallT>0){fallT-=dt;if(fallT<=0)showOver();return;}
-if(pressing)carAng+=TURN_RATE*dt;else carAng-=TURN_RATE*dt;
+if(pressingRight)carAng+=TURN_RATE*dt;else if(pressingLeft)carAng-=TURN_RATE*dt;
 spd=Math.min(400,BASE_SPD+sc*.04);
 const tvx=Math.cos(carAng)*spd,tvy=Math.sin(carAng)*spd;
 carVx+=(tvx-carVx)*GRIP*dt;carVy+=(tvy-carVy)*GRIP*dt;
@@ -190,7 +190,7 @@ if(dblT>0)dblT-=dt;if(rushT>0)rushT-=dt;
 const slip=Math.abs(Math.atan2(carVy,carVx)-carAng);
 if(slip>.3&&alive)trails.push({x:carX,y:carY,a:1});
 trails=trails.filter(t=>{t.a-=dt*2.5;return t.a>0;});
-camX+=(carX-camX)*3.5*dt;camY+=(carY-cvs.height*.3-camY)*3.5*dt;
+camX+=(carX-camX)*3.5*dt;camY+=(carY-cvs.height*.5-camY)*3.5*dt;
 document.getElementById('ind-double').style.display=dblT>0?'inline':'none';
 document.getElementById('ind-rush').style.display=rushT>0?'inline':'none';
 document.getElementById('ind-life').style.display=xLives>0?'inline':'none';
@@ -207,7 +207,7 @@ ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 ctx.fillStyle='rgba(0,0,0,0.03)';
 for(let i=0;i<30;i++){const gx=((i*137+camX*.2)%W+W)%W,gy=((i*251+camY*.2)%H+H)%H;
 ctx.fillRect(gx,gy,3,3);}
-ctx.save();ctx.translate(W/2-camX,H*.7-camY);
+ctx.save();ctx.translate(W/2-camX,H*.5-camY);
 // Road
 for(let i=Math.max(0,segI-10);i<Math.min(road.length,segI+18);i++){
 const s=road[i];
@@ -272,19 +272,21 @@ c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);
 </script>
 <script>
 // === Input ===
-function onDown(e){e.preventDefault();pressing=true;
+function onDown(e){e.preventDefault();
 if(ACTX.state==='suspended')ACTX.resume();
-if(gState==='start')tryStart();}
-function onUp(e){e.preventDefault();pressing=false;}
+if(gState==='start')tryStart();
+const cx=e.touches?e.touches[0].clientX:e.clientX;
+if(cx<window.innerWidth/2)pressingLeft=true;else pressingRight=true;}
+function onUp(e){e.preventDefault();pressingLeft=false;pressingRight=false;}
 cvs.addEventListener('mousedown',onDown);
 cvs.addEventListener('mouseup',onUp);
 cvs.addEventListener('mouseleave',onUp);
 cvs.addEventListener('touchstart',onDown,{passive:false});
 cvs.addEventListener('touchend',onUp,{passive:false});
 document.addEventListener('keydown',e=>{
-if(e.code==='Space'||e.code==='ArrowRight'){e.preventDefault();pressing=true;
-if(gState==='start')tryStart();}});
-document.addEventListener('keyup',e=>{if(e.code==='Space'||e.code==='ArrowRight')pressing=false;});
+if(e.code==='ArrowRight'||e.code==='KeyD'){e.preventDefault();pressingRight=true;if(gState==='start')tryStart();}
+if(e.code==='ArrowLeft'||e.code==='KeyA'){e.preventDefault();pressingLeft=true;if(gState==='start')tryStart();}});
+document.addEventListener('keyup',e=>{if(e.code==='ArrowRight'||e.code==='KeyD')pressingRight=false;if(e.code==='ArrowLeft'||e.code==='KeyA')pressingLeft=false;});
 
 // === Game State ===
 function tryStart(){
@@ -297,7 +299,7 @@ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
 genRoad();carX=0;carY=-40;carAng=-Math.PI/2;carVx=0;carVy=-BASE_SPD;
 spd=BASE_SPD;sc=0;rCoins=0;alive=true;segI=0;fallT=0;
 dblT=0;rushT=0;xLives=0;trails=[];
-camX=carX;camY=carY-cvs.height*.3;pressing=false;gState='play';
+camX=carX;camY=carY-cvs.height*.5;pressingLeft=false;pressingRight=false;gState='play';
 if(!audioMuted&&!bgmLoaded)startBGM();}
 function showOver(){
 gState='over';const s=Math.floor(sc);

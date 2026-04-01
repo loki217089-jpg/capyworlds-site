@@ -265,6 +265,7 @@ function spawnSlashFX(x,y,angle,wpnName){
 
 // ===== TOUCH / SLASH =====
 let touchPoints=[];let isTouching=false;
+let weaponToast='';let weaponToastTimer=0;
 function getCanvasPos(cx,cy){
   const r=canvas.getBoundingClientRect();
   return{x:(cx-r.left)/r.width*GW,y:(cy-r.top)/r.height*GH};
@@ -566,6 +567,24 @@ function render(){
     else{ctx.fillStyle=p.color;ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);}
     ctx.restore();
   });
+  // Weapon range indicator (shows when touching)
+  if(isTouching && touchPoints.length>0){
+    const lastPt=touchPoints[touchPoints.length-1];
+    const range=getSlashRange();
+    const wpn=WEAPONS[curWeapon];
+    const ts=TRAIL_STYLES[wpn.name]||TRAIL_STYLES.dagger;
+    ctx.save();
+    ctx.globalAlpha=0.12+Math.sin(animFrame*0.1)*0.04;
+    ctx.strokeStyle=ts.glow;ctx.lineWidth=1.5;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.arc(lastPt.x,lastPt.y,range*0.3+wpn.range*0.15,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);
+    // Fill range area lightly
+    ctx.globalAlpha=0.04;
+    ctx.fillStyle=ts.glow;
+    ctx.beginPath();ctx.arc(lastPt.x,lastPt.y,range*0.3+wpn.range*0.15,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
   // Slash trail (weapon-colored)
   if(slashTrail.length>=2){
     const wName=WEAPONS[slashTrail[0].w||0].name;
@@ -639,6 +658,16 @@ function render(){
     ctx.globalAlpha=0.6+Math.sin(animFrame*0.1)*0.4;
     ctx.fillText(comboCount+' COMBO!',GW/2,60);ctx.restore();
   }
+  // Weapon switch toast
+  if(weaponToastTimer>0){
+    weaponToastTimer--;
+    ctx.save();
+    ctx.globalAlpha=Math.min(1,weaponToastTimer/20);
+    ctx.font='bold 14px sans-serif';ctx.textAlign='center';
+    ctx.fillStyle='#fff';ctx.shadowColor='rgba(0,0,0,.8)';ctx.shadowBlur=6;
+    ctx.fillText(weaponToast,GW/2,GH-80);
+    ctx.restore();
+  }
   ctx.restore();
 }
 
@@ -692,7 +721,15 @@ document.getElementById('back-btn').addEventListener('click',e=>{e.preventDefaul
 document.querySelectorAll('.weapon-slot').forEach(el=>{
   el.addEventListener('click',()=>{
     const i=parseInt(el.dataset.w);
-    if(save.weapons[i]>0){curWeapon=i;updateWeaponBar();}
+    if(save.weapons[i]>0){
+      curWeapon=i;updateWeaponBar();
+      // Show range indicator briefly
+      const wpn=WEAPONS[i];
+      const rangeLabel=lang==='zh'?'範圍':'Range';
+      const dmgLabel=lang==='zh'?'傷害':'DMG';
+      weaponToast=`${wpn.emoji} ${rangeLabel}:${wpn.range}px  ${dmgLabel}:${wpn.dmg}`;
+      weaponToastTimer=90;
+    }
   });
 });
 

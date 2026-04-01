@@ -306,14 +306,22 @@ const CREATURES = [
   { id:'crab',       name:'帝王蟹',  icon:'🦀', desc:'底棲清道夫，定期爆發掉落。',        baseRate:{coral:0.6},  zone:'mid',     rarity:'common',    maxLv:10 },
   { id:'shark',      name:'鯊魚',    icon:'🦈', desc:'海洋頂級掠食者，加速探索返回。',   baseRate:{pearls:0.5}, zone:'mid',     rarity:'rare',      maxLv:10 },
   { id:'anglerfish', name:'鮟鱇魚',  icon:'🐟', desc:'深淵黑暗獵手，產出能量精華。',     baseRate:{essence:0.4},zone:'abyss',  rarity:'common',    maxLv:10 },
+<<<<<<< HEAD
   { id:'whale',      name:'抹香鯨',  icon:'🐋', desc:'深海巨獸，大量產出能量精華。',     baseRate:{essence:0.2},zone:'abyss',  rarity:'rare',      maxLv:10 },
+=======
+  { id:'whale',      name:'抹香鯦',  icon:'🐋', desc:'深海巨獈，大量產出能量精華。',     baseRate:{essence:0.2},zone:'abyss',  rarity:'rare',      maxLv:10 },
+>>>>>>> d3c51abd1181f918c5893976fb7176fd391eedf4
   { id:'jellyfish',  name:'發光水母',icon:'🪼', desc:'深海之光，大幅提升離線收益。',     baseRate:{essence:0.1},zone:'hadal',  rarity:'rare',      maxLv:10 },
 ];
 
 // 文物資料：zone=發現海域, rarity=common(2%)/rare(0.3%)/legendary(0.1%)
 const ARTIFACTS = [
   { id:'shell',   name:'古貝殼',   icon:'🐚', zone:'shallow', rarity:'common',    bonus:'珍珠產出 +10%', effect:'pearls_rate', val:0.1  },
+<<<<<<< HEAD
   { id:'anchor',  name:'鏽鐵錨',   icon:'⚓', zone:'shallow', rarity:'common',    bonus:'探索速度 +5%',  effect:'speed',       val:0.05 },
+=======
+  { id:'anchor',  name:'鏽鐵錠',   icon:'⚓', zone:'shallow', rarity:'common',    bonus:'探索速度 +5%',  effect:'speed',       val:0.05 },
+>>>>>>> d3c51abd1181f918c5893976fb7176fd391eedf4
   { id:'bottle',  name:'漂流瓶',   icon:'🍾', zone:'shallow', rarity:'rare',      bonus:'珊瑚產出 +20%', effect:'coral_rate',  val:0.2  },
   { id:'compass', name:'神秘羅盤', icon:'🧭', zone:'mid',     rarity:'common',    bonus:'所有收益 +8%',  effect:'all_rate',    val:0.08 },
   { id:'lantern', name:'深海燈籠', icon:'🏮', zone:'mid',     rarity:'common',    bonus:'離線時間+1hr',  effect:'offline_hr',  val:1    },
@@ -322,7 +330,11 @@ const ARTIFACTS = [
   { id:'skull',   name:'海盜頭骨', icon:'💀', zone:'abyss',   rarity:'common',    bonus:'貨艙容量 +5',   effect:'cargo',       val:5    },
   { id:'gem',     name:'深淵寶石', icon:'💠', zone:'abyss',   rarity:'rare',      bonus:'珍珠產出 +30%', effect:'pearls_rate', val:0.3  },
   { id:'crown',   name:'深海王冠', icon:'👑', zone:'hadal',   rarity:'legendary', bonus:'全資源 +50%',   effect:'all_rate',    val:0.5  },
+<<<<<<< HEAD
   { id:'crystal', name:'時光水晶', icon:'🔮', zone:'hadal',   rarity:'legendary', bonus:'離線收益 ×2',   effect:'offline_x2',  val:2    },
+=======
+  { id:'crystal', name:'時光水欶', icon:'🔮', zone:'hadal',   rarity:'legendary', bonus:'離線收益 ×2',   effect:'offline_x2',  val:2    },
+>>>>>>> d3c51abd1181f918c5893976fb7176fd391eedf4
   { id:'map',     name:'失落海圖', icon:'🗺️', zone:'hadal',   rarity:'rare',      bonus:'掉落率 +40%',   effect:'drop_rate',   val:0.4  },
 ];
 
@@ -811,7 +823,11 @@ document.addEventListener('mousemove', function(e) {
     const r = document.body.getBoundingClientRect();
     let x = e.clientX - r.left + 12;
     let y = e.clientY - r.top - gtt.offsetHeight - 8;
+<<<<<<< HEAD
     if (x + 200 > document.body.clientWidth) x = e.clientX - r.left - 202;
+=======
+    if (x + 200 > document.body.clientWidth) x = e.clientX - r.left - 200 - 12;
+>>>>>>> d3c51abd1181f918c5893976fb7176fd391eedf4
     if (y < 0) y = e.clientY - r.top + 16;
     gtt.style.left = x + 'px';
     gtt.style.top = y + 'px';
@@ -1162,4 +1178,8 @@ showNotif('🌊 歡迎來到深海秘境！點擊海域開始探索', true);
 </script>
 <div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
 </body>
+<<<<<<< HEAD
 </html>
+=======
+  </html>
+>>>>>>> d3c51abd1181f918c5893976fb7176fd391eedf4

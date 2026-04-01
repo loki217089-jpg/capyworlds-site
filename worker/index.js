@@ -1,4 +1,58 @@
-// v2.1 - Generic room system + IAP (/iap/*)
+// v2.2 - Generic room system + IAP + Auth + Favorites
+
+// ── Auth Helpers (PBKDF2 + HMAC-SHA256 JWT) ──────────────────────
+function b64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64urlStr(s) { return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+
+async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMat = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:80000, hash:'SHA-256'}, keyMat, 256);
+  const saltHex = [...salt].map(b=>b.toString(16).padStart(2,'0')).join('');
+  const hashHex = [...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return saltHex + ':' + hashHex;
+}
+
+async function verifyPassword(password, stored) {
+  const [saltHex, hashHex] = stored.split(':');
+  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(h=>parseInt(h,16)));
+  const keyMat = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:80000, hash:'SHA-256'}, keyMat, 256);
+  const check = [...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return check === hashHex;
+}
+
+async function createJWT(payload, secret) {
+  const header = b64urlStr(JSON.stringify({alg:'HS256',typ:'JWT'}));
+  const body = b64urlStr(JSON.stringify({...payload, exp: Math.floor(Date.now()/1000)+604800}));
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['sign']);
+  const sig = b64url(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(header+'.'+body)));
+  return header+'.'+body+'.'+sig;
+}
+
+async function verifyJWT(token, secret) {
+  try {
+    const [h,b,s] = token.split('.');
+    if (!h||!b||!s) return null;
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), {name:'HMAC',hash:'SHA-256'}, false, ['verify']);
+    // rebuild signature
+    const valid = await crypto.subtle.verify('HMAC', key, Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')), c=>c.charCodeAt(0)), new TextEncoder().encode(h+'.'+b));
+    if (!valid) return null;
+    const payload = JSON.parse(atob(b.replace(/-/g,'+').replace(/_/g,'/')));
+    if (payload.exp && payload.exp < Math.floor(Date.now()/1000)) return null;
+    return payload;
+  } catch { return null; }
+}
+
+async function getAuthUser(request, env) {
+  const auth = (request.headers.get('Authorization')||'').replace('Bearer ','').trim();
+  if (!auth) return null;
+  const secret = env.JWT_SECRET || 'capyworlds-default-jwt-secret-2026';
+  return await verifyJWT(auth, secret);
+}
 
 // ── Google Play JWT 生成（Service Account 驗證用）─────────────────
 async function makeGoogleJWT(svcAccount) {
@@ -840,6 +894,105 @@ export default {
         await cache.put(cacheKey, cacheResp);
         return resp;
       } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
+    }
+
+    // ── Auth: 註冊 / 登入 / 個人資訊 ──────────────────────────────
+    const JWT_SEC = env.JWT_SECRET || 'capyworlds-default-jwt-secret-2026';
+
+    if (url.pathname==='/auth/register' && request.method==='POST') {
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, username TEXT NOT NULL, password_hash TEXT NOT NULL, avatar TEXT NOT NULL DEFAULT '🦫', created_at TEXT NOT NULL)`).run();
+      let b; try{b=await request.json();}catch{return Response.json({error:'格式錯誤'},{status:400,headers:cors});}
+      const email=(b.email||'').trim().toLowerCase(), username=(b.username||'').trim().slice(0,20), password=(b.password||'');
+      if (!email||!username||!password) return Response.json({error:'請填寫所有欄位'},{status:400,headers:cors});
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({error:'Email 格式錯誤'},{status:400,headers:cors});
+      if (password.length<6) return Response.json({error:'密碼至少 6 個字元'},{status:400,headers:cors});
+      if (username.length<2) return Response.json({error:'名稱至少 2 個字元'},{status:400,headers:cors});
+      const hash = await hashPassword(password);
+      try {
+        const r = await env.DB.prepare('INSERT INTO users (email,username,password_hash,avatar,created_at) VALUES (?,?,?,?,?)').bind(email,username,hash,'🦫',new Date().toISOString()).run();
+        const id = r.meta.last_row_id;
+        const token = await createJWT({id,email,username,avatar:'🦫'}, JWT_SEC);
+        return Response.json({ok:true,token,user:{id,email,username,avatar:'🦫'}},{headers:cors});
+      } catch(e) {
+        if (e.message&&e.message.includes('UNIQUE')) return Response.json({error:'此 Email 已註冊'},{status:409,headers:cors});
+        return Response.json({error:'註冊失敗'},{status:500,headers:cors});
+      }
+    }
+
+    if (url.pathname==='/auth/login' && request.method==='POST') {
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, username TEXT NOT NULL, password_hash TEXT NOT NULL, avatar TEXT NOT NULL DEFAULT '🦫', created_at TEXT NOT NULL)`).run();
+      let b; try{b=await request.json();}catch{return Response.json({error:'格式錯誤'},{status:400,headers:cors});}
+      const email=(b.email||'').trim().toLowerCase(), password=(b.password||'');
+      if (!email||!password) return Response.json({error:'請填寫 Email 和密碼'},{status:400,headers:cors});
+      const user = await env.DB.prepare('SELECT id,email,username,password_hash,avatar FROM users WHERE email=?').bind(email).first();
+      if (!user) return Response.json({error:'帳號或密碼錯誤'},{status:401,headers:cors});
+      const valid = await verifyPassword(password, user.password_hash);
+      if (!valid) return Response.json({error:'帳號或密碼錯誤'},{status:401,headers:cors});
+      const token = await createJWT({id:user.id,email:user.email,username:user.username,avatar:user.avatar}, JWT_SEC);
+      return Response.json({ok:true,token,user:{id:user.id,email:user.email,username:user.username,avatar:user.avatar}},{headers:cors});
+    }
+
+    if (url.pathname==='/auth/me' && request.method==='GET') {
+      const u = await getAuthUser(request, env);
+      if (!u) return Response.json({error:'未登入'},{status:401,headers:cors});
+      return Response.json({ok:true,user:u},{headers:cors});
+    }
+
+    if (url.pathname==='/auth/me' && request.method==='PUT') {
+      const u = await getAuthUser(request, env);
+      if (!u) return Response.json({error:'未登入'},{status:401,headers:cors});
+      let b; try{b=await request.json();}catch{return Response.json({error:'格式錯誤'},{status:400,headers:cors});}
+      const username=(b.username||u.username).trim().slice(0,20);
+      const avatar=(b.avatar||u.avatar).trim().slice(0,4);
+      await env.DB.prepare('UPDATE users SET username=?,avatar=? WHERE id=?').bind(username,avatar,u.id).run();
+      const token = await createJWT({id:u.id,email:u.email,username,avatar}, JWT_SEC);
+      return Response.json({ok:true,token,user:{id:u.id,email:u.email,username,avatar}},{headers:cors});
+    }
+
+    // ── Favorites ──────────────────────────────────────────────────
+    if (url.pathname==='/favorites' && request.method==='GET') {
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, game_slug TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(user_id,game_slug))`).run();
+      const u = await getAuthUser(request, env);
+      if (!u) return Response.json({error:'未登入'},{status:401,headers:cors});
+      const {results}=await env.DB.prepare('SELECT game_slug,created_at FROM favorites WHERE user_id=? ORDER BY created_at DESC').bind(u.id).all();
+      return Response.json(results,{headers:cors});
+    }
+    if (url.pathname==='/favorites' && request.method==='POST') {
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS favorites (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, game_slug TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(user_id,game_slug))`).run();
+      const u = await getAuthUser(request, env);
+      if (!u) return Response.json({error:'未登入'},{status:401,headers:cors});
+      let b; try{b=await request.json();}catch{return Response.json({error:'格式錯誤'},{status:400,headers:cors});}
+      const slug=(b.game_slug||'').trim();
+      if (!slug) return Response.json({error:'缺少 game_slug'},{status:400,headers:cors});
+      await env.DB.prepare('INSERT OR IGNORE INTO favorites (user_id,game_slug,created_at) VALUES (?,?,?)').bind(u.id,slug,new Date().toISOString()).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+    const favDel=url.pathname.match(/^\/favorites\/([a-z0-9_-]+)$/);
+    if (favDel && request.method==='DELETE') {
+      const u = await getAuthUser(request, env);
+      if (!u) return Response.json({error:'未登入'},{status:401,headers:cors});
+      await env.DB.prepare('DELETE FROM favorites WHERE user_id=? AND game_slug=?').bind(u.id,favDel[1]).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+
+    // ── Play History ──────────────────────────────────────────────
+    if (url.pathname==='/play-history' && request.method==='POST') {
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS play_history (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, game_slug TEXT NOT NULL, play_count INTEGER NOT NULL DEFAULT 1, last_played TEXT NOT NULL, UNIQUE(user_id,game_slug))`).run();
+      const u = await getAuthUser(request, env);
+      if (!u) return Response.json({error:'未登入'},{status:401,headers:cors});
+      let b; try{b=await request.json();}catch{return Response.json({error:'格式錯誤'},{status:400,headers:cors});}
+      const slug=(b.game_slug||'').trim();
+      if (!slug) return Response.json({error:'缺少 game_slug'},{status:400,headers:cors});
+      const now=new Date().toISOString();
+      await env.DB.prepare('INSERT INTO play_history (user_id,game_slug,play_count,last_played) VALUES (?,?,1,?) ON CONFLICT(user_id,game_slug) DO UPDATE SET play_count=play_count+1,last_played=?').bind(u.id,slug,now,now).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+    if (url.pathname==='/play-history' && request.method==='GET') {
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS play_history (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, game_slug TEXT NOT NULL, play_count INTEGER NOT NULL DEFAULT 1, last_played TEXT NOT NULL, UNIQUE(user_id,game_slug))`).run();
+      const u = await getAuthUser(request, env);
+      if (!u) return Response.json({error:'未登入'},{status:401,headers:cors});
+      const {results}=await env.DB.prepare('SELECT game_slug,play_count,last_played FROM play_history WHERE user_id=? ORDER BY last_played DESC').bind(u.id).all();
+      return Response.json(results,{headers:cors});
     }
 
     return env.ASSETS.fetch(request);
