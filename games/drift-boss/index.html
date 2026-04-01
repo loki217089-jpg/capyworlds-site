@@ -207,7 +207,7 @@ ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 ctx.fillStyle='rgba(0,0,0,0.03)';
 for(let i=0;i<30;i++){const gx=((i*137+camX*.2)%W+W)%W,gy=((i*251+camY*.2)%H+H)%H;
 ctx.fillRect(gx,gy,3,3);}
-ctx.save();ctx.translate(W/2-camX,H*.7-camY);
+ctx.save();ctx.translate(W/2-camX,H*.5-camY);
 // Road
 for(let i=Math.max(0,segI-10);i<Math.min(road.length,segI+18);i++){
 const s=road[i];
