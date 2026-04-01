@@ -43,7 +43,7 @@ Step 7：確認 GitHub Actions 部署成功（綠勾）
 位置：`index.html` → `<!-- NEW GAMES ROW -->` → `div.row-scroll`
 
 ```html
-<!-- 新遊戲插在最前面，最多保留 3 張，超過刪最舊的 -->
+<!-- 新遊戲插在最前面，可橫向滾動，不限數量 -->
 <a class="g-card" href="games/XXX/">
   <div class="g-card-banner" style="background:linear-gradient(135deg,#???,#???)">EMOJI</div>
   <div class="g-card-body">
@@ -1514,7 +1514,7 @@ git push origin main
      | 三消/解謎/問答 | #puzzle | 🧩 益智 |
      | 農場/村落/經營 | #simulation | 🌿 模擬經營 |
      | 對戰/聊天/連線 | #multiplayer | 👥 多人連線 |
-   - 同時加入「最新遊戲」row（最前面，最多保留 3~4 張）
+   - 同時加入「最新遊戲」row（最前面，可橫向滾動，不限數量）
    - 不確定分類時 → 問用戶
 
 4. commit + push 到指定分支
