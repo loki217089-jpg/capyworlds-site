@@ -130,10 +130,10 @@ unlocked=JSON.parse(localStorage.getItem('driftUnlocked')||'["red"]');
 function genRoad(){
 road=[];cns=[];pups=[];
 let cx=0,cy=0,nd=0;
-road.push({x1:0,y1:0,x2:0,y2:-400,dx:0,dy:-1,len:400,w:100});
+road.push({x1:0,y1:0,x2:0,y2:-400,dx:0,dy:-1,len:400,w:140});
 cx=0;cy=-400;nd=Math.random()<0.5?1:3;
 for(let i=1;i<500;i++){
-const len=80+Math.random()*180,w=Math.max(36,ROAD_W0-i*0.09);
+const len=80+Math.random()*180,w=Math.max(38,140-i*0.22);
 let dx=0,dy=0;
 if(nd===0)dy=-1;else if(nd===1)dx=1;else dx=-1;
 road.push({x1:cx,y1:cy,x2:cx+dx*len,y2:cy+dy*len,dx,dy,len,w});
@@ -190,7 +190,7 @@ if(dblT>0)dblT-=dt;if(rushT>0)rushT-=dt;
 const slip=Math.abs(Math.atan2(carVy,carVx)-carAng);
 if(slip>.3&&alive)trails.push({x:carX,y:carY,a:1});
 trails=trails.filter(t=>{t.a-=dt*2.5;return t.a>0;});
-camX+=(carX-camX)*3.5*dt;camY+=(carY-cvs.height*.3-camY)*3.5*dt;
+camX+=(carX-camX)*3.5*dt;camY+=(carY-cvs.height*.5-camY)*3.5*dt;
 document.getElementById('ind-double').style.display=dblT>0?'inline':'none';
 document.getElementById('ind-rush').style.display=rushT>0?'inline':'none';
 document.getElementById('ind-life').style.display=xLives>0?'inline':'none';
@@ -299,7 +299,7 @@ document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('active'));
 genRoad();carX=0;carY=-40;carAng=-Math.PI/2;carVx=0;carVy=-BASE_SPD;
 spd=BASE_SPD;sc=0;rCoins=0;alive=true;segI=0;fallT=0;
 dblT=0;rushT=0;xLives=0;trails=[];
-camX=carX;camY=carY-cvs.height*.3;pressingLeft=false;pressingRight=false;gState='play';
+camX=carX;camY=carY-cvs.height*.5;pressingLeft=false;pressingRight=false;gState='play';
 if(!audioMuted&&!bgmLoaded)startBGM();}
 function showOver(){
 gState='over';const s=Math.floor(sc);
