@@ -261,6 +261,7 @@
     <a href="tarot/"><span class="ico">🃏</span> 塔羅抽牌</a>
     <a href="soul-match/"><span class="ico">🌀</span> 靈魂配對</a>
     <a href="games/psych-test/"><span class="ico">🔮</span> 人格測驗</a>
+    <a href="pokemon-guide/"><span class="ico">⚡</span> 寶可夢攻略</a>
     <div class="div"></div>
     <div class="sb-sec">社會工具</div>
     <a href="rental-rights/"><span class="ico">📋</span> 租屋自救包</a>
@@ -314,6 +315,7 @@
           <a class="row-see" href="games/">查看全部 →</a>
         </div>
         <div class="row-scroll">
+          <a class="g-card" href="pokemon-guide/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a1a0a,#281008)">⚡</div><div class="g-card-body"><div class="g-card-title">寶可夢喜好攻略</div><div class="g-card-sub">攻略 / 圖鑑</div></div></a>
           <a class="g-card" href="games/pig-dice/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a1a3a,#0a0a28)">🎲</div><div class="g-card-body"><div class="g-card-title">貪婪骰子</div><div class="g-card-sub">益智 / 策略</div></div></a>
           <a class="g-card" href="games/deep-sea-idle/"><div class="g-card-banner" style="background:linear-gradient(135deg,#050d1a,#081828)">🐙</div><div class="g-card-body"><div class="g-card-title">深海秘境</div><div class="g-card-sub">放置 / 深海</div></div></a>
           <a class="g-card" href="games/fantasy-idle/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a1408,#2a1e0a)">🏛️</div><div class="g-card-body"><div class="g-card-title">遺跡紀行</div><div class="g-card-sub">放置 RPG / 探索</div></div></a>
@@ -498,6 +500,7 @@
     {name:'水豚猜拳',emoji:'✂️',href:'games/capy-rps/',cat:'對戰 / 多人'},
     {name:'水豚問答PK',emoji:'📚',href:'games/capy-quiz/',cat:'對戰 / 問答'},
     {name:'人格測驗',emoji:'🔮',href:'games/psych-test/',cat:'心理測驗'},
+    {name:'寶可夢喜好攻略',emoji:'⚡',href:'pokemon-guide/',cat:'攻略 / 圖鑑'},
     {name:'每日運勢',emoji:'🌟',href:'fortune/',cat:'趣味'},
     {name:'塔羅抽牌',emoji:'🃏',href:'tarot/',cat:'趣味'},
     {name:'靈魂配對',emoji:'🌀',href:'soul-match/',cat:'趣味'},
@@ -579,6 +582,7 @@
     'capy-quiz':{t:'水豚問答PK',e:'📚',c:'問答',bg:'#0a1a3a,#081028'},
     'pig-dice':{t:'貪婪骰子',e:'🎲',c:'益智 / 策略',bg:'#1a1a3a,#0a0a28'},
     'fantasy-idle':{t:'遺跡紀行',e:'🏛️',c:'放置 RPG',bg:'#1a1408,#2a1e0a'},
+    'pokemon-guide':{t:'寶可夢喜好攻略',e:'⚡',c:'攻略 / 圖鑑',bg:'#3a1a0a,#281008'},
   };
 
   function saveFavs(){ localStorage.setItem(FAV_KEY, JSON.stringify([...userFavs])); }
@@ -598,7 +602,7 @@
     list.innerHTML=favArr.map(slug=>{
       const g=GAME_REG[slug];
       if(!g) return '';
-      const href=slug==='deep-diggers'?'games/deep-diggers.html':'games/'+slug+'/';
+      const href=slug==='deep-diggers'?'games/deep-diggers.html':slug==='pokemon-guide'?'pokemon-guide/':'games/'+slug+'/';
       return `<a class="g-card" href="${href}"><div class="g-card-banner" style="background:linear-gradient(135deg,${g.bg})">${g.e}</div><div class="g-card-body"><div class="g-card-title">${g.t}</div><div class="g-card-sub">${g.c}</div></div></a>`;
     }).join('');
   }
