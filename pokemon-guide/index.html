@@ -99,6 +99,16 @@ a{color:var(--accent);text-decoration:none}
 .offering-taste{min-width:48px;font-weight:600}
 .offering-effect{color:var(--text)}
 .empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.item-tag-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.item-tag-section h3{font-size:16px;font-weight:700;color:var(--accent2);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.item-tag-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.item-chip{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);text-align:center;transition:.2s}
+.item-chip:hover{border-color:var(--accent);transform:translateY(-1px)}
+.item-tag-desc{font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6}
+.item-tag-count{font-size:12px;color:var(--text2);margin-left:auto}
+.filter-tag-btn{padding:6px 14px;border-radius:16px;cursor:pointer;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:13px;transition:.2s}
+.filter-tag-btn:hover{border-color:var(--accent)}
+.filter-tag-btn.active{background:rgba(200,164,86,.2);border-color:var(--accent);color:var(--accent)}
 @media(max-width:600px){
   .card-grid{grid-template-columns:1fr}
   .container{padding:10px}
@@ -121,6 +131,7 @@ a{color:var(--accent);text-decoration:none}
     <div class="tab" data-tab="habitat" onclick="switchTab('habitat')">🏠 棲息地查詢</div>
     <div class="tab" data-tab="skill" onclick="switchTab('skill')">⚡ 專長一覽</div>
     <div class="tab" data-tab="recipe" onclick="switchTab('recipe')">🍳 料理食譜</div>
+    <div class="tab" data-tab="itemtag" onclick="switchTab('itemtag')">🏷️ 物品喜好</div>
   </div>
   <div class="search-bar">
     <input id="search" type="text" placeholder="搜尋寶可夢名稱、專長、棲息地..." oninput="doSearch()">
@@ -675,12 +686,12 @@ function habImg(habStr) {
 }
 
 const i18n = {
-  zh: {searchPh:'搜尋寶可夢名稱、專長、棲息地...',tabPk:'🐾 寶可夢查詢',tabHab:'🏠 棲息地查詢',tabSkill:'⚡ 專長一覽',
+  zh: {searchPh:'搜尋寶可夢名稱、專長、棲息地...',tabPk:'🐾 寶可夢查詢',tabHab:'🏠 棲息地查詢',tabSkill:'⚡ 專長一覽',tabItem:'🏷️ 物品喜好',
     envLabel:'環境',tasteLabel:'口味',skillLabel:'專長',likesLabel:'喜好事物',dropLabel:'掉落物',habLabel:'棲息地',
     allEnv:'全部環境',allTaste:'全部口味',allSkill:'全部專長',found:'找到',items:'筆',back:'← 返回',
     noResult:'找不到符合條件的結果，請嘗試其他搜尋詞',reqItems:'需要道具',appearPk:'出現寶可夢',
     hab:'棲息地',pokemon:'寶可夢',detail:'詳細資料',close:'✕',none:'無'},
-  en: {searchPh:'Search Pokémon name, skill, habitat...',tabPk:'🐾 Pokémon',tabHab:'🏠 Habitats',tabSkill:'⚡ Skills',
+  en: {searchPh:'Search Pokémon name, skill, habitat...',tabPk:'🐾 Pokémon',tabHab:'🏠 Habitats',tabSkill:'⚡ Skills',tabItem:'🏷️ Item Prefs',
     envLabel:'Environment',tasteLabel:'Taste',skillLabel:'Skill',likesLabel:'Likes',dropLabel:'Drops',habLabel:'Habitat',
     allEnv:'All Env',allTaste:'All Taste',allSkill:'All Skills',found:'Found',items:'results',back:'← Back',
     noResult:'No results found. Try different search terms.',reqItems:'Required Items',appearPk:'Pokémon',
@@ -695,10 +706,11 @@ const TASTES=['甜','辣','苦','酸','澀'];
 const SKILLS=[...new Set(PK_DATA.flatMap(p=>p[2]?p[2].split('、').map(s=>s.trim()):[]))].filter(s=>s&&s!=='-').sort();
 let filterEnv='',filterTaste='',filterSkill='';
 
-function switchTab(tab){curTab=tab;document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));filterEnv='';filterTaste='';filterSkill='';renderAll();}
+function switchTab(tab){curTab=tab;document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));filterEnv='';filterTaste='';filterSkill='';filterItemTag='';renderAll();}
 
 function renderFilters(){
   const el=document.getElementById('filters');let html='';
+  if(curTab==='itemtag'){el.innerHTML='';return;}
   if(curTab==='pokemon'){
     html+=`<div class="filter-btn ${filterEnv?'':'active'}" onclick="filterEnv='';renderAll()">${t('allEnv')}</div>`;
     ENVS.forEach(e=>{html+=`<div class="filter-btn ${filterEnv===e?'active':''}" onclick="filterEnv='${e}';renderAll()">${e}</div>`;});
@@ -775,7 +787,58 @@ const INGREDIENT_SOURCES = [
   ['成熟的胡蘿蔔','🥕','農田種植收穫']
 ];
 
-function renderAll(){renderFilters();const q=document.getElementById('search').value.trim().toLowerCase();if(curTab==='pokemon'||curTab==='skill')renderPokemon(q);else if(curTab==='recipe')renderRecipes(q);else renderHabitats(q);}
+// Item preference tag data from Pokétopia
+// Keys match PK_DATA likes field; matchKeys are alternative search terms
+const ITEM_TAGS = {
+  '方形':{emoji:'📐',altName:'棱角分明的',desc:'外形方正、有稜有角的家具物品',descEn:'Angular, sharp-edged furniture and items',items:['收納箱','壁掛式收納箱','大收納箱','樓梯角角櫃','積木','紙箱','木箱','破舊的木箱']},
+  '整潔':{emoji:'✨',altName:'整潔的',desc:'清潔、浴室、衛生相關物品',descEn:'Clean, tidy, bathroom-related items',items:['洗手台','壁掛毛巾','洗澡套組','清潔套組','花灑','浴缸','瑪力露浴缸','水盆']},
+  '多彩':{emoji:'🌈',altName:'多彩的 / 五彩繽紛',desc:'色彩繽紛、裝飾性強的物品',descEn:'Colorful, decorative items',items:['寶可金屬','顏料（任意）','彩色氣球（任意）','電競冰箱','古董椅子','流行椅','電視椅','新潮沙發','圓木鞦韆','電競床','CD架','雜貨櫃','迷你書架','書架','石頭壁爐','電競電腦','風車','編織套組','急救箱','氣球','水桶','歡迎盆花','電影燈','派對牆飾']},
+  '建設':{emoji:'🔨',altName:'建設',desc:'建築工地、工具、施工相關物品',descEn:'Construction tools and building materials',items:['沙包','金屬桶','工具套組','鐵管堆','挖山道具','手推車','鐵架台/板','鷹手架']},
+  '可愛':{emoji:'💕',altName:'可愛的',desc:'粉色系、圓潤、可愛風格的物品',descEn:'Cute, pink, rounded items',items:['精靈球櫃台','可愛的桌子','新潮桌子','糖果造型格','時尚果子','可愛椅','蓓石椅','可愛的沙發','新潮沙發','新潮床鋪','糖果造型床','可愛的床','可愛的梳妝台','緞帶蛋糕','洗澡套組','伊布玩偶','皮卡丘玩偶','皮皮玩偶','風速狗玩偶','快龍玩偶','百變怪玩偶','瞎身玩偶','吉利蛋福袋','自動門','可愛的燈','貝殼燈','果實吊燈','可愛的花']},
+  '訓練':{emoji:'🥊',altName:'訓練用的',desc:'健身、鍛鍊用的道具',descEn:'Training equipment and exercise items',items:['拳擊機','沙袋']},
+  '看起來很難':{emoji:'🤔',altName:'看起來很難懂的',desc:'看起來複雜、不好理解的物品',descEn:'Items that look complex or hard to understand',items:['CD架','雜誌架']},
+  '玻璃':{emoji:'🪟',altName:'有玻璃的',desc:'含玻璃材質的家具、鏡子、門窗',descEn:'Items with glass — mirrors, windows, doors',items:['壁掛鏡','大鏡子','古董梳妝台','華麗梳妝台','可愛的梳妝台','哈哈鏡','水晶球','路數路燈','庭園燈','壁燈','鏡面球','螢光燈','電競燈','裝飾燈','摩登門','玻璃墻','黑框玻璃','彩色玻璃上','彩色玻璃中','彩色玻璃下','升降窗','時尚門','雙轉燈','自動門','天窗','簡易門','簡約門','辦公室架子','港口路燈','精靈球燈','可愛的燈','展覽風燈','古董吊燈','帳燈','星光燈']},
+  '容器':{emoji:'📦',altName:'容器',desc:'收納、儲存功能的家具',descEn:'Storage containers, cabinets, and boxes',items:['壁掛式收納箱','自然風儲物櫃','辦公室收納箱','電競冰箱','精靈球柜子','果實收納櫃','古董抽屜櫃','自然風衣櫃','辦公室儲物櫃','古董衣櫃','辦公室架子','自然風梳妝台','鐵鏈柜','抽屜梳妝台','可愛的梳妝台','野餐籃','馬克杯','茶具','樹果野餐籃','草文花瓶','豪華的花','崖苔盆栽','扁平植栽','扭扭糖機','小垃圾箱','寶可夢存錢罐','電話','CD架','雜誌架','迷你書架','書架','餐具柜','冰箱','洗衣機','急救箱','低箱','木果箱','佈箱','破舊的木箱','木箱','木桶','垃圾桶','空罐回收箱','金屬桶','工具套組','手推車','收銀機']},
+  '電力驅動':{emoji:'⚡',altName:'電力驅動的',desc:'需要電力運作的電器、電子設備',descEn:'Electric-powered appliances and electronics',items:['電競冰箱','電競床','電競椅','微波爐','冰箱','電風扇','空調','打印機','體重球','洗衣機','馬桶','平板電腦','手機','筆記本電腦','台式電腦','電視','穩天美器','壁掛屏幕','相機','Gameboy','遊戲機','無線電話','CD播放器','桌上錄音機','竹式音反風','遙控電話組','遊戲街機','路燈','吊燈','電線','無線傳輸電器','聖光燈','迷你家電機','點地開關','牆面開關','洗水器','傳感器','地球儀','電競電腦','精靈球台灯','精靈球石','檯灯','籃球模型']},
+  '布製':{emoji:'🧵',altName:'布製的',desc:'布料、織物、軟性材質的物品',descEn:'Fabric, cloth, and soft material items',items:['棉花','自然風越鋪櫃','自然風衣櫃','自然風靠枕','簡約靠枕','自然風桌子','踏踏桌子','討飴桌子','柔軟的蒲團','蘆式沙發','自然風椅子','蕾絲風椅子','雅緻的椅子','可愛椅','古董椅子','沙發椅','流行椅','電競椅','新潮沙發','展覽風沙發','古董沙發','豪華沙發','沙包','可愛的沙發','圖木浴槽','自然風小床','展覽風床','假球','沙灘椅','新潮床鋪','沙灘床鋪','精靈球造型床','樹果造型床','自然風環床','庭院風臥墊','古董床','工業風環床','可愛的球','自然風台燈','野餐籃','餐鋪蓋組','壁掛毛巾','偽裝道具','小水果擺設','派對帽飾','窗布風景圖','皮卡丘玩偶','皮皮玩偶','風速狗玩偶','快龍玩偶','百變怪玩偶','靜音玩偶','沙發','窗布風景圖']},
+};
+let filterItemTag='';
+
+function renderItemTags(q){
+  document.getElementById('stats').textContent='';
+  const el=document.getElementById('results');
+  let html='';
+  const tagKeys=Object.keys(ITEM_TAGS);
+  // filter buttons
+  const filterEl=document.getElementById('filters');
+  let fhtml=`<div class="filter-tag-btn ${filterItemTag?'':'active'}" onclick="filterItemTag='';renderAll()">全部</div>`;
+  tagKeys.forEach(k=>{
+    const d=ITEM_TAGS[k];
+    fhtml+=`<div class="filter-tag-btn ${filterItemTag===k?'active':''}" onclick="filterItemTag='${k}';renderAll()">${d.emoji} ${k}</div>`;
+  });
+  filterEl.innerHTML=fhtml;
+
+  // Also show which Pokémon like this tag
+  const displayTags=filterItemTag?[filterItemTag]:tagKeys;
+  displayTags.forEach(tag=>{
+    const d=ITEM_TAGS[tag];
+    const filtered=q?d.items.filter(it=>it.toLowerCase().includes(q)):d.items;
+    if(q&&!filtered.length)return;
+    // Find Pokémon that like this tag
+    const likers=PK_DATA.filter(p=>p[5]&&p[5].includes(tag)).map(p=>p[1]);
+    const title=d.altName&&d.altName!==tag?`${tag}（${d.altName}）`:tag;
+    html+=`<div class="item-tag-section" style="grid-column:1/-1">
+      <h3>${d.emoji} ${title} <span class="item-tag-count">${filtered.length} 個物品</span></h3>
+      <div class="item-tag-desc">${lang==='en'?d.descEn:d.desc}</div>
+      ${likers.length?`<div style="margin-bottom:10px;font-size:12px;color:var(--text2)">🐾 喜歡此類的寶可夢：<span style="color:var(--accent)">${likers.slice(0,15).join('、')}${likers.length>15?'…等'+likers.length+'隻':''}</span></div>`:''}
+      <div class="item-tag-grid">${filtered.map(it=>`<div class="item-chip">${it}</div>`).join('')}</div>
+    </div>`;
+  });
+  if(!html)html=`<div class="empty">${t('noResult')}</div>`;
+  el.innerHTML=html;
+}
+
+function renderAll(){renderFilters();const q=document.getElementById('search').value.trim().toLowerCase();if(curTab==='pokemon'||curTab==='skill')renderPokemon(q);else if(curTab==='recipe')renderRecipes(q);else if(curTab==='itemtag')renderItemTags(q);else renderHabitats(q);}
 
 function renderRecipes(q){
   document.getElementById('stats').textContent='';
