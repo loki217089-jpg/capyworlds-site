@@ -676,16 +676,29 @@ function handlePhoto(input) {
 }
 
 async function uploadPhoto(file, path) {
-  if (localMode) {
-    return new Promise(resolve=>{
-      const r=new FileReader();
-      r.onload=e=>resolve(e.target.result);
-      r.readAsDataURL(file);
-    });
-  }
-  const ref = storage.ref().child(path);
-  await ref.put(file);
-  return await ref.getDownloadURL();
+  // 壓縮照片為 base64（Spark 方案不支援 Storage）
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 800; // 最大寬高
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.6)); // 壓縮到 60% 品質
+      };
+      img.onerror = () => resolve(e.target.result); // fallback 原圖
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 // ===== CREATE TREASURE =====
@@ -1048,13 +1061,16 @@ document.getElementById('filterBar').addEventListener('click',e=>{
 
 // ===== SEED DATA =====
 function seedTreasures() {
+  // 種子寶藏使用使用者當前位置附近（半徑 2km 內）
+  const bLat = userLat, bLng = userLng;
+  const rnd = (range) => (Math.random() - 0.5) * range;
   const seeds=[
-    {name:'水豚公園秘密花園',desc:'在公園噴水池旁的大石頭後面，有一個被藤蔓覆蓋的小空間，非常適合放鬆心情。',hint:'跟著水豚的腳步走',lat:25.033,lng:121.5654,tags:['nature'],diff:'easy',likes:24,foundBy:['小明','探險者A'],comments:[{user:'小明',avatar:'🐱',text:'太棒了！找了20分鐘終到',createdAt:Date.now()-86400000,isFound:true}]},
-    {name:'巷弄裡的貓咪壁畫',desc:'這條巷子深處有一幅超大的貓咪壁畫，是在地藝術家的作品。',hint:'從便利商店旁的小巷進去',lat:25.0345,lng:121.5672,tags:['art','urban'],diff:'easy',likes:31,foundBy:['藝術迷'],comments:[]},
-    {name:'天空之橋觀景台',desc:'很少人知道這座天橋的盡頭可以看到整個城市的夜景。',hint:'天橋走到底，往右邊看',lat:25.031,lng:121.562,tags:['urban','secret'],diff:'medium',likes:56,foundBy:['夜景獵人','攝影師','遊客C'],comments:[{user:'夜景獵人',avatar:'🦉',text:'夜景真的超美！',createdAt:Date.now()-172800000,isFound:true}]},
-    {name:'百年老樹的樹洞',desc:'這棵百年榕樹的樹洞裡，據說當地人會放小紙條許願。',hint:'在廟旁邊最大的那棵樹',lat:25.0365,lng:121.5638,tags:['nature','history'],diff:'medium',likes:42,foundBy:['自然控'],comments:[]},
-    {name:'地下通道的音樂空間',desc:'這個地下通道的回音效果特別好，偶爾會有街頭藝人在這裡表演。',hint:'注意聽，跟著音樂走',lat:25.0298,lng:121.569,tags:['secret','art'],diff:'hard',likes:18,foundBy:['音樂人'],comments:[]},
-    {name:'屋頂上的秘密菜園',desc:'這棟老舊公寓的屋頂上，有人偷偷種了一片有機菜園和花園。',hint:'找到藍色大門的公寓',lat:25.032,lng:121.571,tags:['nature','secret'],diff:'hard',likes:67,foundBy:['園藝控','驢友'],comments:[]},
+    {name:'公園秘密花園',desc:'在公園噴水池旁的大石頭後面，有一個被藤蔓覆蓋的小空間，非常適合放鬆心情。',hint:'跟著水豚的腳步走',lat:bLat+rnd(0.01),lng:bLng+rnd(0.01),tags:['nature'],diff:'easy',likes:24,foundBy:['小明','探險者A'],comments:[{user:'小明',avatar:'🐱',text:'太棒了！找了20分鐘終於找到',createdAt:Date.now()-86400000,isFound:true}]},
+    {name:'巷弄裡的貓咪壁畫',desc:'這條巷子深處有一幅超大的貓咪壁畫，是在地藝術家的作品。',hint:'從便利商店旁的小巷進去',lat:bLat+rnd(0.008),lng:bLng+rnd(0.008),tags:['art','urban'],diff:'easy',likes:31,foundBy:['藝術迷'],comments:[]},
+    {name:'天空之橋觀景台',desc:'很少人知道這座天橋的盡頭可以看到整個城市的夜景。',hint:'天橋走到底，往右邊看',lat:bLat+rnd(0.012),lng:bLng+rnd(0.012),tags:['urban','secret'],diff:'medium',likes:56,foundBy:['夜景獵人','攝影師','遊客C'],comments:[{user:'夜景獵人',avatar:'🦉',text:'夜景真的超美！',createdAt:Date.now()-172800000,isFound:true}]},
+    {name:'百年老樹的樹洞',desc:'這棵百年榕樹的樹洞裡，據說當地人會放小紙條許願。',hint:'在廟旁邊最大的那棵樹',lat:bLat+rnd(0.006),lng:bLng+rnd(0.006),tags:['nature','history'],diff:'medium',likes:42,foundBy:['自然控'],comments:[]},
+    {name:'地下通道的音樂空間',desc:'這個地下通道的回音效果特別好，偶爾會有街頭藝人在這裡表演。',hint:'注意聽，跟著音樂走',lat:bLat+rnd(0.015),lng:bLng+rnd(0.015),tags:['secret','art'],diff:'hard',likes:18,foundBy:['音樂人'],comments:[]},
+    {name:'屋頂上的秘密菜園',desc:'這棟老舊公寓的屋頂上，有人偷偷種了一片有機菜園和花園。',hint:'找到藍色大門的公寓',lat:bLat+rnd(0.01),lng:bLng+rnd(0.01),tags:['nature','secret'],diff:'hard',likes:67,foundBy:['園藝控','驢友'],comments:[]},
   ];
   seeds.forEach((s,i)=>{
     s.id='seed_'+i;s.createdAt=Date.now()-(i*86400000);s.photo='';s.userId='seed';s.userName='系統';s.userAvatar='🗺️';
