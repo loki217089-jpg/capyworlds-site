@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>都市尋寶 Urban Treasure Hunt</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<style>
+:root{--primary:#00e5ff;--primary-dark:#00b8d4;--accent:#ff3c8e;--bg:#0a0e1a;--bg2:#111827;--bg3:#1e293b;--card:#1a2235;--text:#e2e8f0;--text2:#94a3b8;--gold:#fbbf24;--green:#34d399;--red:#f87171;--radius:16px;--shadow:0 4px 24px rgba(0,0,0,0.4)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ===== LOADING / AUTH ===== */
+.auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .5s}
+.auth-overlay.hide{opacity:0;pointer-events:none}
+.auth-overlay .logo{font-size:64px;animation:bounce 1s infinite alternate}
+@keyframes bounce{0%{transform:translateY(0)}100%{transform:translateY(-12px)}}
+.auth-overlay h1{font-size:28px;background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-overlay .sub{color:var(--text2);font-size:14px}
+.auth-form{width:90%;max-width:340px;display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.auth-form input{background:var(--bg3);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 16px;color:var(--text);font-size:15px;outline:none;text-align:center}
+.auth-form input:focus{border-color:var(--primary)}
+.auth-form .emoji-picker{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.auth-form .emoji-opt{width:44px;height:44px;border-radius:50%;background:var(--bg3);border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:.2s}
+.auth-form .emoji-opt.sel{border-color:var(--primary);background:rgba(0,229,255,0.1)}
+.auth-btn{padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px}
+.auth-btn:active{transform:scale(.97)}
+.auth-btn:disabled{opacity:.4}
+
+/* ===== NAV ===== */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid rgba(255,255,255,0.06);display:flex;z-index:1000;padding-bottom:env(safe-area-inset-bottom,8px)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 6px;cursor:pointer;transition:.2s;color:var(--text2);font-size:11px;gap:4px;-webkit-tap-highlight-color:transparent;position:relative}
+.nav-item.active{color:var(--primary)}
+.nav-item svg{width:24px;height:24px}
+.nav-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--accent);color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;font-weight:700}
+.nav-badge.show{display:flex}
+
+/* ===== PAGES ===== */
+.page{display:none;padding-bottom:80px;min-height:100vh}
+.page.active{display:block}
+#map{width:100%;height:calc(100vh - 70px)}
+.map-controls{position:fixed;top:16px;right:16px;z-index:800;display:flex;flex-direction:column;gap:8px}
+.map-btn{width:44px;height:44px;border-radius:12px;background:var(--bg2);border:1px solid rgba(255,255,255,0.1);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);transition:.2s}
+.map-btn:active{transform:scale(.92);background:var(--bg3)}
+.map-filter-bar{position:fixed;top:16px;left:16px;right:68px;z-index:800;display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.map-filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0;padding:8px 16px;border-radius:20px;background:var(--bg2);border:1px solid rgba(255,255,255,0.1);color:var(--text2);font-size:13px;cursor:pointer;white-space:nowrap;transition:.2s}
+.filter-chip.active{background:var(--primary);color:var(--bg);border-color:var(--primary);font-weight:600}
+
+/* ===== HEADER ===== */
+.page-header{position:sticky;top:0;z-index:500;background:var(--bg);padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.page-header h1{font-size:22px;font-weight:700}
+.page-header .sub{font-size:13px;color:var(--text2);margin-top:2px}
+
+/* ===== CARDS ===== */
+.treasure-card{background:var(--card);border-radius:var(--radius);margin:12px 16px;overflow:hidden;box-shadow:var(--shadow);transition:.2s;cursor:pointer}
+.treasure-card:active{transform:scale(.98)}
+.card-img{width:100%;height:200px;object-fit:cover;background:var(--bg3);display:block}
+.card-placeholder{width:100%;height:200px;display:flex;align-items:center;justify-content:center;font-size:48px;background:linear-gradient(135deg,#0a1a2e,#1a2a3e)}
+.card-body{padding:14px 16px}
+.card-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.card-meta{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text2);flex-wrap:wrap}
+.card-meta svg{width:14px;height:14px}
+.card-meta .item{display:flex;align-items:center;gap:4px}
+.card-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.tag{padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600}
+.tag-nature{background:rgba(52,211,153,0.15);color:var(--green)}.tag-urban{background:rgba(0,229,255,0.15);color:var(--primary)}.tag-secret{background:rgba(255,60,142,0.15);color:var(--accent)}.tag-food{background:rgba(251,191,36,0.15);color:var(--gold)}.tag-art{background:rgba(52,211,153,0.15);color:var(--green)}.tag-history{background:rgba(248,113,113,0.15);color:var(--red)}
+.card-actions{display:flex;gap:0;border-top:1px solid rgba(255,255,255,0.06);margin-top:12px}
+.card-action{flex:1;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer;transition:.2s;border:none;background:none}
+.card-action:active{background:rgba(255,255,255,0.04)}
+.card-action.liked{color:var(--accent)}.card-action.found{color:var(--green)}
+.card-action svg{width:18px;height:18px}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2000;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto}
+.modal-img{width:100%;height:250px;object-fit:cover}
+.modal-body{padding:20px}
+.modal-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.modal-desc{font-size:15px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.modal-info{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:16px}
+.modal-info-item{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text2)}
+.modal-info-item svg{width:16px;height:16px;color:var(--primary)}
+.hint-box{background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:16px;border-left:3px solid var(--gold)}
+.hint-box .label{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:4px}
+.hint-box .text{font-size:14px;color:var(--text);line-height:1.5}
+
+/* ===== COMMENTS ===== */
+.comments-section{margin-top:20px}.comments-section h3{font-size:16px;margin-bottom:12px}
+.comment{display:flex;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.comment-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;color:var(--primary)}
+.comment-body{flex:1}
+.comment-name{font-size:13px;font-weight:700}.comment-time{font-size:11px;color:var(--text2);margin-left:8px}
+.comment-text{font-size:14px;color:var(--text);margin-top:4px;line-height:1.5}
+.comment-found{font-size:12px;color:var(--green);margin-top:4px;display:flex;align-items:center;gap:4px}
+.comment-photo{width:100%;max-width:200px;border-radius:8px;margin-top:8px}
+.comment-input-row{display:flex;gap:8px;margin-top:16px;align-items:center}
+.comment-input{flex:1;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:10px 16px;color:var(--text);font-size:14px;outline:none}
+.comment-input:focus{border-color:var(--primary)}
+.comment-photo-btn{width:40px;height:40px;border-radius:50%;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0;color:var(--text2)}
+.comment-photo-btn:active{background:var(--primary);color:#000}
+.send-btn{width:40px;height:40px;border-radius:50%;background:var(--primary);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0}
+.send-btn:active{transform:scale(.9)}
+
+/* ===== CREATE ===== */
+.create-form{padding:16px}.form-group{margin-bottom:20px}
+.form-label{font-size:14px;font-weight:600;margin-bottom:8px;display:block;color:var(--text)}
+.form-input,.form-textarea,.form-select{width:100%;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;color:var(--text);font-size:15px;outline:none;font-family:inherit}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--primary)}
+.form-textarea{min-height:100px;resize:vertical}
+.photo-upload{width:100%;height:200px;border-radius:12px;border:2px dashed rgba(255,255,255,0.15);background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:8px;transition:.2s;overflow:hidden;position:relative}
+.photo-upload:active{border-color:var(--primary)}
+.photo-upload img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo-upload svg{width:40px;height:40px;color:var(--text2)}
+.photo-upload span{font-size:14px;color:var(--text2)}
+.photo-upload .uploading{position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+.diff-selector{display:flex;gap:8px}
+.diff-option{flex:1;padding:12px;border-radius:12px;text-align:center;background:var(--bg3);border:2px solid transparent;cursor:pointer;transition:.2s}
+.diff-option.selected{border-color:var(--primary);background:rgba(0,229,255,0.1)}
+.diff-option .emoji{font-size:24px}.diff-option .label{font-size:12px;color:var(--text2);margin-top:4px}
+.tag-selector{display:flex;flex-wrap:wrap;gap:8px}
+.tag-option{padding:8px 14px;border-radius:20px;font-size:13px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:.2s;color:var(--text2)}
+.tag-option.selected{background:rgba(0,229,255,0.15);border-color:var(--primary);color:var(--primary)}
+.gps-display{background:var(--bg3);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:14px}
+.gps-display svg{color:var(--green);width:20px;height:20px;flex-shrink:0}
+.gps-display .coords{color:var(--text2);font-size:13px}
+.gps-display .status{color:var(--green);font-weight:600}
+.gps-display .loading{color:var(--gold)}
+.submit-btn{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:.2s;margin-top:8px}
+.submit-btn:active{transform:scale(.97);opacity:.9}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ===== NOTIFICATIONS ===== */
+.notif-list{padding:16px}
+.notif-item{display:flex;gap:12px;padding:14px;background:var(--card);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.notif-item:active{transform:scale(.98)}
+.notif-item.unread{border-left:3px solid var(--primary)}
+.notif-icon{width:40px;height:40px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.notif-body{flex:1}
+.notif-text{font-size:14px;line-height:1.4}
+.notif-text strong{color:var(--primary)}
+.notif-time{font-size:12px;color:var(--text2);margin-top:4px}
+
+/* ===== PROFILE ===== */
+.profile-header{text-align:center;padding:30px 20px;background:linear-gradient(180deg,rgba(0,229,255,0.08),transparent)}
+.avatar-large{width:80px;height:80px;border-radius:50%;background:var(--bg3);border:3px solid var(--primary);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px}
+.profile-name{font-size:20px;font-weight:700}
+.profile-name input{background:none;border:none;color:var(--text);text-align:center;font-size:20px;font-weight:700;outline:none;width:200px;border-bottom:1px dashed transparent;transition:.2s}
+.profile-name input:focus{border-bottom-color:var(--primary)}
+.profile-bio{font-size:14px;color:var(--text2);margin-top:4px}
+.stats-row{display:flex;justify-content:center;gap:32px;margin-top:16px}
+.stat{text-align:center}
+.stat-num{font-size:22px;font-weight:700;color:var(--primary)}
+.stat-label{font-size:12px;color:var(--text2);margin-top:2px}
+.profile-section{padding:16px 20px}
+.profile-section h3{font-size:16px;margin-bottom:12px}
+.achievement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.achievement{background:var(--card);border-radius:12px;padding:14px 8px;text-align:center;transition:.2s}
+.achievement.locked{opacity:.35}
+.achievement .emoji{font-size:28px}.achievement .name{font-size:11px;color:var(--text2);margin-top:4px}
+.logout-btn{width:100%;padding:14px;border-radius:12px;background:var(--bg3);border:1px solid rgba(255,255,255,0.1);color:var(--red);font-size:14px;cursor:pointer;margin-top:20px;transition:.2s}
+.logout-btn:active{background:rgba(248,113,113,0.1)}
+
+/* ===== RANKING ===== */
+.rank-tabs{display:flex;padding:0 16px;gap:8px;margin-top:8px}
+.rank-tab{padding:8px 16px;border-radius:20px;font-size:13px;background:var(--bg3);color:var(--text2);cursor:pointer;transition:.2s}
+.rank-tab.active{background:var(--primary);color:var(--bg);font-weight:600}
+.rank-list{padding:16px}
+.rank-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.rank-item:active{transform:scale(.98)}
+.rank-pos{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.rank-1{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000}
+.rank-2{background:linear-gradient(135deg,#94a3b8,#64748b);color:#000}
+.rank-3{background:linear-gradient(135deg,#c2703e,#a0522d);color:#fff}
+.rank-default{background:var(--bg3);color:var(--text2)}
+.rank-info{flex:1}.rank-name{font-size:15px;font-weight:600}.rank-score{font-size:13px;color:var(--text2)}
+.rank-avatar{width:40px;height:40px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px}
+
+/* ===== REPORT MODAL ===== */
+.report-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:3000;display:none;align-items:center;justify-content:center}
+.report-modal.show{display:flex}
+.report-box{background:var(--bg2);border-radius:16px;padding:24px;width:90%;max-width:360px}
+.report-box h3{margin-bottom:16px;font-size:18px}
+.report-option{padding:12px;border-radius:8px;background:var(--bg3);margin-bottom:8px;cursor:pointer;font-size:14px;transition:.2s}
+.report-option:active{background:rgba(0,229,255,0.1)}
+.report-cancel{text-align:center;padding:12px;color:var(--text2);cursor:pointer;font-size:14px;margin-top:4px}
+
+/* ===== MISC ===== */
+.distance-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:12px;background:rgba(0,229,255,0.1);color:var(--primary)}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--text);padding:12px 24px;border-radius:12px;font-size:14px;z-index:5000;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,0.1);animation:fadeInDown .3s ease;display:none}
+.toast.show{display:block}
+@keyframes fadeInDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.nearby-pulse{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:10px 20px;border-radius:24px;font-size:14px;font-weight:700;z-index:900;box-shadow:0 0 20px rgba(52,211,153,0.4);animation:pulse 2s infinite;cursor:pointer;display:none}
+@keyframes pulse{0%,100%{box-shadow:0 0 20px rgba(52,211,153,0.4)}50%{box-shadow:0 0 30px rgba(52,211,153,0.7)}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty-state .emoji{font-size:48px;margin-bottom:12px}
+.empty-state .title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px}
+.empty-state .desc{font-size:14px}
+.online-count{position:fixed;top:70px;right:16px;z-index:800;background:var(--bg2);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--green);display:flex;align-items:center;gap:4px}
+.online-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.leaflet-container{background:var(--bg)}
+.treasure-marker{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
+.user-marker{width:20px;height:20px;border-radius:50%;background:var(--primary);border:3px solid #fff;box-shadow:0 0 12px rgba(0,229,255,0.6)}
+.leaflet-popup-content-wrapper{background:var(--card);color:var(--text);border-radius:12px;box-shadow:var(--shadow)}
+.leaflet-popup-tip{background:var(--card)}
+.popup-content{padding:4px}
+.popup-content .name{font-weight:700;font-size:15px}
+.popup-content .info{font-size:13px;color:var(--text2);margin-top:4px}
+.popup-content .view-btn{display:inline-block;margin-top:8px;padding:6px 14px;background:var(--primary);color:var(--bg);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+</style>
+</head>
+<body>
+
+<!-- ===== AUTH SCREEN ===== -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="logo">🗺️</div>
+  <h1>都市尋寶</h1>
+  <div class="sub">在城市角落藏寶、探索、冒險</div>
+  <div class="auth-form">
+    <div class="emoji-picker" id="avatarPicker"></div>
+    <input id="authName" placeholder="你的探險家名稱" maxlength="20">
+    <button class="auth-btn" id="authBtn" onclick="doAuth()">開始冒險</button>
+    <div class="sub" style="text-align:center;font-size:12px">匿名登入，資料安全儲存於雲端</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="nearby-pulse" id="nearbyPulse" onclick="showNearbyTreasure()">📍 附近有寶藏！點擊查看</div>
+<div class="online-count" id="onlineCount"><div class="online-dot"></div><span id="onlineNum">1</span> 位探險家在線</div>
+
+<!-- ===== MAP ===== -->
+<div class="page active" id="page-map">
+  <div class="map-filter-bar" id="filterBar">
+    <div class="filter-chip active" data-filter="all">全部</div>
+    <div class="filter-chip" data-filter="nature">🌿 自然</div>
+    <div class="filter-chip" data-filter="urban">🏙️ 都市</div>
+    <div class="filter-chip" data-filter="secret">🔮 秘境</div>
+    <div class="filter-chip" data-filter="nearby">📍 附近</div>
+  </div>
+  <div class="map-controls">
+    <div class="map-btn" onclick="centerOnUser()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg></div>
+    <div class="map-btn" onclick="refreshAll()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<!-- ===== EXPLORE ===== -->
+<div class="page" id="page-explore">
+  <div class="page-header"><h1>探索</h1><div class="sub">發現附近的寶藏</div></div>
+  <div id="exploreList"></div>
+</div>
+
+<!-- ===== CREATE ===== -->
+<div class="page" id="page-create">
+  <div class="page-header"><h1>藏寶</h1><div class="sub">在這個地點藏一個寶藏</div></div>
+  <div class="create-form">
+    <div class="form-group">
+      <label class="form-label">寶藏照片</label>
+      <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span>點擊拍照或上傳照片</span>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
+    </div>
+    <div class="form-group"><label class="form-label">寶藏名稱</label><input class="form-input" id="treasureName" placeholder="取個吸引人的名字..." maxlength="40"></div>
+    <div class="form-group"><label class="form-label">描述與提示</label><textarea class="form-textarea" id="treasureDesc" placeholder="描述這個地方的特色，給尋寶者一些線索..."></textarea></div>
+    <div class="form-group"><label class="form-label">線索提示</label><input class="form-input" id="treasureHint" placeholder="給尋寶者的關鍵提示..."></div>
+    <div class="form-group">
+      <label class="form-label">尋找難度</label>
+      <div class="diff-selector">
+        <div class="diff-option selected" data-diff="easy" onclick="selectDiff(this)"><div class="emoji">🌱</div><div class="label">簡單</div></div>
+        <div class="diff-option" data-diff="medium" onclick="selectDiff(this)"><div class="emoji">🔍</div><div class="label">中等</div></div>
+        <div class="diff-option" data-diff="hard" onclick="selectDiff(this)"><div class="emoji">🏔️</div><div class="label">困難</div></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">分類標籤</label>
+      <div class="tag-selector">
+        <div class="tag-option" data-tag="nature" onclick="toggleTag(this)">🌿 自然景觀</div>
+        <div class="tag-option" data-tag="urban" onclick="toggleTag(this)">🏙️ 都市秘境</div>
+        <div class="tag-option" data-tag="secret" onclick="toggleTag(this)">🔮 隱藏角落</div>
+        <div class="tag-option" data-tag="food" onclick="toggleTag(this)">🍜 美食據點</div>
+        <div class="tag-option" data-tag="art" onclick="toggleTag(this)">🎨 藝術裝置</div>
+        <div class="tag-option" data-tag="history" onclick="toggleTag(this)">🏛️ 歷史遺跡</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">GPS 位置</label>
+      <div class="gps-display" id="gpsDisplay">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div><div class="status loading" id="gpsStatus">定位中...</div><div class="coords" id="gpsCoords">--</div></div>
+      </div>
+    </div>
+    <button class="submit-btn" id="submitBtn" onclick="submitTreasure()">藏下寶藏 ✨</button>
+  </div>
+</div>
+
+<!-- ===== NOTIFICATIONS ===== -->
+<div class="page" id="page-notif">
+  <div class="page-header"><h1>通知</h1><div class="sub">你的寶藏動態</div></div>
+  <div class="notif-list" id="notifList"></div>
+</div>
+
+<!-- ===== RANKING ===== -->
+<div class="page" id="page-ranking">
+  <div class="page-header"><h1>排行榜</h1><div class="sub">最活躍的探險家</div></div>
+  <div class="rank-tabs">
+    <div class="rank-tab active" onclick="switchRankTab(this,'hiders')">藏寶達人</div>
+    <div class="rank-tab" onclick="switchRankTab(this,'finders')">尋寶高手</div>
+    <div class="rank-tab" onclick="switchRankTab(this,'popular')">熱門寶藏</div>
+  </div>
+  <div class="rank-list" id="rankList"></div>
+</div>
+
+<!-- ===== PROFILE ===== -->
+<div class="page" id="page-profile">
+  <div class="profile-header">
+    <div class="avatar-large" id="profileAvatar">🦫</div>
+    <div class="profile-name"><input id="profileName" value="探險家" onchange="updateProfile()"></div>
+    <div class="profile-bio">都市探險家 Lv.<span id="profileLevel">1</span></div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-num" id="statHidden">0</div><div class="stat-label">已藏</div></div>
+      <div class="stat"><div class="stat-num" id="statFound">0</div><div class="stat-label">已找到</div></div>
+      <div class="stat"><div class="stat-num" id="statLikes">0</div><div class="stat-label">被按讚</div></div>
+    </div>
+  </div>
+  <div class="profile-section"><h3>成就</h3><div class="achievement-grid" id="achievementGrid"></div></div>
+  <div class="profile-section"><h3>我藏的寶藏</h3><div id="myTreasureList"></div></div>
+  <div class="profile-section"><button class="logout-btn" onclick="doLogout()">登出</button></div>
+</div>
+
+<!-- ===== DETAIL MODAL ===== -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="modalImgWrap"></div>
+    <div class="modal-body">
+      <div id="modalTags" class="card-tags" style="margin-bottom:10px"></div>
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-info" id="modalInfo"></div>
+      <div class="modal-desc" id="modalDesc"></div>
+      <div class="hint-box" id="modalHint"><div class="label">💡 線索提示</div><div class="text" id="modalHintText"></div></div>
+      <div class="card-actions" style="margin:0 -20px;padding:0">
+        <button class="card-action" id="modalLikeBtn" onclick="toggleLike()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span id="modalLikeCount">0</span></button>
+        <button class="card-action" id="modalFoundBtn" onclick="markFound()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg><span id="modalFoundText">我找到了！</span></button>
+        <button class="card-action" onclick="openReport()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>檢舉</button>
+      </div>
+      <div class="comments-section">
+        <h3>留言 (<span id="commentCount">0</span>)</h3>
+        <div id="commentList"></div>
+        <div class="comment-input-row">
+          <input type="file" id="commentPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleCommentPhoto(this)">
+          <button class="comment-photo-btn" onclick="document.getElementById('commentPhotoInput').click()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+          <input class="comment-input" id="commentInput" placeholder="說點什麼..." onkeydown="if(event.key==='Enter')postComment()">
+          <button class="send-btn" onclick="postComment()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#000" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+        </div>
+        <div id="commentPhotoPreview" style="display:none;margin-top:8px"><img style="width:80px;height:80px;object-fit:cover;border-radius:8px"><span style="margin-left:8px;color:var(--text2);font-size:12px;cursor:pointer" onclick="clearCommentPhoto()">✕ 移除</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REPORT MODAL ===== -->
+<div class="report-modal" id="reportModal" onclick="if(event.target===this)closeReport()">
+  <div class="report-box">
+    <h3>檢舉此寶藏</h3>
+    <div class="report-option" onclick="submitReport('inappropriate')">不適當的內容</div>
+    <div class="report-option" onclick="submitReport('location')">位置不正確</div>
+    <div class="report-option" onclick="submitReport('dangerous')">危險地點</div>
+    <div class="report-option" onclick="submitReport('spam')">垃圾訊息</div>
+    <div class="report-cancel" onclick="closeReport()">取消</div>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchPage('map')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>地圖</div>
+  <div class="nav-item" onclick="switchPage('explore')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>探索</div>
+  <div class="nav-item" onclick="switchPage('create')" style="position:relative"><div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;margin-top:-20px;box-shadow:0 4px 16px rgba(0,229,255,0.3)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>藏寶</div>
+  <div class="nav-item" onclick="switchPage('notif')" style="position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span class="nav-badge" id="notifBadge">0</span>通知</div>
+  <div class="nav-item" onclick="switchPage('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>我的</div>
+</div>
+
+<script>
+// ========================================
+// 🔥 FIREBASE CONFIG — 填入你的 Firebase 設定
+// ========================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDPccxBAqZofmwKEqTeMoZY__pksDcaS-M",
+  authDomain: "urban-treasure-hunt-b4c1b.firebaseapp.com",
+  projectId: "urban-treasure-hunt-b4c1b",
+  storageBucket: "urban-treasure-hunt-b4c1b.firebasestorage.app",
+  messagingSenderId: "306913680462",
+  appId: "1:306913680462:web:c9784e1e53fb563f1e371f",
+  measurementId: "G-DC83FQW3GP"
+};
+
+// ===== 常數 =====
+const AVATARS = ['🦫','🐱','🦊','🐸','🐼','🦉','🐙','🦋','🐢','🦜','🐶','🐰'];
+const TAG_MAP = {nature:'自然景觀',urban:'都市秘境',secret:'隱藏角落',food:'美食據點',art:'藝術裝置',history:'歷史遺跡'};
+const TAG_CLASS = {nature:'tag-nature',urban:'tag-urban',secret:'tag-secret',food:'tag-food',art:'tag-art',history:'tag-history'};
+const TAG_EMOJI = {nature:'🌿',urban:'🏙️',secret:'🔮',food:'🍜',art:'🎨',history:'🏛️'};
+const DIFF_MAP = {easy:'簡單',medium:'中等',hard:'困難'};
+const ACHIEVEMENTS = [
+  {id:'first_hide',name:'初次藏寶',emoji:'📦',check:u=>u.hidden>=1},
+  {id:'first_find',name:'初次尋寶',emoji:'🔍',check:u=>u.found>=1},
+  {id:'hide_5',name:'藏寶達人',emoji:'🗺️',check:u=>u.hidden>=5},
+  {id:'find_10',name:'探險專家',emoji:'🏆',check:u=>u.found>=10},
+  {id:'hide_20',name:'藏寶大師',emoji:'👑',check:u=>u.hidden>=20},
+  {id:'find_50',name:'傳說獵人',emoji:'⚡',check:u=>u.found>=50},
+];
+
+// ===== 狀態 =====
+let fb, db, auth, storage;
+let currentUser = null, uid = null;
+let lMap, userMarker, userLat=25.033, userLng=121.5654;
+let treasures = [], markers = [], unsubscribers = [];
+let currentFilter='all', currentDetailId=null, commentPhotoData=null;
+let notifications = [], unreadCount = 0;
+
+// ===== FIREBASE 初始化 =====
+function initFirebase() {
+  // 偵測是否已填入真實 config
+  if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+    console.log('⚠️ Firebase 尚未設定，使用本地模式');
+    initLocalMode();
+    return;
+  }
+  fb = firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+  auth = firebase.auth();
+  storage = firebase.storage();
+  // 啟用離線持久化
+  db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      uid = user.uid;
+      loadUserProfile();
+    } else {
+      showAuth();
+    }
+  });
+}
+
+// ===== 本地模式（無 Firebase 時） =====
+let localMode = false;
+function initLocalMode() {
+  localMode = true;
+  const saved = localStorage.getItem('ut_user');
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    uid = currentUser.uid || 'local_' + Date.now();
+    currentUser.uid = uid;
+    hideAuth();
+    startApp();
+  } else {
+    showAuth();
+  }
+}
+
+function localSave() {
+  if (!localMode) return;
+  localStorage.setItem('ut_user', JSON.stringify(currentUser));
+  localStorage.setItem('ut_treasures', JSON.stringify(treasures));
+}
+
+function localLoadTreasures() {
+  const saved = localStorage.getItem('ut_treasures');
+  if (saved) treasures = JSON.parse(saved);
+  if (treasures.length === 0) seedTreasures();
+}
+
+// ===== AUTH =====
+function showAuth() {
+  document.getElementById('authOverlay').classList.remove('hide');
+  const picker = document.getElementById('avatarPicker');
+  picker.innerHTML = AVATARS.map((a,i) => `<div class="emoji-opt${i===0?' sel':''}" onclick="pickAvatar(this,'${a}')">${a}</div>`).join('');
+}
+function hideAuth() { document.getElementById('authOverlay').classList.add('hide'); }
+let selectedAvatar = AVATARS[0];
+function pickAvatar(el, emoji) {
+  document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedAvatar = emoji;
+}
+
+async function doAuth() {
+  const name = document.getElementById('authName').value.trim() || '探險家';
+  const btn = document.getElementById('authBtn');
+  btn.disabled = true; btn.textContent = '登入中...';
+  if (localMode) {
+    uid = 'local_' + Date.now();
+    currentUser = { uid, name, avatar: selectedAvatar, hidden:0, found:0, likes:0, foundIds:[], likedIds:[], createdAt: Date.now() };
+    localStorage.setItem('ut_user', JSON.stringify(currentUser));
+    hideAuth();
+    startApp();
+    return;
+  }
+  try {
+    const cred = await auth.signInAnonymously();
+    uid = cred.user.uid;
+    currentUser = { uid, name, avatar: selectedAvatar, hidden:0, found:0, likes:0, foundIds:[], likedIds:[], createdAt: Date.now() };
+    await db.collection('users').doc(uid).set(currentUser);
+    hideAuth();
+    startApp();
+  } catch(e) {
+    showToast('登入失敗：'+e.message);
+    btn.disabled = false; btn.textContent = '開始冒險';
+  }
+}
+
+async function loadUserProfile() {
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    if (doc.exists) {
+      currentUser = doc.data();
+      hideAuth();
+      startApp();
+    } else {
+      showAuth();
+    }
+  } catch(e) { showAuth(); }
+}
+
+async function updateProfile() {
+  const name = document.getElementById('profileName').value.trim();
+  if (!name) return;
+  currentUser.name = name;
+  if (localMode) { localSave(); return; }
+  try { await db.collection('users').doc(uid).update({ name }); }
+  catch(e) { showToast('更新失敗'); }
+}
+
+function doLogout() {
+  if (localMode) {
+    localStorage.clear();
+    location.reload();
+    return;
+  }
+  auth.signOut().then(()=>location.reload());
+}
+
+// ===== APP START =====
+function startApp() {
+  initMap();
+  startGPS();
+  if (localMode) {
+    localLoadTreasures();
+    renderAll();
+  } else {
+    listenTreasures();
+    listenNotifications();
+    updatePresence();
+  }
+  renderProfile();
+}
+
+// ===== MAP =====
+function initMap() {
+  lMap = L.map('map',{zoomControl:false,attributionControl:false}).setView([userLat,userLng],15);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(lMap);
+  const icon = L.divIcon({className:'',html:'<div class="user-marker"></div>',iconSize:[20,20],iconAnchor:[10,10]});
+  userMarker = L.marker([userLat,userLng],{icon}).addTo(lMap);
+}
+
+function renderMarkers() {
+  markers.forEach(m=>lMap.removeLayer(m));
+  markers = [];
+  filterTreasures().forEach(t => {
+    const emoji = t.tags[0]?(TAG_EMOJI[t.tags[0]]||'📦'):'📦';
+    const colors = {nature:'#34d399',urban:'#00e5ff',secret:'#ff3c8e',food:'#fbbf24',art:'#34d399',history:'#f87171'};
+    const bg = colors[t.tags[0]] || '#fbbf24';
+    const icon = L.divIcon({className:'',html:`<div class="treasure-marker" style="background:${bg}">${emoji}</div>`,iconSize:[36,36],iconAnchor:[18,18]});
+    const m = L.marker([t.lat,t.lng],{icon}).addTo(lMap);
+    m.bindPopup(`<div class="popup-content"><div class="name">${esc(t.name)}</div><div class="info">${t.foundBy?t.foundBy.length:0} 人找到 · ${t.likes||0} 讚</div><button class="view-btn" onclick="openDetail('${t.id}')">查看詳情</button></div>`,{closeButton:false});
+    markers.push(m);
+  });
+}
+
+function filterTreasures() {
+  if (currentFilter==='all') return treasures;
+  if (currentFilter==='nearby') return treasures.filter(t=>getDistance(userLat,userLng,t.lat,t.lng)<2000).sort((a,b)=>getDistance(userLat,userLng,a.lat,a.lng)-getDistance(userLat,userLng,b.lat,b.lng));
+  return treasures.filter(t=>t.tags && t.tags.includes(currentFilter));
+}
+
+function centerOnUser() { lMap.setView([userLat,userLng],16); }
+function refreshAll() { renderMarkers(); renderExplore(); showToast('已重整'); }
+
+// ===== GPS =====
+function startGPS() {
+  if (!navigator.geolocation) { document.getElementById('gpsStatus').textContent='GPS 不可用'; return; }
+  navigator.geolocation.watchPosition(pos=>{
+    userLat=pos.coords.latitude; userLng=pos.coords.longitude;
+    if(userMarker)userMarker.setLatLng([userLat,userLng]);
+    document.getElementById('gpsStatus').className='status';
+    document.getElementById('gpsStatus').textContent='已定位';
+    document.getElementById('gpsCoords').textContent=`${userLat.toFixed(6)}, ${userLng.toFixed(6)}`;
+    checkNearby();
+  },()=>{
+    document.getElementById('gpsStatus').textContent='定位失敗，使用預設位置';
+    document.getElementById('gpsStatus').className='status loading';
+  },{enableHighAccuracy:true,maximumAge:10000,timeout:15000});
+}
+
+function checkNearby() {
+  const nearby = treasures.find(t=>{
+    if(currentUser.foundIds && currentUser.foundIds.includes(t.id)) return false;
+    return getDistance(userLat,userLng,t.lat,t.lng)<100;
+  });
+  const el=document.getElementById('nearbyPulse');
+  if(nearby){el.style.display='block';el.dataset.id=nearby.id}else{el.style.display='none'}
+}
+function showNearbyTreasure(){const id=document.getElementById('nearbyPulse').dataset.id;if(id)openDetail(id)}
+
+// ===== FIRESTORE REALTIME =====
+function listenTreasures() {
+  const unsub = db.collection('treasures').orderBy('createdAt','desc').limit(500)
+    .onSnapshot(snap=>{
+      treasures=[];
+      snap.forEach(doc=>treasures.push({id:doc.id,...doc.data()}));
+      renderAll();
+    });
+  unsubscribers.push(unsub);
+}
+
+function listenNotifications() {
+  const unsub = db.collection('notifications').where('targetUid','==',uid).orderBy('createdAt','desc').limit(50)
+    .onSnapshot(snap=>{
+      notifications=[];
+      unreadCount=0;
+      snap.forEach(doc=>{
+        const n={id:doc.id,...doc.data()};
+        notifications.push(n);
+        if(!n.read) unreadCount++;
+      });
+      renderNotifications();
+      const badge=document.getElementById('notifBadge');
+      if(unreadCount>0){badge.textContent=unreadCount;badge.classList.add('show')}
+      else{badge.classList.remove('show')}
+    });
+  unsubscribers.push(unsub);
+}
+
+function renderAll() { renderMarkers(); renderExplore(); renderRanking(); renderProfile(); }
+
+// ===== PRESENCE =====
+function updatePresence() {
+  if(localMode) return;
+  const ref = db.collection('presence').doc(uid);
+  ref.set({uid,name:currentUser.name,avatar:currentUser.avatar,lastSeen:firebase.firestore.FieldValue.serverTimestamp()});
+  setInterval(()=>ref.update({lastSeen:firebase.firestore.FieldValue.serverTimestamp()}),60000);
+  db.collection('presence').where('lastSeen','>',new Date(Date.now()-300000))
+    .onSnapshot(snap=>{document.getElementById('onlineNum').textContent=snap.size||1});
+}
+
+// ===== UPLOAD PHOTO =====
+let selectedPhotoFile=null, selectedPhotoPreview=null;
+function handlePhoto(input) {
+  const file=input.files[0]; if(!file)return;
+  selectedPhotoFile=file;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    selectedPhotoPreview=e.target.result;
+    document.getElementById('photoUpload').innerHTML=`<img src="${selectedPhotoPreview}"><div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);color:#fff;padding:4px 10px;border-radius:8px;font-size:12px">重新拍照</div>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadPhoto(file, path) {
+  if (localMode) {
+    return new Promise(resolve=>{
+      const r=new FileReader();
+      r.onload=e=>resolve(e.target.result);
+      r.readAsDataURL(file);
+    });
+  }
+  const ref = storage.ref().child(path);
+  await ref.put(file);
+  return await ref.getDownloadURL();
+}
+
+// ===== CREATE TREASURE =====
+let selectedDiff='easy', selectedTags=[];
+function selectDiff(el){document.querySelectorAll('.diff-option').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');selectedDiff=el.dataset.diff}
+function toggleTag(el){el.classList.toggle('selected');const tag=el.dataset.tag;const idx=selectedTags.indexOf(tag);if(idx>=0)selectedTags.splice(idx,1);else selectedTags.push(tag)}
+
+async function submitTreasure() {
+  const name=document.getElementById('treasureName').value.trim();
+  const desc=document.getElementById('treasureDesc').value.trim();
+  const hint=document.getElementById('treasureHint').value.trim();
+  if(!name){showToast('請輸入寶藏名稱');return}
+  if(!desc){showToast('請輸入描述');return}
+  if(selectedTags.length===0){showToast('請選擇至少一個標籤');return}
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='上傳中...';
+  let photoURL='';
+  if(selectedPhotoFile){
+    try{photoURL=await uploadPhoto(selectedPhotoFile,`treasures/${uid}_${Date.now()}`)}
+    catch(e){showToast('照片上傳失敗');btn.disabled=false;btn.textContent='藏下寶藏 ✨';return}
+  }
+  const treasure = {
+    name, desc, hint: hint||desc.substring(0,50)+'...',
+    lat:userLat, lng:userLng,
+    tags:selectedTags, diff:selectedDiff, photo:photoURL,
+    likes:0, likeUids:[], foundBy:[], foundUids:[],
+    userId:uid, userName:currentUser.name, userAvatar:currentUser.avatar,
+    createdAt: localMode ? Date.now() : firebase.firestore.FieldValue.serverTimestamp(),
+    reports:[]
+  };
+  try {
+    if(localMode) {
+      treasure.id='t_'+Date.now();
+      treasure.createdAt=Date.now();
+      treasures.unshift(treasure);
+      currentUser.hidden++;
+      localSave(); renderAll();
+    } else {
+      const ref=await db.collection('treasures').add(treasure);
+      await db.collection('users').doc(uid).update({hidden:firebase.firestore.FieldValue.increment(1)});
+      currentUser.hidden++;
+    }
+    resetCreateForm();
+    showToast('🎉 寶藏已藏好！');
+    checkAchievements();
+    switchPage('map');
+    lMap.setView([userLat,userLng],16);
+  } catch(e){showToast('建立失敗：'+e.message)}
+  btn.disabled=false;btn.textContent='藏下寶藏 ✨';
+}
+
+function resetCreateForm() {
+  document.getElementById('treasureName').value='';
+  document.getElementById('treasureDesc').value='';
+  document.getElementById('treasureHint').value='';
+  selectedPhotoFile=null;selectedPhotoPreview=null;selectedTags=[];selectedDiff='easy';
+  document.querySelectorAll('.tag-option').forEach(t=>t.classList.remove('selected'));
+  document.querySelectorAll('.diff-option').forEach(d=>d.classList.remove('selected'));
+  document.querySelector('.diff-option[data-diff="easy"]').classList.add('selected');
+  document.getElementById('photoUpload').innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>點擊拍照或上傳照片</span>';
+}
+
+// ===== DETAIL =====
+function openDetail(id) {
+  const t=treasures.find(x=>x.id===id);if(!t)return;
+  currentDetailId=id;
+  const dist=getDistance(userLat,userLng,t.lat,t.lng);
+  const isFound=currentUser.foundIds&&currentUser.foundIds.includes(id);
+  const isLiked=currentUser.likedIds&&currentUser.likedIds.includes(id);
+  // Image
+  const wrap=document.getElementById('modalImgWrap');
+  wrap.innerHTML=t.photo?`<img class="modal-img" src="${t.photo}">`:`<div class="modal-img" style="display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#0a1a2e,#1a2a3e)">${TAG_EMOJI[t.tags[0]]||'📦'}</div>`;
+  document.getElementById('modalTags').innerHTML=t.tags.map(tag=>`<span class="tag ${TAG_CLASS[tag]||''}">${TAG_EMOJI[tag]||''} ${TAG_MAP[tag]||tag}</span>`).join('');
+  document.getElementById('modalTitle').textContent=t.name;
+  document.getElementById('modalDesc').textContent=t.desc;
+  document.getElementById('modalHintText').textContent=t.hint||'仔細觀察周圍環境...';
+  document.getElementById('modalInfo').innerHTML=`
+    <div class="modal-info-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>${formatDistance(dist)}</div>
+    <div class="modal-info-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>${(t.foundBy||[]).length} 人找到</div>
+    <div class="modal-info-item">${DIFF_MAP[t.diff]||'中等'}</div>
+    <div class="modal-info-item">by ${esc(t.userName||'匿名')}</div>`;
+  document.getElementById('modalLikeBtn').className='card-action'+(isLiked?' liked':'');
+  document.getElementById('modalLikeCount').textContent=t.likes||0;
+  const fb=document.getElementById('modalFoundBtn');
+  fb.className='card-action'+(isFound?' found':'');
+  document.getElementById('modalFoundText').textContent=isFound?'已找到 ✓':'我找到了！';
+  // Load comments
+  if(localMode){renderComments(t.comments||[])}
+  else{db.collection('treasures').doc(id).collection('comments').orderBy('createdAt','asc').get().then(snap=>{
+    const comments=[];snap.forEach(d=>comments.push({id:d.id,...d.data()}));renderComments(comments);
+  })}
+  document.getElementById('detailModal').classList.add('show');
+}
+function closeModal(){document.getElementById('detailModal').classList.remove('show');currentDetailId=null}
+
+// ===== LIKE =====
+async function toggleLike() {
+  if(!currentDetailId)return;
+  const t=treasures.find(x=>x.id===currentDetailId);if(!t)return;
+  const isLiked=currentUser.likedIds&&currentUser.likedIds.includes(currentDetailId);
+  if(localMode){
+    if(isLiked){currentUser.likedIds=currentUser.likedIds.filter(x=>x!==currentDetailId);t.likes=Math.max(0,t.likes-1)}
+    else{currentUser.likedIds.push(currentDetailId);t.likes++}
+    localSave();openDetail(currentDetailId);return;
+  }
+  try{
+    const ref=db.collection('treasures').doc(currentDetailId);
+    if(isLiked){
+      await ref.update({likes:firebase.firestore.FieldValue.increment(-1),likeUids:firebase.firestore.FieldValue.arrayRemove(uid)});
+      currentUser.likedIds=currentUser.likedIds.filter(x=>x!==currentDetailId);
+      await db.collection('users').doc(uid).update({likedIds:currentUser.likedIds});
+    }else{
+      await ref.update({likes:firebase.firestore.FieldValue.increment(1),likeUids:firebase.firestore.FieldValue.arrayUnion(uid)});
+      currentUser.likedIds.push(currentDetailId);
+      await db.collection('users').doc(uid).update({likedIds:currentUser.likedIds});
+      // 通知寶藏主人
+      if(t.userId!==uid){
+        await db.collection('notifications').add({
+          targetUid:t.userId,type:'like',treasureId:currentDetailId,treasureName:t.name,
+          fromName:currentUser.name,fromAvatar:currentUser.avatar,read:false,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+    }
+  }catch(e){showToast('操作失敗')}
+}
+
+// ===== FOUND =====
+async function markFound() {
+  if(!currentDetailId)return;
+  if(currentUser.foundIds&&currentUser.foundIds.includes(currentDetailId)){showToast('你已經找到了！');return}
+  const t=treasures.find(x=>x.id===currentDetailId);if(!t)return;
+  if(localMode){
+    if(!currentUser.foundIds)currentUser.foundIds=[];
+    currentUser.foundIds.push(currentDetailId);currentUser.found++;
+    if(!t.foundBy)t.foundBy=[];t.foundBy.push(currentUser.name);
+    if(!t.comments)t.comments=[];
+    t.comments.push({user:currentUser.name,avatar:currentUser.avatar,text:'我找到了！🎉',createdAt:Date.now(),isFound:true});
+    localSave();showToast('🎉 恭喜找到寶藏！');openDetail(currentDetailId);checkAchievements();return;
+  }
+  try{
+    const ref=db.collection('treasures').doc(currentDetailId);
+    await ref.update({foundBy:firebase.firestore.FieldValue.arrayUnion(currentUser.name),foundUids:firebase.firestore.FieldValue.arrayUnion(uid)});
+    await ref.collection('comments').add({
+      userId:uid,user:currentUser.name,avatar:currentUser.avatar,
+      text:'我找到了！🎉',isFound:true,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    currentUser.foundIds.push(currentDetailId);currentUser.found++;
+    await db.collection('users').doc(uid).update({foundIds:currentUser.foundIds,found:firebase.firestore.FieldValue.increment(1)});
+    // 通知
+    if(t.userId!==uid){
+      await db.collection('notifications').add({
+        targetUid:t.userId,type:'found',treasureId:currentDetailId,treasureName:t.name,
+        fromName:currentUser.name,fromAvatar:currentUser.avatar,read:false,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    showToast('🎉 恭喜找到寶藏！+10 經驗值');checkAchievements();
+  }catch(e){showToast('操作失敗')}
+}
+
+// ===== COMMENTS =====
+function renderComments(comments) {
+  document.getElementById('commentCount').textContent=comments.length;
+  document.getElementById('commentList').innerHTML=comments.map(c=>`
+    <div class="comment">
+      <div class="comment-avatar">${c.avatar||'👤'}</div>
+      <div class="comment-body">
+        <span class="comment-name">${esc(c.user||'匿名')}</span>
+        <span class="comment-time">${timeAgo(c.createdAt&&c.createdAt.toDate?c.createdAt.toDate().getTime():c.createdAt||Date.now())}</span>
+        <div class="comment-text">${esc(c.text||'')}</div>
+        ${c.photo?`<img class="comment-photo" src="${c.photo}">`:''}
+        ${c.isFound?'<div class="comment-found"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>已找到此寶藏</div>':''}
+      </div>
+    </div>
+  `).join('')||'<div style="text-align:center;color:var(--text2);padding:20px;font-size:14px">還沒有留言</div>';
+}
+
+let commentPhotoFile=null;
+function handleCommentPhoto(input){
+  const file=input.files[0];if(!file)return;
+  commentPhotoFile=file;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    commentPhotoData=e.target.result;
+    const preview=document.getElementById('commentPhotoPreview');
+    preview.style.display='flex';preview.querySelector('img').src=commentPhotoData;
+  };
+  reader.readAsDataURL(file);
+}
+function clearCommentPhoto(){commentPhotoFile=null;commentPhotoData=null;document.getElementById('commentPhotoPreview').style.display='none'}
+
+async function postComment() {
+  const text=document.getElementById('commentInput').value.trim();
+  if(!text&&!commentPhotoFile)return;
+  if(!currentDetailId)return;
+  let photoURL='';
+  if(commentPhotoFile){
+    try{photoURL=await uploadPhoto(commentPhotoFile,`comments/${uid}_${Date.now()}`)}catch(e){}
+  }
+  const comment={userId:uid,user:currentUser.name,avatar:currentUser.avatar,text,photo:photoURL,isFound:false,createdAt:localMode?Date.now():firebase.firestore.FieldValue.serverTimestamp()};
+  if(localMode){
+    const t=treasures.find(x=>x.id===currentDetailId);if(!t)return;
+    if(!t.comments)t.comments=[];
+    comment.createdAt=Date.now();
+    t.comments.push(comment);
+    localSave();renderComments(t.comments);
+  }else{
+    try{
+      await db.collection('treasures').doc(currentDetailId).collection('comments').add(comment);
+      const t=treasures.find(x=>x.id===currentDetailId);
+      if(t&&t.userId!==uid){
+        await db.collection('notifications').add({
+          targetUid:t.userId,type:'comment',treasureId:currentDetailId,treasureName:t.name,
+          fromName:currentUser.name,fromAvatar:currentUser.avatar,commentText:text.substring(0,50),read:false,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      // Reload comments
+      const snap=await db.collection('treasures').doc(currentDetailId).collection('comments').orderBy('createdAt','asc').get();
+      const comments=[];snap.forEach(d=>comments.push({id:d.id,...d.data()}));
+      renderComments(comments);
+    }catch(e){showToast('留言失敗')}
+  }
+  document.getElementById('commentInput').value='';
+  clearCommentPhoto();
+  showToast('留言成功！');
+}
+
+// ===== REPORT =====
+function openReport(){document.getElementById('reportModal').classList.add('show')}
+function closeReport(){document.getElementById('reportModal').classList.remove('show')}
+async function submitReport(reason) {
+  if(!currentDetailId)return;
+  if(localMode){showToast('檢舉已提交');closeReport();return}
+  try{
+    await db.collection('reports').add({treasureId:currentDetailId,reporterId:uid,reason,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    showToast('檢舉已提交，感謝你的回報');
+  }catch(e){showToast('提交失敗')}
+  closeReport();
+}
+
+// ===== NOTIFICATIONS =====
+function renderNotifications() {
+  const list=document.getElementById('notifList');
+  if(notifications.length===0){
+    list.innerHTML='<div class="empty-state"><div class="emoji">🔔</div><div class="title">沒有通知</div><div class="desc">當有人找到或按讚你的寶藏時會通知你</div></div>';
+    return;
+  }
+  const icons={like:'❤️',found:'🎉',comment:'💬'};
+  const texts={like:'按讚了你的寶藏',found:'找到了你的寶藏',comment:'留言了'};
+  list.innerHTML=notifications.map(n=>`
+    <div class="notif-item${n.read?'':' unread'}" onclick="readNotif('${n.id}','${n.treasureId}')">
+      <div class="notif-icon">${icons[n.type]||'📌'}</div>
+      <div class="notif-body">
+        <div class="notif-text"><strong>${esc(n.fromName||'某人')}</strong> ${texts[n.type]||''} <strong>「${esc(n.treasureName||'')}」</strong>${n.commentText?' — '+esc(n.commentText):''}</div>
+        <div class="notif-time">${timeAgo(n.createdAt&&n.createdAt.toDate?n.createdAt.toDate().getTime():Date.now())}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function readNotif(notifId, treasureId) {
+  if(!localMode&&notifId){
+    try{await db.collection('notifications').doc(notifId).update({read:true})}catch(e){}
+  }
+  if(treasureId)openDetail(treasureId);
+}
+
+// ===== EXPLORE =====
+function renderExplore() {
+  const list=document.getElementById('exploreList');
+  const sorted=[...treasures].sort((a,b)=>getDistance(userLat,userLng,a.lat,a.lng)-getDistance(userLat,userLng,b.lat,b.lng));
+  if(sorted.length===0){list.innerHTML='<div class="empty-state"><div class="emoji">🗺️</div><div class="title">還沒有寶藏</div><div class="desc">成為第一個藏寶的人吧！</div></div>';return}
+  list.innerHTML=sorted.map(t=>{
+    const dist=getDistance(userLat,userLng,t.lat,t.lng);
+    const imgHtml=t.photo?`<img class="card-img" src="${t.photo}">`:`<div class="card-placeholder">${TAG_EMOJI[t.tags[0]]||'📦'}</div>`;
+    return`<div class="treasure-card" onclick="openDetail('${t.id}')">
+      ${imgHtml}
+      <div class="card-body">
+        <div class="card-title">${esc(t.name)}</div>
+        <div class="card-meta">
+          <span class="item"><span class="distance-badge">${formatDistance(dist)}</span></span>
+          <span class="item">❤️ ${t.likes||0}</span>
+          <span class="item">✓ ${(t.foundBy||[]).length} 人找到</span>
+          <span class="item">${DIFF_MAP[t.diff]||'中等'}</span>
+        </div>
+        <div class="card-tags">${(t.tags||[]).map(tag=>`<span class="tag ${TAG_CLASS[tag]||''}">${TAG_EMOJI[tag]||''} ${TAG_MAP[tag]||tag}</span>`).join('')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== RANKING =====
+function renderRanking(tab='hiders') {
+  const list=document.getElementById('rankList');
+  let data=[];
+  if(tab==='hiders'){
+    const m={};treasures.forEach(t=>{const n=t.userName||'匿名';if(!m[n])m[n]={name:n,score:0,avatar:t.userAvatar||'👤'};m[n].score++});
+    data=Object.values(m).sort((a,b)=>b.score-a.score).slice(0,20);
+    data.forEach(d=>d.label=d.score+' 個寶藏');
+  }else if(tab==='finders'){
+    const m={};treasures.forEach(t=>(t.foundBy||[]).forEach(f=>{if(!m[f])m[f]={name:f,score:0,avatar:'👤'};m[f].score++}));
+    data=Object.values(m).sort((a,b)=>b.score-a.score).slice(0,20);
+    data.forEach(d=>d.label=d.score+' 個寶藏');
+  }else{
+    data=[...treasures].sort((a,b)=>(b.likes||0)-(a.likes||0)).slice(0,20).map(t=>({name:t.name,score:t.likes||0,avatar:TAG_EMOJI[t.tags[0]]||'📦',label:(t.likes||0)+' 讚',id:t.id}));
+  }
+  if(data.length===0){list.innerHTML='<div class="empty-state"><div class="emoji">🏆</div><div class="title">還沒有資料</div></div>';return}
+  list.innerHTML=data.map((d,i)=>`
+    <div class="rank-item" ${d.id?`onclick="openDetail('${d.id}')"`:''}><div class="rank-pos ${i<3?'rank-'+(i+1):'rank-default'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div class="rank-avatar">${d.avatar}</div><div class="rank-info"><div class="rank-name">${esc(d.name)}</div><div class="rank-score">${d.label}</div></div></div>
+  `).join('');
+}
+function switchRankTab(el,tab){document.querySelectorAll('.rank-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderRanking(tab)}
+
+// ===== PROFILE =====
+function renderProfile() {
+  if(!currentUser)return;
+  document.getElementById('profileName').value=currentUser.name;
+  document.getElementById('profileAvatar').textContent=currentUser.avatar;
+  document.getElementById('profileLevel').textContent=Math.floor((currentUser.hidden*20+currentUser.found*10)/50)+1;
+  document.getElementById('statHidden').textContent=currentUser.hidden||0;
+  document.getElementById('statFound').textContent=currentUser.found||0;
+  const totalLikes=treasures.filter(t=>t.userId===uid).reduce((s,t)=>s+(t.likes||0),0);
+  document.getElementById('statLikes').textContent=totalLikes;
+  document.getElementById('achievementGrid').innerHTML=ACHIEVEMENTS.map(a=>`<div class="achievement ${a.check(currentUser)?'':'locked'}"><div class="emoji">${a.emoji}</div><div class="name">${a.name}</div></div>`).join('');
+  const mine=treasures.filter(t=>t.userId===uid);
+  document.getElementById('myTreasureList').innerHTML=mine.length===0?
+    '<div class="empty-state" style="padding:30px"><div class="emoji">📦</div><div class="title">還沒有藏寶</div></div>':
+    mine.map(t=>`<div class="rank-item" onclick="openDetail('${t.id}')" style="cursor:pointer"><div class="rank-avatar">${TAG_EMOJI[t.tags[0]]||'📦'}</div><div class="rank-info"><div class="rank-name">${esc(t.name)}</div><div class="rank-score">${t.likes||0} 讚 · ${(t.foundBy||[]).length} 人找到</div></div></div>`).join('');
+}
+
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(a=>{
+    if(a.check(currentUser)&&!localStorage.getItem('ach_'+a.id)){
+      localStorage.setItem('ach_'+a.id,'1');
+      setTimeout(()=>showToast(`🏆 成就解鎖：${a.name}！`),500);
+    }
+  });
+}
+
+// ===== NAVIGATION =====
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const pages=['map','explore','create','notif','profile'];
+  document.querySelectorAll('.nav-item').forEach((n,i)=>n.classList.toggle('active',pages[i]===name));
+  if(name==='map'){setTimeout(()=>lMap.invalidateSize(),100);renderMarkers()}
+  if(name==='explore')renderExplore();
+  if(name==='ranking')renderRanking();
+  if(name==='profile')renderProfile();
+}
+
+document.getElementById('filterBar').addEventListener('click',e=>{
+  const chip=e.target.closest('.filter-chip');if(!chip)return;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');currentFilter=chip.dataset.filter;renderMarkers();
+});
+
+// ===== SEED DATA =====
+function seedTreasures() {
+  const seeds=[
+    {name:'水豚公園秘密花園',desc:'在公園噴水池旁的大石頭後面，有一個被藤蔓覆蓋的小空間，非常適合放鬆心情。',hint:'跟著水豚的腳步走',lat:25.033,lng:121.5654,tags:['nature'],diff:'easy',likes:24,foundBy:['小明','探險者A'],comments:[{user:'小明',avatar:'🐱',text:'太棒了！找了20分鐘終到',createdAt:Date.now()-86400000,isFound:true}]},
+    {name:'巷弄裡的貓咪壁畫',desc:'這條巷子深處有一幅超大的貓咪壁畫，是在地藝術家的作品。',hint:'從便利商店旁的小巷進去',lat:25.0345,lng:121.5672,tags:['art','urban'],diff:'easy',likes:31,foundBy:['藝術迷'],comments:[]},
+    {name:'天空之橋觀景台',desc:'很少人知道這座天橋的盡頭可以看到整個城市的夜景。',hint:'天橋走到底，往右邊看',lat:25.031,lng:121.562,tags:['urban','secret'],diff:'medium',likes:56,foundBy:['夜景獵人','攝影師','遊客C'],comments:[{user:'夜景獵人',avatar:'🦉',text:'夜景真的超美！',createdAt:Date.now()-172800000,isFound:true}]},
+    {name:'百年老樹的樹洞',desc:'這棵百年榕樹的樹洞裡，據說當地人會放小紙條許願。',hint:'在廟旁邊最大的那棵樹',lat:25.0365,lng:121.5638,tags:['nature','history'],diff:'medium',likes:42,foundBy:['自然控'],comments:[]},
+    {name:'地下通道的音樂空間',desc:'這個地下通道的回音效果特別好，偶爾會有街頭藝人在這裡表演。',hint:'注意聽，跟著音樂走',lat:25.0298,lng:121.569,tags:['secret','art'],diff:'hard',likes:18,foundBy:['音樂人'],comments:[]},
+    {name:'屋頂上的秘密菜園',desc:'這棟老舊公寓的屋頂上，有人偷偷種了一片有機菜園和花園。',hint:'找到藍色大門的公寓',lat:25.032,lng:121.571,tags:['nature','secret'],diff:'hard',likes:67,foundBy:['園藝控','驢友'],comments:[]},
+  ];
+  seeds.forEach((s,i)=>{
+    s.id='seed_'+i;s.createdAt=Date.now()-(i*86400000);s.photo='';s.userId='seed';s.userName='系統';s.userAvatar='🗺️';
+    s.likeUids=[];s.foundUids=[];s.reports=[];
+    s.lat+=(Math.random()-.5)*.003;s.lng+=(Math.random()-.5)*.003;
+  });
+  treasures=seeds;
+  if(localMode)localStorage.setItem('ut_treasures',JSON.stringify(treasures));
+}
+
+// ===== UTILS =====
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function getDistance(lat1,lng1,lat2,lng2){const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180,a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+function formatDistance(m){return m<1000?Math.round(m)+'m':(m/1000).toFixed(1)+'km'}
+function timeAgo(ts){const d=Date.now()-ts;if(d<60000)return'剛剛';if(d<3600000)return Math.floor(d/60000)+' 分鐘前';if(d<86400000)return Math.floor(d/3600000)+' 小時前';if(d<604800000)return Math.floor(d/86400000)+' 天前';return new Date(ts).toLocaleDateString('zh-TW')}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+// ===== START =====
+initFirebase();
+</script>
+</body>
+</html>

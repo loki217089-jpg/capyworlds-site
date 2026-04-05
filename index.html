@@ -315,6 +315,7 @@
           <a class="row-see" href="games/">查看全部 →</a>
         </div>
         <div class="row-scroll">
+          <a class="g-card" href="games/urban-treasure-hunt/"><div class="g-card-banner" style="background:linear-gradient(135deg,#050d1a,#0a2a1a)">🗺️</div><div class="g-card-body"><div class="g-card-title">都市尋寶</div><div class="g-card-sub">社交 / 地圖探索</div></div></a>
           <a class="g-card" href="pokemon-guide/"><div class="g-card-banner" style="background:linear-gradient(135deg,#3a1a0a,#281008)">⚡</div><div class="g-card-body"><div class="g-card-title">寶可夢喜好攻略</div><div class="g-card-sub">攻略 / 圖鑑</div></div></a>
           <a class="g-card" href="games/pig-dice/"><div class="g-card-banner" style="background:linear-gradient(135deg,#1a1a3a,#0a0a28)">🎲</div><div class="g-card-body"><div class="g-card-title">貪婪骰子</div><div class="g-card-sub">益智 / 策略</div></div></a>
           <a class="g-card" href="games/deep-sea-idle/"><div class="g-card-banner" style="background:linear-gradient(135deg,#050d1a,#081828)">🐙</div><div class="g-card-body"><div class="g-card-title">深海秘境</div><div class="g-card-sub">放置 / 深海</div></div></a>
@@ -475,6 +476,7 @@
   <script>
   /* ── Search Data ── */
   const GAMES = [
+    {name:'都市尋寶',emoji:'🗺️',href:'games/urban-treasure-hunt/',cat:'社交 / 地圖探索'},
     {name:'勇者傳說',emoji:'⚔️',href:'games/hero/',cat:'放置 RPG'},
     {name:'殭屍蔓延',emoji:'🧟',href:'games/zombie-idle/',cat:'放置 / 點擊'},
     {name:'世界航道',emoji:'⛵',href:'games/sea-route/',cat:'放置 / 探索'},
@@ -558,6 +560,7 @@
   let userFavs=new Set(JSON.parse(localStorage.getItem(FAV_KEY)||'[]'));
 
   const GAME_REG = {
+    'urban-treasure-hunt':{t:'都市尋寶',e:'🗺️',c:'社交 / 地圖探索',bg:'#050d1a,#0a2a1a'},
     'hero':{t:'勇者傳說',e:'⚔️',c:'放置 RPG',bg:'#2a1a3a,#1a0a28'},
     'zombie-idle':{t:'殭屍蔓延',e:'🧟',c:'放置 / 點擊',bg:'#1a2a1a,#0a1a0a'},
     'sea-route':{t:'世界航道',e:'⛵',c:'放置 / 探索',bg:'#0a1a3a,#081028'},
