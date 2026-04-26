@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>🦫 Capy Stack</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#080504;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100vh;overflow:hidden;touch-action:none;
+  font-family:'Segoe UI','PingFang TC',sans-serif;user-select:none}
+#wrap{position:relative}
+canvas{display:block;cursor:pointer;touch-action:none}
+#ov,#tut{display:none;position:absolute;inset:0;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;color:#f0e0b0;
+  padding:32px;background:rgba(4,2,1,.93)}
+#ov.show,#tut.show{display:flex}
+.oh{font-size:22px;color:#f0c040;font-weight:bold}
+.of{font-size:56px;font-weight:bold;color:#fff;line-height:1}
+.os{font-size:12px;color:#a07830}
+.btn{padding:13px 38px;background:#f0c040;color:#080504;border:none;
+  border-radius:9px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px}
+.btn:hover{background:#ffd060}
+.th{font-size:19px;color:#f0c040;font-weight:bold;text-align:center}
+.step{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.65;max-width:260px}
+.ico{font-size:21px;line-height:1.3;flex-shrink:0}
+.sub{font-size:11px;color:#8a6828;margin-top:1px}
+</style>
+</head>
+<body>
+<div id="wrap">
+<canvas id="c"></canvas>
+<div id="ov">
+  <div style="font-size:34px">🦫</div>
+  <div class="oh">Game Over!</div>
+  <div class="of" id="of">0</div>
+  <div class="os">floors · 層</div>
+  <div id="ob" style="font-size:14px;color:#c8a040;margin-top:2px"></div>
+  <button class="btn" id="rb">Play Again ▶</button>
+</div>
+<div id="tut">
+  <div class="th">🦫 Capy Stack</div>
+  <div class="step"><div class="ico">👀</div><div>
+    Watch the platform slide left and right.<br>
+    <span class="sub">看著平台左右滑動</span>
+  </div></div>
+  <div class="step"><div class="ico">👆</div><div>
+    Tap / click to drop it! Stack as high as you can.<br>
+    <span class="sub">點擊投下，疊越高越好！</span>
+  </div></div>
+  <div class="step"><div class="ico">✨</div><div>
+    Land perfectly to keep full width. Chain PERFECT for bonus!<br>
+    <span class="sub">完美落下保持寬度，連段爆分！</span>
+  </div></div>
+  <div class="step"><div class="ico">⚡</div><div>
+    Speed increases as you climb. How high can you go?<br>
+    <span class="sub">越高越快——你能到幾樓？</span>
+  </div></div>
+  <button class="btn" id="tb">Stack It! · 開始疊！</button>
+</div>
+</div>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:.35;font-size:10px">
+  <a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a>
+</div>
+<script>
+// ─── setup ───────────────────────────────────────────────────────────────
+const cv = document.getElementById('c'), cx = cv.getContext('2d');
+const MW = Math.min(360, window.innerWidth - 8);
+const MH = Math.min(580, window.innerHeight - 8);
+const S  = Math.min(MW, Math.round(MH * 360 / 580));
+const CW = 360, CH = 580;
+cv.width = CW; cv.height = CH;
+cv.style.width = S + 'px'; cv.style.height = Math.round(CH * S / CW) + 'px';
+
+// ─── constants ───────────────────────────────────────────────────────────
+const FH = 38;          // floor height
+const INIT_W = 256;     // starting width
+const SPBASE = 2.2;     // base slider speed
+const SPINC  = 0.14;    // speed added per floor
+const SPMAX  = 11;      // max speed
+const PERF   = 9;       // perfect tolerance px
+const MINW   = 7;       // game over width
+const GY     = CH - 58; // ground platform top (world Y)
+const PALETTES = [
+  ['#d4a060','#a87030'],['#d06040','#a04020'],['#9060c8','#6038a0'],
+  ['#4090d0','#2868a8'],['#44b060','#2a8840'],['#c8c040','#9a9020'],
+];
+
+// ─── state ───────────────────────────────────────────────────────────────
+let plats=[], slider={}, score=0, best=0, dead=false, combo=0;
+let camY=0, targetCam=0, parts=[], labels=[], flash=0, flashC='#fff', shk=0;
+const AC = new(window.AudioContext||window.webkitAudioContext)();
+
+// ─── audio ───────────────────────────────────────────────────────────────
+function tone(f,t,v,d,f2=0){try{
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);
+  o.type=t;o.frequency.value=f;
+  if(f2)o.frequency.linearRampToValueAtTime(f2,AC.currentTime+d);
+  g.gain.setValueAtTime(v,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);
+  o.start();o.stop(AC.currentTime+d);
+}catch(e){}}
+const sfxDrop = ()=> tone(180,'triangle',.25,.1);
+const sfxGood = ()=> tone(440,'sine',.2,.15,520);
+const sfxPerf = ()=>{ tone(520,'sine',.25,.16); setTimeout(()=>tone(780,'sine',.2,.16),70); setTimeout(()=>tone(1040,'sine',.15,.22),140); };
+const sfxMiss = ()=>{ tone(200,'sawtooth',.3,.1); setTimeout(()=>tone(100,'sawtooth',.25,.2),100); };
+const sfxOver = ()=>{ tone(280,'sawtooth',.3,.1); setTimeout(()=>tone(180,'sawtooth',.25,.15),110); setTimeout(()=>tone(90,'sawtooth',.2,.3),220); };
+
+// ─── particles ───────────────────────────────────────────────────────────
+function chopParts(x,y,w,col){
+  for(let i=0;i<Math.min(w*.9,22);i++)
+    parts.push({x:x+Math.random()*w,y,vx:(Math.random()-.5)*7,vy:-(2+Math.random()*5),
+      r:3+Math.random()*4,col,life:45+Math.random()*20,ml:65});
+}
+function perfParts(cx2,y,w){
+  for(let i=0;i<22;i++){const a=(i/22)*Math.PI*2,s=3+Math.random()*4;
+    parts.push({x:cx2+w/2,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2.5,
+      r:3+Math.random()*3,col:'#ffe060',life:55,ml:55});}
+}
+
+// ─── game logic ──────────────────────────────────────────────────────────
+function pal(f){ return PALETTES[f % PALETTES.length]; }
+
+function mkSlider(prev,f){
+  const sp = Math.min(SPBASE + f*SPINC, SPMAX);
+  return { x:prev.x, w:prev.w, dir:1, sp, wy:prev.wy - FH, col:pal(f) };
+}
+
+function newGame(){
+  plats=[]; parts=[]; labels=[]; score=0; combo=0;
+  dead=false; flash=0; shk=0; camY=0; targetCam=0;
+  plats.push({ x:CW/2-INIT_W/2, w:INIT_W, wy:GY, col:pal(0) });
+  slider = mkSlider(plats[0], 1);
+  document.getElementById('ov').classList.remove('show');
+}
+
+function drop(){
+  if(dead) return;
+  if(AC.state==='suspended') AC.resume();
+  const prev = plats[plats.length-1];
+  const ol = Math.max(prev.x, slider.x);
+  const or2 = Math.min(prev.x+prev.w, slider.x+slider.w);
+  const ov = or2 - ol;
+
+  if(ov <= 0){ sfxMiss(); shk=18; flashC='rgba(255,40,10,.45)'; flash=14; combo=0; doOver(); return; }
+
+  const isPerfect = Math.abs(slider.x - prev.x) < PERF;
+  let nx, nw;
+
+  if(isPerfect){
+    nx=prev.x; nw=prev.w; combo++;
+    sfxPerf();
+    flashC='rgba(255,235,60,.38)'; flash=14;
+    perfParts(nx, slider.wy+camY, nw);
+    const txt = combo>=3 ? `🔥×${combo} PERFECT!` : '✨ PERFECT!';
+    labels.push({x:CW/2, y:slider.wy+camY-10, text:txt, col:'#ffe060', life:72, vy:-1.3, sz:17});
+  } else {
+    nx=ol; nw=ov; combo=0; sfxGood();
+    const chopX = slider.x < prev.x ? slider.x : prev.x+prev.w;
+    const chopW = slider.x < prev.x ? prev.x-slider.x : slider.x+slider.w-(prev.x+prev.w);
+    chopParts(chopX+CW/2-CW/2, slider.wy+camY, chopW, slider.col[0]);
+    if(nw < prev.w * 0.35)
+      labels.push({x:CW/2, y:slider.wy+camY-10, text:'😬 NARROW!', col:'#ff8844', life:55, vy:-.9, sz:13});
+  }
+
+  if(nw < MINW){ doOver(); return; }
+  sfxDrop();
+  score++;
+  if(score>best){ best=score; localStorage.setItem('cstkBest',best); }
+  plats.push({ x:nx, w:nw, wy:slider.wy, col:slider.col });
+
+  // scroll camera: keep top platform at 35% down
+  const topWY = slider.wy - FH;
+  const wantScreen = CH * 0.35;
+  if(topWY + camY < wantScreen)
+    targetCam = wantScreen - topWY;
+
+  slider = mkSlider(plats[plats.length-1], score+1);
+}
+
+function doOver(){
+  dead=true; sfxOver();
+  document.getElementById('of').textContent = score;
+  const pb = parseInt(localStorage.getItem('cstkBest')||'0');
+  document.getElementById('ob').textContent = score >= pb ? '🏆 New Best!' : `Best: ${pb}`;
+  document.getElementById('ov').classList.add('show');
+}
+
+// ─── update ──────────────────────────────────────────────────────────────
+function update(){
+  if(dead) return;
+  // slider bounce
+  slider.x += slider.sp * slider.dir;
+  if(slider.x + slider.w >= CW-8){ slider.x=CW-8-slider.w; slider.dir=-1; }
+  if(slider.x <= 8){ slider.x=8; slider.dir=1; }
+  // camera lerp
+  camY += (targetCam - camY) * 0.1;
+  // particles
+  parts=parts.filter(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.18; p.life--; return p.life>0; });
+  labels=labels.filter(l=>{ l.y+=l.vy; l.life--; return l.life>0; });
+  if(flash>0) flash--;
+  if(shk>0) shk--;
+}
+
+// ─── draw ────────────────────────────────────────────────────────────────
+function drawFloor(x,y,w,c1,c2,score2){
+  cx.fillStyle=c1;
+  cx.beginPath();cx.roundRect(x,y,w,FH-3,4);cx.fill();
+  cx.fillStyle=c2;
+  cx.beginPath();cx.roundRect(x+2,y+FH-10,w-4,7,3);cx.fill();
+  // score label on ground
+  if(score2!==undefined){
+    cx.fillStyle='rgba(255,255,255,.25)';cx.font='bold 11px sans-serif';
+    cx.textAlign='center';cx.fillText('Floor '+score2,x+w/2,y+FH/2+4);cx.textAlign='left';
+  }
+}
+
+function draw(){
+  cx.save();
+  if(shk>0){ cx.translate((Math.random()-.5)*shk*.6,(Math.random()-.5)*shk*.4); }
+
+  // background gradient
+  const bg=cx.createLinearGradient(0,0,0,CH);
+  bg.addColorStop(0,'#0c0808'); bg.addColorStop(1,'#1a0e06');
+  cx.fillStyle=bg; cx.fillRect(0,0,CW,CH);
+
+  // grid lines (subtle)
+  cx.strokeStyle='rgba(255,200,100,.04)'; cx.lineWidth=1;
+  for(let gy=0;gy<CH;gy+=40){ cx.beginPath();cx.moveTo(0,gy);cx.lineTo(CW,gy);cx.stroke(); }
+
+  // platforms
+  for(let i=0;i<plats.length;i++){
+    const p=plats[i];
+    const sy = p.wy + camY;
+    if(sy > CH+50 || sy < -FH-50) continue;
+    drawFloor(p.x, sy, p.w, p.col[0], p.col[1], i===0 ? undefined : undefined);
+  }
+
+  // slider
+  if(!dead){
+    const sy = slider.wy + camY;
+    // alignment guide (ghost)
+    const prev=plats[plats.length-1];
+    cx.fillStyle='rgba(255,255,255,.055)';
+    cx.beginPath();cx.roundRect(prev.x,sy,prev.w,FH-3,4);cx.fill();
+    // actual slider
+    drawFloor(slider.x, sy, slider.w, slider.col[0], slider.col[1]);
+    // capybara emoji on slider
+    cx.font = `${Math.min(slider.w*.55,28)}px sans-serif`;
+    cx.textAlign='center';
+    cx.fillText('🦫', slider.x+slider.w/2, sy+FH-6);
+    cx.textAlign='left';
+  }
+
+  // HUD
+  cx.fillStyle='rgba(0,0,0,.55)';
+  cx.beginPath();cx.roundRect(10,10,110,54,8);cx.fill();
+  cx.fillStyle='#a07830';cx.font='10px sans-serif';cx.fillText('FLOOR',18,28);
+  cx.fillStyle='#fff';cx.font='bold 28px sans-serif';cx.fillText(score,18,54);
+  cx.fillStyle='#a07830';cx.font='10px sans-serif';cx.fillText('BEST '+best,70,54);
+  if(combo>=2){
+    cx.fillStyle='#ffe060';cx.font=`bold 13px sans-serif`;cx.textAlign='right';
+    cx.fillText(`🔥 ×${combo}`,CW-12,28);cx.textAlign='left';
+  }
+
+  // flash
+  if(flash>0){ cx.fillStyle=flashC; cx.globalAlpha=flash/14; cx.fillRect(0,0,CW,CH); cx.globalAlpha=1; }
+
+  // particles
+  for(const p of parts){
+    cx.globalAlpha=p.life/p.ml; cx.fillStyle=p.col;
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fill();
+  }
+  cx.globalAlpha=1;
+
+  // labels
+  cx.textAlign='center';
+  for(const l of labels){
+    cx.globalAlpha=l.life/72; cx.fillStyle=l.col;
+    cx.font=`bold ${l.sz}px sans-serif`;cx.fillText(l.text,l.x,l.y);
+  }
+  cx.globalAlpha=1; cx.textAlign='left';
+  cx.restore();
+}
+
+// ─── loop + controls ─────────────────────────────────────────────────────
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+
+cv.addEventListener('click', drop);
+cv.addEventListener('touchend', e=>{ e.preventDefault(); drop(); },{passive:false});
+document.getElementById('rb').addEventListener('click', newGame);
+document.getElementById('tb').addEventListener('click',()=>{
+  document.getElementById('tut').classList.remove('show');
+  localStorage.setItem('cstkTut','1');
+  newGame();
+});
+
+best = parseInt(localStorage.getItem('cstkBest')||'0');
+if(!localStorage.getItem('cstkTut')) document.getElementById('tut').classList.add('show');
+else newGame();
+loop();
+</script>
+</body>
+</html>
