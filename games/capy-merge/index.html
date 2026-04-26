@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>🦫 Capy Merge</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#130c05;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100vh;
+  font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;overflow:hidden;touch-action:none}
+#top{display:flex;align-items:center;gap:24px;padding:10px 0;width:100%;justify-content:center}
+.stat{text-align:center}
+.slb{font-size:10px;color:#a07830;letter-spacing:1px;text-transform:uppercase}
+.svl{font-size:22px;font-weight:bold;color:#f0c040}
+#nxt{display:flex;flex-direction:column;align-items:center;gap:3px}
+#nxt .slb{font-size:10px;color:#a07830;letter-spacing:1px}
+#wrap{position:relative}
+#gc{display:block;cursor:none;touch-action:none;border:2px solid #2a1a08;border-radius:6px}
+#ov,#tut{display:none;position:absolute;inset:0;background:rgba(8,4,1,.92);border-radius:6px;
+  flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#f0e0b0;padding:28px}
+#ov.show,#tut.show{display:flex}
+#ov h2{font-size:24px;color:#f0c040}
+#ov .fs{font-size:44px;font-weight:bold;color:#fff;line-height:1}
+.obtn{margin-top:14px;padding:12px 32px;background:#f0c040;color:#130c05;
+  border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;transition:background .15s}
+.obtn:hover{background:#ffd060}
+#tut h2{font-size:20px;color:#f0c040;text-align:center}
+.step{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.6;max-width:280px}
+.ico{font-size:22px;flex-shrink:0;line-height:1.4}
+.sub{font-size:11px;color:#9a7840;margin-top:1px}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="stat"><div class="slb">Score</div><div class="svl" id="sv">0</div></div>
+  <div id="nxt"><div class="slb">Next</div><canvas id="nc" width="58" height="58"></canvas></div>
+  <div class="stat"><div class="slb">Best</div><div class="svl" id="bv">0</div></div>
+</div>
+<div id="wrap">
+<canvas id="gc"></canvas>
+<div id="ov">
+  <div style="font-size:36px">🦫</div>
+  <h2>Game Over!</h2>
+  <div class="fs" id="osv">0</div>
+  <div style="font-size:12px;color:#a07830">Final Score 最終得分</div>
+  <button class="obtn" id="rb">Play Again ▶</button>
+</div>
+<div id="tut">
+  <h2>🦫 Capy Merge</h2>
+  <div class="step"><div class="ico">🖱️</div><div>
+    <div>Move to aim your capybara drop.</div>
+    <div class="sub">移動滑鼠或手指瞄準位置</div>
+  </div></div>
+  <div class="step"><div class="ico">👆</div><div>
+    <div>Click / tap to drop. Same size = merge!</div>
+    <div class="sub">點擊投下，相同大小自動合併！</div>
+  </div></div>
+  <div class="step"><div class="ico">🔗</div><div>
+    <div>Chain merges for massive combos.</div>
+    <div class="sub">連鎖合併，分數暴增！</div>
+  </div></div>
+  <div class="step"><div class="ico">⚠️</div><div>
+    <div>Don't let capybaras pile above the red line.</div>
+    <div class="sub">別讓水豚堆超過紅線，否則 Game Over</div>
+  </div></div>
+  <button class="obtn" id="tb">Let's Play! 開始 🦫</button>
+</div>
+</div>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:.4;font-size:10px">
+  <a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a>
+</div>
+
+<script>
+// ─── canvas setup ───────────────────────────────────────────────────────────
+const gc=document.getElementById('gc'), gx=gc.getContext('2d');
+const nc=document.getElementById('nc'), nx=nc.getContext('2d');
+const MW=Math.min(370,window.innerWidth-12);
+const MH=Math.min(530,window.innerHeight-110);
+const SIDE=Math.min(MW,Math.round(MH*370/530));
+const CW=370, CH=530;
+gc.width=CW; gc.height=CH;
+gc.style.width=SIDE+'px'; gc.style.height=Math.round(CH*SIDE/CW)+'px';
+
+// ─── physics constants ────────────────────────────────────────────────────
+const WL=13, WR=CW-13, FL=CH-13, DL=112; // walls, floor, danger line
+const G=0.30, DAMP=0.46, FRIC=0.97;
+
+// ─── capy types  [radius, score, body-color, dark-color] ─────────────────
+const T=[
+  [15, 1,'#d4a060','#a07030'],
+  [21, 3,'#c99050','#9a6828'],
+  [29, 8,'#c08040','#8e5818'],
+  [39,15,'#b47238','#834e10'],
+  [51,25,'#a86430','#7a3e08'],
+  [65,40,'#9c5a28','#6c3200'],
+  [81,65,'#8a4e20','#5c2800'],
+  [99,100,'#784218','#4e2000'],
+];
+
+// ─── state ────────────────────────────────────────────────────────────────
+let balls=[], score=0, best=0, dead=false, canDrop=true;
+let dropX=CW/2, curT=0, nxtT=0, dtimer=0;
+let parts=[], pops=[];
+const AC=new(window.AudioContext||window.webkitAudioContext)();
+
+function rndT(){ return Math.floor(Math.random()*4); }
+function mkBall(x,y,t){ return{x,y,vx:0,vy:0,r:T[t][0],t,age:0,jm:false}; }
+
+// ─── draw capybara ────────────────────────────────────────────────────────
+function capy(ctx,x,y,r,t){
+  const[,,col,dk]=T[t];
+  ctx.fillStyle=dk;
+  ctx.beginPath();ctx.arc(x-r*.54,y-r*.71,r*.25,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+r*.54,y-r*.71,r*.25,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#d06858';
+  ctx.beginPath();ctx.arc(x-r*.54,y-r*.71,r*.13,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x+r*.54,y-r*.71,r*.13,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=col;
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.11)';
+  ctx.beginPath();ctx.ellipse(x,y+r*.1,r*.54,r*.41,0,0,Math.PI*2);ctx.fill();
+  if(r>=13){
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(x-r*.27,y-r*.12,r*.18,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+r*.27,y-r*.12,r*.18,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#1a0808';
+    ctx.beginPath();ctx.arc(x-r*.24,y-r*.1,r*.1,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+r*.24,y-r*.1,r*.1,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(x-r*.2,y-r*.15,r*.045,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+r*.28,y-r*.15,r*.045,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=dk;
+    ctx.beginPath();ctx.ellipse(x,y+r*.1,r*.17,r*.11,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#3a1a08';
+    ctx.beginPath();ctx.arc(x-r*.07,y+r*.08,r*.055,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+r*.07,y+r*.08,r*.055,0,Math.PI*2);ctx.fill();
+  }
+}
+
+// ─── physics ─────────────────────────────────────────────────────────────
+function physics(){
+  for(const b of balls){
+    b.vy+=G; b.vx*=FRIC;
+    b.vy=Math.min(b.vy,14);
+    b.x+=b.vx; b.y+=b.vy; b.age++;
+    if(b.y+b.r>FL){b.y=FL-b.r;b.vy*=-DAMP;b.vx*=0.82;if(Math.abs(b.vy)<0.5)b.vy=0;}
+    if(b.x-b.r<WL){b.x=WL+b.r;b.vx*=-DAMP;}
+    if(b.x+b.r>WR){b.x=WR-b.r;b.vx*=-DAMP;}
+  }
+  const mrg=[];
+  for(let i=0;i<balls.length;i++){
+    for(let j=i+1;j<balls.length;j++){
+      const a=balls[i],b=balls[j];
+      const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy,md=a.r+b.r;
+      if(d2<md*md){
+        const d=Math.sqrt(d2)||.01,nx2=dx/d,ny2=dy/d;
+        if(a.t===b.t&&a.t<7&&a.age>10&&b.age>10&&!a.jm&&!b.jm){
+          mrg.push([i,j]);continue;
+        }
+        const ov=(md-d)*.5;
+        a.x-=nx2*ov;a.y-=ny2*ov;b.x+=nx2*ov;b.y+=ny2*ov;
+        const rv=(b.vx-a.vx)*nx2+(b.vy-a.vy)*ny2;
+        if(rv<0){const imp=rv*.72;a.vx+=imp*nx2;a.vy+=imp*ny2;b.vx-=imp*nx2;b.vy-=imp*ny2;}
+      }
+    }
+  }
+  const rem=new Set();
+  for(const[i,j]of mrg){
+    if(rem.has(i)||rem.has(j))continue;
+    const a=balls[i],b=balls[j];
+    const nt=a.t+1,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    rem.add(i);rem.add(j);
+    const nb=mkBall(mx,my,nt);nb.vy=-3.8;nb.jm=true;
+    balls.push(nb);
+    const pts=T[nt][1];score+=pts;
+    if(score>best){best=score;localStorage.setItem('cmBest',best);}
+    document.getElementById('sv').textContent=score;
+    document.getElementById('bv').textContent=best;
+    pops.push({x:mx,y:my-14,pts,life:55,vy:-1.6});
+    spawnParts(mx,my,nt);playMrg(nt);
+  }
+  balls=balls.filter((_,i)=>!rem.has(i));
+  for(const b of balls)if(b.jm&&b.age>6)b.jm=false;
+  const danger=balls.some(b=>b.y-b.r<DL&&b.age>35&&Math.abs(b.vy)<1.2);
+  if(danger){dtimer++;if(dtimer>105)gameOver();}
+  else dtimer=Math.max(0,dtimer-2);
+}
+
+// ─── particles ───────────────────────────────────────────────────────────
+function spawnParts(x,y,t){
+  const c=T[Math.min(t,7)][2];
+  for(let i=0;i<14;i++){
+    const a=(i/14)*Math.PI*2,s=2+Math.random()*3.5;
+    parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2.2,r:3+Math.random()*3,c,life:45+Math.random()*18,ml:63});
+  }
+}
+function stepParts(){
+  parts=parts.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.16;p.life--;return p.life>0;});
+  pops=pops.filter(p=>{p.y+=p.vy;p.life--;return p.life>0;});
+}
+
+// ─── audio ────────────────────────────────────────────────────────────────
+function playMrg(t){try{
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);
+  o.frequency.value=200+t*75;o.type='sine';
+  g.gain.setValueAtTime(.3,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.35);
+  o.start();o.stop(AC.currentTime+.35);
+}catch(e){}}
+function playDrp(){try{
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);
+  o.frequency.value=130;o.type='triangle';
+  g.gain.setValueAtTime(.12,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.12);
+  o.start();o.stop(AC.currentTime+.12);
+}catch(e){}}
+
+// ─── draw ─────────────────────────────────────────────────────────────────
+function drawNxt(){
+  nx.clearRect(0,0,58,58);
+  capy(nx,29,29,Math.min(T[nxtT][0],22),nxtT);
+}
+function draw(){
+  gx.fillStyle='#1c1008';gx.fillRect(0,0,CW,CH);
+  gx.fillStyle='#251508';
+  gx.fillRect(0,0,WL,CH);gx.fillRect(WR,0,CW-WR,CH);gx.fillRect(0,FL,CW,CH-FL);
+  const da=dtimer>0?.22+.55*(dtimer/105):.16;
+  gx.strokeStyle=`rgba(255,65,25,${da})`;gx.setLineDash([6,5]);gx.lineWidth=1.5;
+  gx.beginPath();gx.moveTo(WL,DL);gx.lineTo(WR,DL);gx.stroke();
+  gx.setLineDash([]);
+  for(const b of balls)capy(gx,b.x,b.y,b.r,b.t);
+  if(!dead&&canDrop){
+    gx.globalAlpha=.35;capy(gx,dropX,DL-T[curT][0]-4,T[curT][0],curT);gx.globalAlpha=1;
+    gx.strokeStyle='rgba(240,180,60,.16)';gx.lineWidth=1;gx.setLineDash([4,6]);
+    gx.beginPath();gx.moveTo(dropX,DL);gx.lineTo(dropX,FL);gx.stroke();gx.setLineDash([]);
+  }
+  for(const p of parts){
+    gx.globalAlpha=p.life/p.ml;gx.fillStyle=p.c;
+    gx.beginPath();gx.arc(p.x,p.y,p.r,0,Math.PI*2);gx.fill();
+  }
+  gx.globalAlpha=1;gx.textAlign='center';
+  for(const p of pops){
+    gx.globalAlpha=p.life/55;gx.fillStyle='#ffe060';
+    gx.font=`bold ${12+Math.min(p.pts/10,9)}px sans-serif`;
+    gx.fillText('+'+p.pts,p.x,p.y);
+  }
+  gx.globalAlpha=1;gx.textAlign='left';
+}
+
+// ─── game control ─────────────────────────────────────────────────────────
+function newGame(){
+  balls=[];score=0;dead=false;canDrop=true;parts=[];pops=[];dtimer=0;
+  curT=rndT();nxtT=rndT();
+  document.getElementById('sv').textContent='0';
+  document.getElementById('ov').classList.remove('show');
+  drawNxt();
+}
+function gameOver(){
+  if(dead)return;dead=true;
+  document.getElementById('osv').textContent=score;
+  document.getElementById('ov').classList.add('show');
+}
+function getX(e){
+  const rc=gc.getBoundingClientRect(),sx=CW/rc.width;
+  return((e.touches?e.touches[0].clientX:e.clientX)-rc.left)*sx;
+}
+gc.addEventListener('mousemove',e=>{
+  if(dead)return;dropX=Math.max(WL+T[curT][0],Math.min(WR-T[curT][0],getX(e)));
+});
+gc.addEventListener('touchmove',e=>{
+  e.preventDefault();if(dead)return;dropX=Math.max(WL+T[curT][0],Math.min(WR-T[curT][0],getX(e)));
+},{passive:false});
+function doDrop(){
+  if(dead||!canDrop)return;
+  if(AC.state==='suspended')AC.resume();
+  const b=mkBall(dropX,DL-T[curT][0],curT);b.vy=1.5;balls.push(b);
+  playDrp();canDrop=false;curT=nxtT;nxtT=rndT();drawNxt();
+  setTimeout(()=>{canDrop=true;},380);
+}
+gc.addEventListener('click',doDrop);
+gc.addEventListener('touchend',e=>{e.preventDefault();doDrop();},{passive:false});
+document.getElementById('rb').addEventListener('click',newGame);
+document.getElementById('tb').addEventListener('click',()=>{
+  document.getElementById('tut').classList.remove('show');
+  localStorage.setItem('cmTut','1');newGame();
+});
+
+// ─── main loop ────────────────────────────────────────────────────────────
+function loop(){
+  if(!dead){physics();stepParts();}
+  draw();requestAnimationFrame(loop);
+}
+best=parseInt(localStorage.getItem('cmBest')||'0');
+document.getElementById('bv').textContent=best;
+if(!localStorage.getItem('cmTut'))document.getElementById('tut').classList.add('show');
+else newGame();
+loop();
+</script>
+</body>
+</html>
